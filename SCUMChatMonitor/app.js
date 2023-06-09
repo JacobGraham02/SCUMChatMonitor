@@ -10,7 +10,7 @@ const client_instance = new Client({
             GatewayIntentBits.MessageContent,
             GatewayIntentBits.GuildMembers]
 });
-const message_regex_pattern = new RegExp("(!discord|discord|\/discord|join discord|!join discord|\/join discord)");
+const message_regex_pattern = new RegExp("(!discord|discord|\/discord|#discord|join discord|!join discord|\/join discord)");
 const channel_name = 'chat-scum';
 
 client_instance.on('ready', () => {
@@ -35,12 +35,10 @@ async function runCommand(command) {
         return;
     }
 
-    robot.keyTap('t');
     await sleep(1000);
     robot.keyTap('tab');
     robot.typeString(command);
     robot.keyTap('enter');
-    robot.keyTap('escape');
         /*const powershell = spawn('powershell.exe', ['-NoExit']);
 
         powershell.stdout.on('data', (data) => {
