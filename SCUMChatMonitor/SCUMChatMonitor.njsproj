@@ -35,6 +35,9 @@
       <SubType>Code</SubType>
     </Content>
     <Content Include="app.js" />
+    <Content Include="config.json">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="package.json" />
     <Content Include="README.md" />
   </ItemGroup>

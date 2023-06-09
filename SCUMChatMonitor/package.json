@@ -9,5 +9,10 @@
   "devDependencies": {
     "eslint": "^8.42.0"
   },
-  "eslintConfig": {}
+  "eslintConfig": {},
+  "dependencies": {
+    "discord-api-types": "^0.37.43",
+    "discord.js": "^14.11.0",
+    "robotjs": "^0.6.0"
+  }
 }
