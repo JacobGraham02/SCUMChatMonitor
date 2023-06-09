@@ -10,7 +10,8 @@ const client_instance = new Client({
             GatewayIntentBits.MessageContent,
             GatewayIntentBits.GuildMembers]
 });
-const message_regex_pattern = new RegExp("(!discord|discord|\/discord|#discord|join discord|!join discord|\/join discord)");
+const message_regex_pattern = new RegExp("(!discord|\/discord|#discord|!join discord|\/join discord)");
+const message_contains_discord_regex_pattern = new RegExp("Discord: https://discord.gg/VseKPc8r");
 const channel_name = 'chat-scum';
 
 client_instance.on('ready', () => {
@@ -22,8 +23,9 @@ client_instance.on('messageCreate', async (message) => {
 
     if (message.channel.name === channel_name && message_regex_pattern.test(message_content)) {
 
-        // message.channel.send('Discord: https://discord.gg/VseKPc8r');
-        type_in_global_chat('Discord: https://discord.gg/VseKPc8r');
+        if (!message_contains_discord_regex_pattern.test(message_content)) {
+            type_in_global_chat('Discord: https://discord.gg/VseKPc8r');
+        }
     }
 });
 
@@ -35,10 +37,9 @@ async function runCommand(command) {
         return;
     }
 
-    await sleep(1000);
-    robot.keyTap('tab');
+    await sleep(250);
     robot.typeString(command);
-    robot.keyTap('enter');
+    robot.keyTap('enter');  
         /*const powershell = spawn('powershell.exe', ['-NoExit']);
 
         powershell.stdout.on('data', (data) => {
@@ -59,7 +60,7 @@ async function runCommand(command) {
 function sleep(milliseconds) {
     return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
-
+    
 function type_in_global_chat(content) {
     console.log(`Global chat announcement ${content}`);
     runCommand(`${content}`);
