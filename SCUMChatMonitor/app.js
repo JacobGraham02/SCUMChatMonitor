@@ -11,7 +11,8 @@ const client_instance = new Client({
             GatewayIntentBits.GuildMembers]
 });
 const message_regex_pattern = new RegExp("(!discord|\/discord|#discord|!join discord|\/join discord)");
-const message_contains_discord_regex_pattern = new RegExp("Discord: https://discord.gg/VseKPc8r");
+const message_contains_discord_regex_pattern = new RegExp("Discord: https://discord.gg/4BYPXWSFkv");
+const scum_discord_invite_message = 'Discord: https://discord.gg/4BYPXWSFkv';
 const channel_name = 'chat-scum';
 
 client_instance.on('ready', () => {
@@ -24,7 +25,7 @@ client_instance.on('messageCreate', async (message) => {
     if (message.channel.name === channel_name && message_regex_pattern.test(message_content)) {
 
         if (!message_contains_discord_regex_pattern.test(message_content)) {
-            type_in_global_chat('Discord: https://discord.gg/VseKPc8r');
+            type_in_global_chat(scum_discord_invite_message);
         }
     }
 });
@@ -67,7 +68,7 @@ function type_in_global_chat(content) {
 }
 
 
-function checkIfScumGameRunning(callback) {
+/*function checkIfScumGameRunning(callback) {
     const processName = 'SCUM';
 
     const command = `tasklist /FI "IMAGENAME eq ${processName}.exe"`;
@@ -96,4 +97,5 @@ setInterval(() => {
             console.log("The SCUM game is either not running, or the process can be detected");
         }
     });
-}, 20000); // Execute every 20 seconds*/
+}, 20000); // Execute every 20 seconds
+*/
