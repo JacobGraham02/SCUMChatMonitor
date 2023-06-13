@@ -5,7 +5,6 @@ const path = require('node:path');
 const fs = require('node:fs');
 const { discord_bot_token, discord_public_key, discord_secret_key, discord_client_id, discord_guild_id, discord_channel_id } = require('./config.json');
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
-const { authorization_role_name } = require('./commands/discord');
 const client_instance = new Client({
     intents: [GatewayIntentBits.Guilds,
             GatewayIntentBits.GuildMessages,
