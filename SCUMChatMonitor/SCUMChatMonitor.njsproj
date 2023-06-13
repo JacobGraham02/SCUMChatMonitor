@@ -35,11 +35,20 @@
       <SubType>Code</SubType>
     </Content>
     <Content Include="app.js" />
+    <Content Include="commands\discord.js">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="commands\test.js">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="config.json">
       <SubType>Code</SubType>
     </Content>
     <Content Include="package.json" />
     <Content Include="README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="commands\" />
   </ItemGroup>
   <Import Project="$(VSToolsPath)\Node.js Tools\Microsoft.NodejsToolsV2.targets" />
 </Project>
