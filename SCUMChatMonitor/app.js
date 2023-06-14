@@ -7,9 +7,9 @@ const { discord_bot_token, discord_public_key, discord_secret_key, discord_clien
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const client_instance = new Client({
     intents: [GatewayIntentBits.Guilds,
-            GatewayIntentBits.GuildMessages,
-            GatewayIntentBits.MessageContent,
-            GatewayIntentBits.GuildMembers]
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMembers]
 });
 const message_regex_pattern = new RegExp("(!discord|\/discord|#discord|!join discord|\/join discord)");
 const message_content_command_regex = new RegExp("([a-zA-Z]+)");
@@ -39,18 +39,18 @@ client_instance.on('messageCreate', async (message) => {
     const client_command_values = client_instance.commands.get(message_content_command);
 
     if (determineIfUserMessageInCorrectChannel(message) && determineIfUserMessageMatchesRegex(message_content) && determineIfUserCanUseCommand(message.member, client_command_values)) {
-       // type_in_global_chat(scum_discord_invite_message);
+        // type_in_global_chat(scum_discord_invite_message);
         const client_command_message = client_command_values.command_data;
         console.log(client_command_message);
 
     }
     // message.channel.name === channel_name && message_regex_pattern.test(message_content)) {
 
-        // If the message sent in the discord channel 'chat-scum' matches the regex pattern for the discord invite link, do not send the discord invite link. 
-        /*if (!message_contains_discord_regex_pattern.test(message_content)) {
-            type_in_global_chat(scum_discord_invite_message);
-        }*/
-    }
+    // If the message sent in the discord channel 'chat-scum' matches the regex pattern for the discord invite link, do not send the discord invite link. 
+    /*if (!message_contains_discord_regex_pattern.test(message_content)) {
+        type_in_global_chat(scum_discord_invite_message);
+    }*/
+}
 );
 
 client_instance.login(discord_bot_token);
@@ -118,7 +118,7 @@ async function runCommand(command) {
 function sleep(milliseconds) {
     return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
-    
+
 function type_in_global_chat(content) {
     console.log(`Global chat announcement ${content}`);
     runCommand(`${content}`);
