@@ -28,6 +28,9 @@
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include=".env">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include=".eslintrc.json">
       <SubType>Code</SubType>
     </Content>

@@ -22,10 +22,11 @@
     "debug": "~2.6.9",
     "discord-api-types": "^0.37.43",
     "discord.js": "^14.11.0",
+    "dotenv": "^16.1.4",
     "express": "^4.18.2",
     "http-errors": "~1.6.3",
-    "mongodb": "^5.6.0",
     "morgan": "~1.9.1",
+    "mysql2": "^3.3.5",
     "pug": "^3.0.2"
   },
   "pkg": {

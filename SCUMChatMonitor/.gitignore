@@ -2,8 +2,8 @@ npm/
 node_modules/
 bin/
 obj/
-../.vs/
-SCUMChatMonitor/.vs/
-.vs/SCUMChatMonitor
 config.json
 scumchat-monitor.exe
+.env
+.idea
+.vs
