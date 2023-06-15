@@ -1,16 +1,16 @@
 var express = require('express');
 var router = express.Router();
 
-function isLoggedIn(request, response, next) {
+/*function isLoggedIn(request, response, next) {
     if (request.isAuthenticated()) {
         return next();
     } else {
         response.redirect('/login');
     }
-}
+}*/
 
 /* GET home page. */
-router.get('/', isLoggedIn, function(request, response, next) {
+router.get('/', /*isLoggedIn,*/ function(request, response, next) {
   response.render('index', { title: 'Express' });
 });
 
@@ -22,7 +22,7 @@ router.get('/login', function (request, response, next) {
     }
 }); 
 
-router.get('/logout', isLoggedIn, function (request, response, next) {
+router.get('/logout', /*isLoggedIn,*/ function (request, response, next) {
     request.logout(function (error) {
         if (error) {
             return next(error);

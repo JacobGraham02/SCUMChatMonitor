@@ -6,12 +6,18 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var session = require('express-session');
-
-const passport = require('passport');
-const LocalStrategy = require('passport-local').Strategy;
-
+var mysql = require('mysql2');
+var mysqlStore = require('express-mysql-session')(session);
+var database_manager = require('./database/DatabaseConnectionManager');
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
+
+const { v1: uuidv1 } = require('uuid');
+const crypto = require('crypto');
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
+const encryptAndValidatePassword = require('./modules/encryptionAndValidation');
+const userRepository = require('./database/UserRepository'); 
 
 var app = express();
 const server_port = 3000;
@@ -34,11 +40,11 @@ const usernameAndPasswordFields = {
     password_field: 'password'
 }
 
-const verifyCallback = (username, password, done) => {
-    
+/*const verifyCallback = (username, password, done) => {
+    userRepository.findUserById()
 }
 
-const strategy = new LocalStrategy()
+const strategy = new LocalStrategy()*/
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
