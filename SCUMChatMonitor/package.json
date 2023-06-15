@@ -18,11 +18,13 @@
     "@discordjs/builders": "^1.6.3",
     "@discordjs/rest": "^1.7.1",
     "cookie-parser": "~1.4.4",
+    "crypto": "^1.0.1",
     "debug": "~2.6.9",
     "discord-api-types": "^0.37.43",
     "discord.js": "^14.11.0",
     "express": "^4.18.2",
     "http-errors": "~1.6.3",
+    "mongodb": "^5.6.0",
     "morgan": "~1.9.1",
     "pug": "^3.0.2"
   },
