@@ -1,47 +1,61 @@
+const DatabaseConnectionManager = require('./IUserRepository');
 module.exports = class IUserRepository {
 
+    constructor(database_connection_pool) {
+        this.connection_manager = new DatabaseConnectionManager()
+        this.db_connection_pool = this.connection_manager.initializeDatabaseConnectionPool();
+    }
+
     async findUserById(user_id) {
-        const user = await database.query('SELECT * FROM users WHERE id = ?', [user_id]);
-        return user;
+        const database_connection = await this.connection_manager.getConnection();
+        try {
+            const user_collection = database_connection.collection('users');
+            const user = await user_collection.findOne({ _id: user_id });
+            return user;
+        } finally {
+            this.connection_manager.releaseConnection(database_connection);
+        }
     }
 
     async findAllUsers() {
-        const users = await database.query('SELECT * FROM users');
-        return users;
-    }
-
-    async findAllAdministrators() {
-        const administrators = await database.query('SELECT * FROM administrators');
-        return administrators;
+        const database_connection = await this.db_connection_pool.getConnection();
+        try {
+            const user_collection = database_connection.collection('users');
+            const users = await user_collection.find({}).toArray();
+            return users;
+        } finally {
+            this.connection_manager.releaseConnection(database_connection);
+        }
     }
 
     async createUser(user_data) {
-        const create_user_result = await database.query('INSERT INTO users SET ?', [user_data])
-        return create_user_result.insertId;
+        const database_connection = await this.db_connection_pool.getConnection();
+        try {
+            const user_collection_result = database_connection.collection('users');
+            const user_insertion_result = await user_collection_result.insertOne(user_data);
+            return user_insertion_result.insertedId;
+        } finally {
+            this.connection_manager.releaseConnection(database_connection);
+        }
     }
 
     async updateUser(user_id, user_data) {
-        const update_user_result = await database.query('UPDATE users SET ? WHERE id = ?', [user_data, user_id])
-        return update_user_result.affectedRows > 0;
+        const database_connection = await this.db_connection_pool.getConnection();
+        try {
+            const user_collection_result = database_connection.collection('users');
+            const user_update_result = await user_collection_result.updateOne({ _id: user_id }, { $set: user_data });
+        } finally {
+            this.connection_manager.releaseConnection(database_connection);
+        }
     }
 
     async deleteUser(user_id) {
-        const delete_user_result = await database.query('DELETE FROM users WHERE id = ?', [user_id]);
-        return delete_user_result.affectedRows > 0;
-    }
-
-    async createCommand(command_data) {
-        const create_command_result = await database.query('INSERT INTO commands SET ?', [command_data]);
-        return create_command_result.insertId;
-    }
-
-    async editCommand(command_id, command_data) {
-        const update_command_result = await database.query('UPDATE commands SET ? WHERE id = ?', [command_data, command_id]);
-        return update_command_result.affectedRows > 0;
-    }
-
-    async deleteCommand(command_id) {
-        const delete_command_result = await database.query('DELETE FROM commands WHERE id=?', [command_id]);
-        return delete_command_result.affectedRows > 0;
+        const database_connection = await this.db_connection_pool.getConnection();
+        try {
+            const user_collection_result = database_connection.collection('users');
+            const user_deletion_result = await user_collection_result.deleteOne({ _id: user_id });
+        } finally {
+            this.connection_manager.releaseConnection(database_connection);
+        }
     }
 }

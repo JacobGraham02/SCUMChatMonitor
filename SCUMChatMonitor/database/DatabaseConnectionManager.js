@@ -40,7 +40,7 @@ module.exports = class DatabaseConnectionManager {
         return this.pool.acquire();
     }
 
-    async releaseConnection() {
+    async releaseConnection(connection) {
         this.pool.release(connection);
     }
 }
