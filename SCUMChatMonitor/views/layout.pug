@@ -1,7 +1,12 @@
+block variables
 doctype html
 html
   head
-    title= title
+    title= landing_page_title
     link(rel='stylesheet', href='/stylesheets/style.css')
+    script(src='/javascripts/page_timeout.js')
   body
+    block header
     block content
+    block footer
+

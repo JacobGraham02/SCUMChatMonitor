@@ -16,9 +16,9 @@ router.get('/', /*isLoggedIn,*/ function(request, response, next) {
 
 router.get('/login', function (request, response, next) {
     if (request.user) {
-        response.render('/login');
+        response.render('login');
     } else {
-        response.render('/login', { title: "Login page", user: request.user });
+        response.render('login', { title: "Login page", user: request.user });
     }
 }); 
 

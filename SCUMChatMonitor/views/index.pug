@@ -1,5 +1,18 @@
 extends layout
+block variables
+	- var landing_page_title = 'Welcome to ScumMonitorBot' 
+
+block header
+	h1 Welcome to SCUM monitor bot
 
 block content
-  h1= title
-  p Welcome to #{title}
+	h1= title
+	p Welcome to #{title}
+
+block content
+	section
+		p This is the content of the index page.
+
+block footer
+	footer
+		p Copyright © 2023 My Website

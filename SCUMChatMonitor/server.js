@@ -53,7 +53,10 @@ app.listen(server_port, function () {
     console.log(`Server is running on port ${server_port}`);
 })
 
-
+/*app.get('/home', (request, response) => {
+    console.log('Home route');
+    response.render('public/home');
+});*/
 
 // error handler
 app.use(function (err, req, res, next) {
