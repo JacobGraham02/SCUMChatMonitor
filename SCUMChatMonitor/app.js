@@ -15,7 +15,7 @@ const message_regex_pattern = new RegExp("(!discord|\/discord|#discord|!join dis
 const message_content_command_regex = new RegExp("([a-zA-Z]+)");
 const message_contains_discord_regex_pattern = new RegExp("Discord: https://discord.gg/4BYPXWSFkv");
 const scum_discord_invite_message = 'Discord: https://discord.gg/4BYPXWSFkv';
-const channel_name = 'chat-scum';
+const game_chat_channel_name = 'chat-scum';
 
 const commands_path = path.join(__dirname, 'commands');
 const command_files_list = fs.readdirSync(commands_path).filter(file => file.endsWith('.js'));
@@ -37,14 +37,14 @@ client_instance.on('messageCreate', async (message) => {
     const message_content_command_array = message_content.match(message_content_command_regex);
     const message_content_command = message_content_command_array[0].trim();
     const client_command_values = client_instance.commands.get(message_content_command);
+    console.log(message_content);
 
     if (determineIfUserMessageInCorrectChannel(message) && determineIfUserMessageMatchesRegex(message_content) && determineIfUserCanUseCommand(message.member, client_command_values)) {
         // type_in_global_chat(scum_discord_invite_message);
         const client_command_message = client_command_values.command_data;
         console.log(client_command_message);
-
     }
-    // message.channel.name === channel_name && message_regex_pattern.test(message_content)) {
+    // message.channel.name === game_chat_channel_name && message_regex_pattern.test(message_content)) {
 
     // If the message sent in the discord channel 'chat-scum' matches the regex pattern for the discord invite link, do not send the discord invite link. 
     /*if (!message_contains_discord_regex_pattern.test(message_content)) {
@@ -67,7 +67,7 @@ function determineIfUserMessageMatchesRegex(user_message) {
 }
 
 function determineIfUserMessageInCorrectChannel(user_message) {
-    return user_message.channel.name === channel_name;
+    return user_message.channel.name === game_chat_channel_name;
 }
 
 function copyToClipboard(text) {
@@ -112,7 +112,7 @@ async function runCommand(command) {
 
     await sleep(500);
     pasteFromClipboard();
-    await sleep(250);
+    await sleep(100);
     pressEnterKey();
 }
 function sleep(milliseconds) {
@@ -122,6 +122,10 @@ function sleep(milliseconds) {
 function type_in_global_chat(content) {
     console.log(`Global chat announcement ${content}`);
     runCommand(`${content}`);
+}
+
+function fetchSteamIdFromSteamUsername() {
+
 }
 
 

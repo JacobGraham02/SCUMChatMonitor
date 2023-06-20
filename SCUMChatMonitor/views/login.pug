@@ -1,2 +1,20 @@
-h1
-	I am the login page
+extends layout
+
+block variables
+	- var login_page_title = "Log in to your account"
+
+block header
+	h1.welcome_message Log in to your account
+	-if (failed_login_message !== undefined) {
+		p.failed_login_details = message
+	-}
+	
+block content
+	form#login_fields_form(action='/login' method='post') 
+		ul.login_form_fields
+			li#login_username_field
+				label.form_login_username_label(for='username') Email address:
+				input.form_login_username_input(type='text' name='username')
+			li#login_password_field
+				label.form_login_password_label(for='password') Password:
+				input.form_login_password_input(type='text' name='password')

@@ -1,18 +1,22 @@
 extends layout
+
 block variables
-	- var landing_page_title = 'Welcome to ScumMonitorBot' 
+	- var landing_page_title = 'ScumMonitorBot' 
 
 block header
-	h1 Welcome to SCUM monitor bot
+	h1.welcome_message ScumMonitorBot
+	div.index_page_header_buttons
+		a.index_page_login_button(href='login') Log in to your account
+		a.index_page_register_button(href='register') Register your account
+
 
 block content
-	h1= title
-	p Welcome to #{title}
+	h1 Links you may find interesting
+	ul.list_of_landing_page_links 
+		li.how_to_use How to use: Coming soon
+		li.documentation Documentation: Coming soon
+		li.how_bot_is_made The process of building your own SCUM bot: Coming soon
 
-block content
-	section
-		p This is the content of the index page.
 
 block footer
 	footer
-		p Copyright © 2023 My Website

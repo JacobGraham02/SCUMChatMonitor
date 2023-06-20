@@ -11,15 +11,11 @@ var router = express.Router();
 
 /* GET home page. */
 router.get('/', /*isLoggedIn,*/ function(request, response, next) {
-  response.render('index', { title: 'Express' });
+  response.render('index');
 });
 
 router.get('/login', function (request, response, next) {
-    if (request.user) {
-        response.render('login');
-    } else {
-        response.render('login', { title: "Login page", user: request.user });
-    }
+    response.render('login', { title: "Login page", user: request.user });
 }); 
 
 router.get('/logout', /*isLoggedIn,*/ function (request, response, next) {

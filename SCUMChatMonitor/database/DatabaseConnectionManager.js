@@ -40,6 +40,9 @@ module.exports = class DatabaseConnectionManager {
         return this.pool.acquire();
     }
 
+    /*
+    * this.pool.release() function is available in the module generic-pool
+    */
     async releaseConnection(connection) {
         this.pool.release(connection);
     }

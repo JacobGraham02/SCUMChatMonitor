@@ -8,17 +8,169 @@ var logger = require('morgan');
 var session = require('express-session');
 var database_manager = require('./database/DatabaseConnectionManager');
 var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
 
-const { v1: uuidv1 } = require('uuid');
+const { v4: uuidv4 } = require('uuid');
 const crypto = require('crypto');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const encryptAndValidatePassword = require('./modules/encryptionAndValidation');
 const userRepository = require('./database/UserRepository'); 
 
+const FTPClient = require('ftp');
+const readline = require('readline');
+
 var app = express();
 const server_port = 3000;
+
+/*app.get('/process-files', (request, response) => {
+    const ftpClient = new FTPClient();
+    const ftp_config = {
+        host: process.env.gportal_ftp_hostname,
+        port: process.env.gportal_ftp_hostname_port,
+        user: process.env.gportal_ftp_username,
+        password: process.env.gportal_ftp_password,
+    };
+
+    ftpClient.on('ready', () => {
+        console.log('FTP client connected and authenticated');
+        const target_directory = 'SCUM\\Saved\\SaveFiles\\Logs\\';
+        const filename_prefix = 'chat_20230620155922.log';
+
+        ftpClient.list(target_directory, (error, files) => {
+            if (error) {
+                console.log('Error retrieving file listing:', error);
+                response.status(500).json({ error: 'Failed to retrieve file listing' });
+            } else {
+                const matching_files = files.filter(file => file.name === filename_prefix);
+
+                if (matching_files.length === 0) {
+                    console.log('No matching files were found');
+                    response.json({ message: 'No matching files were found' });
+                } else {
+                    const filePath = `${target_directory}${matching_files[0].name}`;
+                    ftpClient.get(filePath, (error, stream) => {
+                        if (error) {
+                            console.log('Error retrieving file:', error);
+                            response.status(500).json({ error: 'Failed to retrieve file' });
+                        } else {
+                            let fileContents = '';
+                            stream.on('data', (chunk) => {
+                                console.log('Stream data incoming');
+                                fileContents += chunk;
+                            });
+
+                            stream.on('end', () => {
+                                console.log('Stream data ended');
+                                console.log('File contents were retrieved: ', fileContents);
+                                response.json({ fileContents });
+                            });
+                        }
+                        ftpClient.end();
+                    });
+                }
+            }
+        });
+    });
+            
+
+    ftpClient.on('error', (error) => {
+        console.log('FTP client error:', error);
+        response.status(500).json({ error: 'FTP client error' });
+    });
+
+    ftpClient.connect(ftp_config);
+});*/
+app.get('/process-files', (request, response) => {
+    const ftp_config = {
+        host: process.env.gportal_ftp_hostname,
+        port: process.env.gportal_ftp_hostname_port,
+        user: process.env.gportal_ftp_username,
+        password: process.env.gportal_ftp_password,
+    };
+
+    const target_directory = 'SCUM\\Saved\\SaveFiles\\Logs\\';
+    const filename_prefix = 'chat_20230620155922.log';
+
+    const ftpClient = new FTPClient();
+    ftpClient.on('ready', () => {
+        console.log('FTP client connected and authenticated');
+
+        ftpClient.list(target_directory, (error, files) => {
+            if (error) {
+                console.log('Error retrieving file listing:', error);
+                response.status(500).json({ error: 'Failed to retrieve file listing' });
+                ftpClient.end();
+                return;
+            }
+
+            const matching_files = files.filter(file => file.name === filename_prefix);
+            if (matching_files.length === 0) {
+                console.log('No matching files were found');
+                response.json({ message: 'No matching files were found' });
+                ftpClient.end();
+                return;
+            }
+
+            const filePath = `${target_directory}${matching_files[0].name}`;
+            ftpClient.get(filePath, (error, stream) => {
+                if (error) {
+                    console.log('Error retrieving file:', error);
+                    response.status(500).json({ error: 'Failed to retrieve file' });
+                    ftpClient.end();
+                    return;
+                }
+
+                let fileContents = '';
+                stream.on('data', (chunk) => {
+                    console.log('Stream data incoming');
+                    fileContents += chunk;
+                });
+
+                stream.on('end', () => {
+                    console.log('Stream data ended');
+                    console.log('File contents were retrieved: ', fileContents);
+                    response.json({ fileContents });
+                    ftpClient.end();
+                });
+            });
+        });
+    });
+
+    ftpClient.on('error', (error) => {
+        console.log('FTP client error:', error);
+        response.status(500).json({ error: 'FTP client error' });
+    });
+
+    ftpClient.connect(ftp_config);
+});
+
+
+
+    
+    /*ftpClient.connect(ftp_config);
+    console.log('process-files route executed');
+    const target_directory = 'SCUM\\Saved\\SaveFiles\\Logs\\';
+    const filename_prefix = 'chat_20230620155922.log';
+
+    console.log('step 1');
+    ftpClient.list(target_directory, (error, files) => {
+        if (error) {
+            console.log('error');
+            response.status(500).json({ error: 'Failed to retrieve file listing' });
+        } else {
+            console.log('step 2');
+            const matching_files = files.filter(file => file.name === filename_prefix);
+        }
+    });*/
+
+/*function processNextFile(files, index, response) {
+    if (index >= files.length) {
+        console.log("DEBUG || The file processing is completed");
+        response.json({ message: "DEBUG || The file processing is completed" });
+        return;
+    } 
+
+}*/
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -31,7 +183,6 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
-app.use('/users', usersRouter);
 
 const usernameAndPasswordFields = {
     username_field: 'username',

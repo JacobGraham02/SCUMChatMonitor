@@ -6,7 +6,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('keydown', resetIdleTimer);
 
     localStorage.setItem("expiredTime", time_until_logout_milliseconds);
-    console.log('test2');
     startTimeoutForIdle();
 });
 

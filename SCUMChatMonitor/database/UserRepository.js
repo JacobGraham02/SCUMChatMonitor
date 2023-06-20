@@ -1,7 +1,7 @@
-const DatabaseConnectionManager = require('./IUserRepository');
+const DatabaseConnectionManager = require('./DatabaseConnectionManager');
 module.exports = class IUserRepository {
 
-    constructor(database_connection_pool) {
+    constructor() {
         this.connection_manager = new DatabaseConnectionManager()
         this.db_connection_pool = this.connection_manager.initializeDatabaseConnectionPool();
     }
