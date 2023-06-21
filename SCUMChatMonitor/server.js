@@ -15,30 +15,32 @@ const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const encryptAndValidatePassword = require('./modules/encryptionAndValidation');
 const userRepository = require('./database/UserRepository'); 
+
 const steam_id_regex = /'([0-9]*):/g;
 
+const gportal_ftp_server_target_directory = 'SCUM\\Saved\\SaveFiles\\Logs\\';
+const gportal_ftp_server_filename_prefix = 'chat_';
+
+const user_steam_ids = new Array();
+
+const gportal_ftp_config = {
+    host: process.env.gportal_ftp_hostname,
+    port: process.env.gportal_ftp_hostname_port,
+    user: process.env.gportal_ftp_username,
+    password: process.env.gportal_ftp_password,
+};
+
 const FTPClient = require('ftp');
-const readline = require('readline');
 
 var app = express();
 const server_port = 3000;
 
 app.get('/process-files', (request, response) => {
-    const ftp_config = {
-        host: process.env.gportal_ftp_hostname,
-        port: process.env.gportal_ftp_hostname_port,
-        user: process.env.gportal_ftp_username,
-        password: process.env.gportal_ftp_password,
-    };
-
-    const target_directory = 'SCUM\\Saved\\SaveFiles\\Logs\\';
-    const filename_prefix = 'chat_';
-
     const ftpClient = new FTPClient();
     ftpClient.on('ready', () => {
         console.log('FTP client connected and authenticated');
 
-        ftpClient.list(target_directory, (error, files) => {
+        ftpClient.list(gportal_ftp_server_target_directory, (error, files) => {
             if (error) {
                 console.log('Error retrieving file listing:', error);
                 response.status(500).json({ error: 'Failed to retrieve file listing' });
@@ -47,48 +49,47 @@ app.get('/process-files', (request, response) => {
             }
 
             const matching_files = files
-                .filter(file => file.name.startsWith(filename_prefix))
-                    .sort((file_one, file_two) => file_two.name.localeCompare(file_one.name));
+                .filter(file => file.name.startsWith(gportal_ftp_server_filename_prefix))
+                .sort((file_one, file_two) => file_two.date - file_one.date);
             if (matching_files.length === 0) {
-                console.log('No matching files were found');
-                response.json({ message: 'No matching files were found' });
+                response.status(500).json({ message: `No files were found that started with the prefix ${gportal_ftp_server_filename_prefix}`});
                 ftpClient.end();
                 return;
             }
 
-            const filePath = `${target_directory}${matching_files[0].name}`;
+            const filePath = `${gportal_ftp_server_target_directory}${matching_files[0].name}`;
             ftpClient.get(filePath, (error, stream) => {
                 if (error) {
-                    console.log('Error retrieving file:', error);
-                    response.status(500).json({ error: 'Failed to retrieve file' });
+                    response.status(500).json({ error: `The file was present in gportal, but could not be fetched. ${error}`});
                     ftpClient.end();
                     return;
                 }
 
-                /*const readlines_from_file = readline.createInterface({
-
-                });*/
-
-                let fileContents = '';
+                let file_contents = '';
                 stream.on('data', (chunk) => {
-                    console.log('Stream data incoming');
-                    fileContents += chunk;
+                    console.log(`Stream data is incoming from the specific ftp server log`);
+                    file_contents += chunk;
                 });
 
                 stream.on('end', () => {
-                    console.log('Stream data ended');
-                    console.log('File contents were retrieved: ', fileContents);
+                    console.log(`Data stream from the specific ftp server log has completed successfully`);
+                    console.log('File contents retrieved from the data stream: ', file_contents);
 
-                    const browser_file_contents = fileContents.replace(/\u0000/g, '');
+                    const browser_file_contents = file_contents.replace(/\u0000/g, '');
 
                     const matches_array = browser_file_contents.match(steam_id_regex);
 
                     for (let matching_string of matches_array) {
-                        console.log(matching_string = matching_string.substring(1, matching_string.length - 1));
+                        console.log(`Steam id of user: ${matching_string = matching_string.substring(1, matching_string.length - 1)}`);
+                        // Eventually get the player name associated with the steam id and push that data into the array. If we do this, a hash map can be used instead of an array
+                        user_steam_ids.push(matching_string);
                     }
                     
+                    response.json({
+                        'File contents': browser_file_contents,
+                        'User steam ids': user_steam_ids
+                    });
 
-                    response.json({ browser_file_contents });
                     ftpClient.end();
                 });
             });
@@ -100,7 +101,7 @@ app.get('/process-files', (request, response) => {
         response.status(500).json({ error: 'FTP client error' });
     });
 
-    ftpClient.connect(ftp_config);
+    ftpClient.connect(gportal_ftp_config);
 });
 
 // view engine setup
