@@ -15,6 +15,7 @@ const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const encryptAndValidatePassword = require('./modules/encryptionAndValidation');
 const userRepository = require('./database/UserRepository'); 
+const steam_id_regex = /'([0-9]*):/g;
 
 const FTPClient = require('ftp');
 const readline = require('readline');
@@ -22,64 +23,6 @@ const readline = require('readline');
 var app = express();
 const server_port = 3000;
 
-/*app.get('/process-files', (request, response) => {
-    const ftpClient = new FTPClient();
-    const ftp_config = {
-        host: process.env.gportal_ftp_hostname,
-        port: process.env.gportal_ftp_hostname_port,
-        user: process.env.gportal_ftp_username,
-        password: process.env.gportal_ftp_password,
-    };
-
-    ftpClient.on('ready', () => {
-        console.log('FTP client connected and authenticated');
-        const target_directory = 'SCUM\\Saved\\SaveFiles\\Logs\\';
-        const filename_prefix = 'chat_20230620155922.log';
-
-        ftpClient.list(target_directory, (error, files) => {
-            if (error) {
-                console.log('Error retrieving file listing:', error);
-                response.status(500).json({ error: 'Failed to retrieve file listing' });
-            } else {
-                const matching_files = files.filter(file => file.name === filename_prefix);
-
-                if (matching_files.length === 0) {
-                    console.log('No matching files were found');
-                    response.json({ message: 'No matching files were found' });
-                } else {
-                    const filePath = `${target_directory}${matching_files[0].name}`;
-                    ftpClient.get(filePath, (error, stream) => {
-                        if (error) {
-                            console.log('Error retrieving file:', error);
-                            response.status(500).json({ error: 'Failed to retrieve file' });
-                        } else {
-                            let fileContents = '';
-                            stream.on('data', (chunk) => {
-                                console.log('Stream data incoming');
-                                fileContents += chunk;
-                            });
-
-                            stream.on('end', () => {
-                                console.log('Stream data ended');
-                                console.log('File contents were retrieved: ', fileContents);
-                                response.json({ fileContents });
-                            });
-                        }
-                        ftpClient.end();
-                    });
-                }
-            }
-        });
-    });
-            
-
-    ftpClient.on('error', (error) => {
-        console.log('FTP client error:', error);
-        response.status(500).json({ error: 'FTP client error' });
-    });
-
-    ftpClient.connect(ftp_config);
-});*/
 app.get('/process-files', (request, response) => {
     const ftp_config = {
         host: process.env.gportal_ftp_hostname,
@@ -89,7 +32,7 @@ app.get('/process-files', (request, response) => {
     };
 
     const target_directory = 'SCUM\\Saved\\SaveFiles\\Logs\\';
-    const filename_prefix = 'chat_20230620155922.log';
+    const filename_prefix = 'chat_';
 
     const ftpClient = new FTPClient();
     ftpClient.on('ready', () => {
@@ -103,7 +46,9 @@ app.get('/process-files', (request, response) => {
                 return;
             }
 
-            const matching_files = files.filter(file => file.name === filename_prefix);
+            const matching_files = files
+                .filter(file => file.name.startsWith(filename_prefix))
+                    .sort((file_one, file_two) => file_two.name.localeCompare(file_one.name));
             if (matching_files.length === 0) {
                 console.log('No matching files were found');
                 response.json({ message: 'No matching files were found' });
@@ -120,6 +65,10 @@ app.get('/process-files', (request, response) => {
                     return;
                 }
 
+                /*const readlines_from_file = readline.createInterface({
+
+                });*/
+
                 let fileContents = '';
                 stream.on('data', (chunk) => {
                     console.log('Stream data incoming');
@@ -129,7 +78,17 @@ app.get('/process-files', (request, response) => {
                 stream.on('end', () => {
                     console.log('Stream data ended');
                     console.log('File contents were retrieved: ', fileContents);
-                    response.json({ fileContents });
+
+                    const browser_file_contents = fileContents.replace(/\u0000/g, '');
+
+                    const matches_array = browser_file_contents.match(steam_id_regex);
+
+                    for (let matching_string of matches_array) {
+                        console.log(matching_string = matching_string.substring(1, matching_string.length - 1));
+                    }
+                    
+
+                    response.json({ browser_file_contents });
                     ftpClient.end();
                 });
             });
@@ -143,34 +102,6 @@ app.get('/process-files', (request, response) => {
 
     ftpClient.connect(ftp_config);
 });
-
-
-
-    
-    /*ftpClient.connect(ftp_config);
-    console.log('process-files route executed');
-    const target_directory = 'SCUM\\Saved\\SaveFiles\\Logs\\';
-    const filename_prefix = 'chat_20230620155922.log';
-
-    console.log('step 1');
-    ftpClient.list(target_directory, (error, files) => {
-        if (error) {
-            console.log('error');
-            response.status(500).json({ error: 'Failed to retrieve file listing' });
-        } else {
-            console.log('step 2');
-            const matching_files = files.filter(file => file.name === filename_prefix);
-        }
-    });*/
-
-/*function processNextFile(files, index, response) {
-    if (index >= files.length) {
-        console.log("DEBUG || The file processing is completed");
-        response.json({ message: "DEBUG || The file processing is completed" });
-        return;
-    } 
-
-}*/
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
