@@ -16,12 +16,13 @@ const LocalStrategy = require('passport-local').Strategy;
 const encryptAndValidatePassword = require('./modules/encryptionAndValidation');
 const userRepository = require('./database/UserRepository'); 
 
-const steam_id_regex = /'([0-9]*):/g;
+const login_log_steam_id_regex = /([0-9]{17})/g;
+const login_log_steam_name_regex = /([a-zA-Z0-9 ]+\([0-9]{1,2}\))/g
 
 const gportal_ftp_server_target_directory = 'SCUM\\Saved\\SaveFiles\\Logs\\';
-const gportal_ftp_server_filename_prefix = 'chat_';
+const gportal_ftp_server_filename_prefix = 'login_';
 
-const user_steam_ids = new Array();
+const user_steam_ids = {};
 
 const gportal_ftp_config = {
     host: process.env.gportal_ftp_hostname,
@@ -77,17 +78,20 @@ app.get('/process-files', (request, response) => {
 
                     const browser_file_contents = file_contents.replace(/\u0000/g, '');
 
-                    const matches_array = browser_file_contents.match(steam_id_regex);
+                    // The below values return as an object of containing values
+                    const file_contents_steam_ids = browser_file_contents.match(login_log_steam_id_regex);
+                    const file_contents_steam_names = browser_file_contents.match(login_log_steam_name_regex);
 
-                    for (let matching_string of matches_array) {
-                        console.log(`Steam id of user: ${matching_string = matching_string.substring(1, matching_string.length - 1)}`);
-                        // Eventually get the player name associated with the steam id and push that data into the array. If we do this, a hash map can be used instead of an array
-                        user_steam_ids.push(matching_string);
+                    file_contents_steam_ids_array = Object.values(file_contents_steam_ids);
+                    file_contents_steam_name_array = Object.values(file_contents_steam_names);
+
+                    for (let i = 0; i < file_contents_steam_ids_array.length; i++) {
+                        user_steam_ids[file_contents_steam_ids_array[i]] = file_contents_steam_name_array[i];
                     }
-                    
+
                     response.json({
                         'File contents': browser_file_contents,
-                        'User steam ids': user_steam_ids
+                        'User steam identities': user_steam_ids,
                     });
 
                     ftpClient.end();
