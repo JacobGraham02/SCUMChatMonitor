@@ -1,5 +1,5 @@
 const DatabaseConnectionManager = require('./DatabaseConnectionManager');
-module.exports = class IUserRepository {
+module.exports = class UserRepository {
 
     constructor() {
         this.connection_manager = new DatabaseConnectionManager()
