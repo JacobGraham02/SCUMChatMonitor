@@ -9,7 +9,8 @@
     "name": "Jacob Graham"
   },
   "scripts": {
-    "start": "start node app.js & start node server.js"
+    "start": "start node app.js & start node server.js",
+    "debug": "nodemon --inspect server.js"
   },
   "devDependencies": {
     "eslint": "^8.42.0"

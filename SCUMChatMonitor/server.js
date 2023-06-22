@@ -6,23 +6,26 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var session = require('express-session');
-var database_manager = require('./database/DatabaseConnectionManager');
 var indexRouter = require('./routes/index');
+var database_manager = require('./database/DatabaseConnectionManager');
+var userRepository = require('./database/UserRepository'); 
 
 const { v4: uuidv4 } = require('uuid');
 const crypto = require('crypto');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const encryptAndValidatePassword = require('./modules/encryptionAndValidation');
-const userRepository = require('./database/UserRepository'); 
+const FTPClient = require('ftp');
+const DatabaseConnectionManager = require('./database/DatabaseConnectionManager');
+const UserRepository = require('./database/UserRepository');
 
 const login_log_steam_id_regex = /([0-9]{17})/g;
 const login_log_steam_name_regex = /([a-zA-Z0-9 _-]+\([0-9]{1,2}\))/g
 
+const server_port = 3000;
+
 const gportal_ftp_server_target_directory = 'SCUM\\Saved\\SaveFiles\\Logs\\';
 const gportal_ftp_server_filename_prefix = 'login_';
-
-const user_steam_ids = {};
 
 const gportal_ftp_config = {
     host: process.env.gportal_ftp_hostname,
@@ -31,22 +34,9 @@ const gportal_ftp_config = {
     password: process.env.gportal_ftp_password,
 };
 
-const FTPClient = require('ftp');
-
 var app = express();
-const server_port = 3000;
 
-app.get('/process-files', handleGportalFtpFileProcessing)
-    .then((steam_user_data) => {
-        insertSteamUsersIntoDatabase(steam_user_data);
-    }).catch((error) => {
-        console.error(error);
-    });
-
-async function insertSteamUsersIntoDatabase() {
-    userRepository.prototype.createUser();
-    
-}
+app.get('/process-files', handleGportalFtpFileProcessing);
 
 async function handleGportalFtpFileProcessing(request, response) {
     try {
@@ -127,7 +117,7 @@ async function handleGportalFtpFileProcessing(request, response) {
             'User steam identities': user_steam_ids,
         });
 
-        return user_steam_ids;
+        await insertSteamUsersIntoDatabase(Object.keys(user_steam_ids), Object.values(user_steam_ids));
 
         ftpClient.end();
     } catch (error) {
@@ -135,6 +125,15 @@ async function handleGportalFtpFileProcessing(request, response) {
         response.status(500).json({ error: 'Failed to process files' });
     }
 }
+
+async function insertSteamUsersIntoDatabase(steam_user_ids_array, steam_user_names_array) {
+    database_manager = new DatabaseConnectionManager();
+    userRepository = new UserRepository(database_manager);
+    //userRepository.prototype.createUser();
+
+}
+
+
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -165,7 +164,6 @@ app.use(function (req, res, next) {
 });
 
 app.listen(server_port, function () {
-    userRepository = new UserRepository();
     console.log(`Server is running on port ${server_port}`);
 })
 

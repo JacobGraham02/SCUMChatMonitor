@@ -1,5 +1,5 @@
 require('dotenv').config({ path: '../.env' })
-const { MongoClient } = require('mongodb');
+const { MongoClient, ServerApiVersion } = require('mongodb');
 const { createPool } = require('generic-pool');
 
 module.exports = class DatabaseConnectionManager {
@@ -8,13 +8,17 @@ module.exports = class DatabaseConnectionManager {
     database_name = process.env.mongodb_database_name;
     pool = null;
 
-    client = new MongoClient(uri, {
+    client = new MongoClient(this.database_url, {
         serverApi: {
             version: ServerApiVersion.v1,
             strict: true,
             deprecationErrors: true,
         }
     });
+
+    constructor() {
+        this.initializeDatabaseConnectionPool();
+    }
 
     async initializeDatabaseConnectionPool() {
         const poolFactory = {
