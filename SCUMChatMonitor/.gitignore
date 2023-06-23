@@ -8,4 +8,5 @@ scumchat-monitor.exe
 .idea
 .vs
 pkg-options.json
-scumchat-monitor.exe
+.\scumchat-monitor.exe
+scumchatmonitor.exe
