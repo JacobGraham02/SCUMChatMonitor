@@ -11,8 +11,8 @@ const client_instance = new Client({
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildMembers]
 });
-const message_regex_pattern = new RegExp("(!discord|\/discord|#discord|!join discord|\/join discord)");
-const message_content_command_regex = new RegExp("([a-zA-Z]+)");
+const message_regex_pattern = new RegExp("(!discord|\/discord|!join discord|\/join discord)");
+const message_content_command_regex = new RegExp("^(?!.*[!\/].*[!\/])([!\/][a-zA-Z]+)$");
 const message_contains_discord_regex_pattern = new RegExp("Discord: https://discord.gg/4BYPXWSFkv");
 const scum_discord_invite_message = 'Discord: https://discord.gg/4BYPXWSFkv';
 const game_chat_channel_name = 'chat-scum';
@@ -34,14 +34,19 @@ client_instance.on('ready', () => {
 
 client_instance.on('messageCreate', async (message) => {
     const message_content = message.content;
+
     const message_content_command_array = message_content.match(message_content_command_regex);
+    // If the command the user typed in discord is not registered in the bot, e.g. !test5 instead of !test, the bot will not execute any code related to the execution of  commands
+    if (message_content_command_array === null) {
+        return; 
+    }
     const message_content_command = message_content_command_array[0].trim();
-    const client_command_values = client_instance.commands.get(message_content_command);
-    console.log(message_content);
+    const client_command_without_first_character = message_content_command.substring(1);
+    const client_command_values = client_instance.commands.get(client_command_without_first_character);
 
     if (determineIfUserMessageInCorrectChannel(message) && determineIfUserMessageMatchesRegex(message_content) && determineIfUserCanUseCommand(message.member, client_command_values)) {
-        // type_in_global_chat(scum_discord_invite_message);
         const client_command_message = client_command_values.command_data;
+        type_in_global_chat(client_command_message);
         console.log(client_command_message);
     }
     // message.channel.name === game_chat_channel_name && message_regex_pattern.test(message_content)) {
@@ -56,7 +61,7 @@ client_instance.on('messageCreate', async (message) => {
 client_instance.login(discord_bot_token);
 
 function determineIfUserCanUseCommand(message_sender, client_command_values) {
-    if (client_command_values.authorization_role_name === undefined) {
+    if (client_command_values.authorization_role_name.length === 0) {
         return true;
     }
     return message_sender.roles.cache.some(role => client_command_values.authorization_role_name.includes(role.name));
@@ -76,7 +81,7 @@ function copyToClipboard(text) {
         if (error) {
             console.error('Error copying to clipboard:', error);
         } else {
-            console.log('Text copied to clipboard.');
+            //console.log('Text copied to clipboard.');
         }
     });
 }
@@ -87,7 +92,40 @@ function pasteFromClipboard() {
         if (error) {
             console.error('Error pasting from clipboard:', error);
         } else {
-            console.log('Text pasted from clipboard.');
+            //console.log('Text pasted from clipboard.');
+        }
+    });
+}
+
+function pressTabKey() {
+    const command = `powershell.exe -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('{TAB}')"`;
+    exec(command, (error) => {
+        if (error) {
+            console.error('Error simulating the a tab key press');
+        } else {
+            //console.log('Tab key press simulated');
+        }
+    });
+}
+
+function pressCharacterKeyT() {
+    const command = `powershell.exe -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('t')`;
+    exec(command, (error) => {
+        if (error) {
+            console.error('T character simulating enter key press:', error);
+        } else {
+            //console.log('T character key press simulated');
+        }
+    });
+}
+
+function pressBackspaceKey() {
+    const command = `powershell.exe -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('{BACKSPACE}')`;
+    exec(command, (error) => {
+        if (error) {
+            console.error('Error simulating backspace key press:', error);
+        } else {
+            //console.log('Backspace key press simulated');
         }
     });
 }
@@ -98,7 +136,7 @@ function pressEnterKey() {
         if (error) {
             console.error('Error simulating enter key press:', error);
         } else {
-            console.log('Enter key press simulated');
+            //console.log('Enter key press simulated');
         }
     });
 }
@@ -110,9 +148,13 @@ async function runCommand(command) {
         return;
     }
 
-    await sleep(500);
+    await sleep(250);
+    pressCharacterKeyT();
+    await sleep(250);
+    pressBackspaceKey();
+    await sleep(250);
     pasteFromClipboard();
-    await sleep(100);
+    await sleep(250);
     pressEnterKey();
 }
 function sleep(milliseconds) {

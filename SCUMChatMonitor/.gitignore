@@ -7,3 +7,5 @@ scumchat-monitor.exe
 .env
 .idea
 .vs
+pkg-options.json
+scumchat-monitor.exe

@@ -37,7 +37,7 @@
     "uuid": "^9.0.0"
   },
   "pkg": {
-    "scripts": "app.js",
+    "scripts": [ "app.js", "commands/**/*.js" ],
     "targets": [
       "node18-win-x64"
     ]
