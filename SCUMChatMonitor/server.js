@@ -36,8 +36,6 @@ const gportal_ftp_config = {
 
 var app = express();
 
-let intervalId;
-
 app.use(session({
     secret: process.env.express_session_key,
     resave: false,
@@ -132,9 +130,14 @@ async function handleGportalFtpFileProcessing(request, response) {
         response.status(500).json({ error: 'Failed to process files' });
     }
 }
-function startFileProcessingInterval() {
+
+// startFileProcessingInterval();
+readSteamUsersFromDatabase();
+handleGportalFtpFileProcessing();
+/*function startFileProcessingInterval() {
     read_login_ftp_file_interval = setInterval(handleGportalFtpFileProcessing, 5000);
-}
+}*/
+
 function stopFileProcessingInterval() {
     clearInterval(read_login_ftp_file_interval);
 }
@@ -145,22 +148,26 @@ function enableDevelopmentModeForReadingLoginFile() {
 }
 
 async function readSteamUsersFromDatabase() {
-    userRepository.prototype.findAllUsers().then((results) => { console.log(results) });
+    database_manager = new DatabaseConnectionManager();
+    userRepository = new UserRepository();
+    userRepository.findAllUsers().then((results) => { console.log(results) });
 }
 
 async function insertSteamUsersIntoDatabase(steam_user_ids_array, steam_user_names_array) {
-    // database_manager = new DatabaseConnectionManager();
+    database_manager = new DatabaseConnectionManager();
     userRepository = new UserRepository();
+    // database_manager = new DatabaseConnectionManager();
+    // userRepository = new UserRepository();
 
     console.log(steam_user_ids_array);
     console.log(steam_user_names_array); 
-    for (const steam_user of steam_user_ids_array) {
 
+    for (let i = 0; i < steam_user_ids_array.length; i++) {
+        const create_user_result = userRepository.createUser(steam_user_ids_array[i], steam_user_names_array[i]);
+        console.log(`Create user result: ${create_user_result}`);
     }
-    // userRepository.prototype.createUser();
 }
-startFileProcessingInterval();
-readSteamUsersFromDatabase();
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
