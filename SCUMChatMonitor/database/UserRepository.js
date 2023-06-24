@@ -1,63 +1,82 @@
 const DatabaseConnectionManager = require("./DatabaseConnectionManager");
 
-module.exports = class UserRepository {
-    constructor(database_connection_manager) {
-        this.database_connection_manager = new DatabaseConnectionManager();
-        this.database_connection_pool = database_connection_manager.initializeDatabaseConnectionPool();
-    }
+const database_connection_manager = new DatabaseConnectionManager();
 
-    async findUserById(user_id) {
+module.exports = class UserRepository {
+
+    async findUserById(user_steam_id) {
+        const database_connection = await database_connection_manager.getConnection();
         try {
-            const database_connection = await this.database_connection_pool.getConnection();
             const user_collection = database_connection.collection('users');
-            const user = await user_collection.findOne({ _id: user_id });
+            const user = await user_collection.findOne({ _id: user_steam_id });
             return user;
         } finally {
-            this.connection_manager.releaseConnection(database_connection);
+            await this.releaseConnectionSafely(database_connection);
         }
     }
 
     async findAllUsers() {
+        const database_connection = await database_connection_manager.getConnection();
         try {
-            const database_connection = await this.database_connection_pool.getConnection();
             const user_collection = database_connection.collection('users');
             const users = await user_collection.find({}).toArray();
             return users;
         } finally {
-            this.connection_manager.releaseConnection(database_connection);
+            await this.releaseConnectionSafely(database_connection);
         }
-    }
+    } 
 
-    async createUser(user_data) {
+    async createUser(user_steam_name, user_steam_id, user_used_welcome_pack) {
+        const database_connection = await database_connection_manager.getConnection();
         try {
-            const database_connection = await this.database_connection_pool.getConnection();
-            const user_collection_result = database_connection.collection('users');
-            const user_insertion_result = await user_collection_result.insertOne(user_data);
+            const user_collection = database_connection.collection('users');
+            const existingUser = await user_collection_result.findOne({
+                $or: [
+                    { steam_id: user_steam_id },
+                    { steam_name: user_steam_name }
+                ]
+            });
+
+            if (existingUser) {
+                return;
+            }
+
+            const user_insertion_result = await user_collection.insertOne(user_steam_name, user_steam_id, user_used_welcome_pack);
             return user_insertion_result.insertedId;
         } finally {
-            this.connection_manager.releaseConnection(database_connection);
+            await this.releaseConnectionSafely(database_connection);
         }
     }
 
-    async updateUser(user_id, user_data) {
+    async updateUser(user_steam_id, user_data) {
+        const database_connection = await database_connection_manager.getConnection();
         try {
-            const database_connection = await this.database_connection_pool.getConnection();
             const user_collection_result = database_connection.collection('users');
-            const user_update_result = await user_collection_result.updateOne({ _id: user_id }, { $set: user_data });
+            const user_update_result = await user_collection_result.updateOne({ _id: user_steam_id }, { $set: user_data });
             return user_updat_result.modifiedCount > 0;
         } finally {
-            this.connection_manager.releaseConnection(database_connection);
+            await this.releaseConnectionSafely(database_connection);
         }
     }
 
-    async deleteUser(user_id) {
+    async deleteUser(user_steam_id) {
+        const database_connection = await database_connection_manager.getConnection();
         try {
-            const database_connection = await this.database_connection_pool.getConnection();
             const user_collection_result = database_connection.collection('users');
-            const user_deletion_result = await user_collection_result.deleteOne({ _id: user_id });
+            const user_deletion_result = await user_collection_result.deleteOne({ _id: user_steam_id });
             return user_deletion_result.deletedCount > 0;
         } finally {
-            this.connection_manager.releaseConnection(database_connection);
+            await this.releaseConnectionSafely(database_connection);
+        }
+    }
+
+    async releaseConnectionSafely(database_connection) {
+        if (database_connection) {
+            try {
+                await database_connection_manager.releaseConnection(database_connection);
+            } catch (error) {
+                console.error('An error has occurred during the execution of releaseConnectionSafely function: ', error);
+            }
         }
     }
 }

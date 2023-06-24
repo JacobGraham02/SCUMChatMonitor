@@ -8,14 +8,6 @@ module.exports = class DatabaseConnectionManager {
     database_name = process.env.mongodb_database_name;
     pool = null;
 
-    client = new MongoClient(this.database_url, {
-        serverApi: {
-            version: ServerApiVersion.v1,
-            strict: true,
-            deprecationErrors: true,
-        }
-    });
-
     constructor() {
         this.initializeDatabaseConnectionPool();
     }
@@ -23,7 +15,13 @@ module.exports = class DatabaseConnectionManager {
     async initializeDatabaseConnectionPool() {
         const poolFactory = {
             create: async () => {
-                const client = new MongoClient(this.database_url);
+                const client = new MongoClient(this.database_url, {
+                    serverApi: {
+                        version: ServerApiVersion.v1,
+                        strict: true,
+                        deprecationErrors: true,
+                    }
+                });
                 await client.connect();
                 return client.db(this.data)
             },

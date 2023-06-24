@@ -57,6 +57,9 @@
     <Content Include="obj\Debug\SCUMChatMonitor.njsproj.FileListAbsolute.txt" />
     <Content Include="package-lock.json" />
     <Content Include="package.json" />
+    <Content Include="pkg-options.json">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="public\home.pug">
       <SubType>Code</SubType>
     </Content>
@@ -73,6 +76,7 @@
     </Content>
     <Content Include="routes\index.js" />
     <Content Include="scumchat-monitor.exe" />
+    <Content Include="scumchatmonitor.exe" />
     <Content Include="server.js">
       <SubType>Code</SubType>
     </Content>
