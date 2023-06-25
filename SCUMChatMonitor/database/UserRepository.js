@@ -30,20 +30,15 @@ module.exports = class UserRepository {
         const database_connection = await database_connection_manager.getConnection();
         try {
             const user_collection = database_connection.collection('Users');
-            const existingUser = await user_collection.findOne({
-                $or: [
-                    { steam_id: user_steam_id },
-                    { steam_name: user_steam_name }
-                ]
-            });
 
-            if (existingUser) {
-                return;
-            }
+            await user_collection.createIndex({ user_steam_id: 1 }, { unique: true });
+            await user_collection.createIndex({ user_steam_name: 1 }, { Unique: true });
+
             const new_user_document = {
                 user_steam_name: user_steam_name,
                 user_steam_id: user_steam_id
             };
+
             const user_insertion_result = await user_collection.insertOne(new_user_document);
             return user_insertion_result.insertedId;
         } finally {

@@ -19,9 +19,13 @@ const FTPClient = require('ftp');
 const DatabaseConnectionManager = require('./database/DatabaseConnectionManager');
 const UserRepository = require('./database/UserRepository');
 
+// The following regex string is for steam ids associated with a steam name. They are saved as a 17-digit number; (e.g. 12345678912345678)
 const login_log_steam_id_regex = /([0-9]{17})/g;
-const login_log_steam_name_regex = /([a-zA-Z0-9 _-]+\([0-9]{1,2}\))/g
 
+// The following regex string is for steam names which match the same format as the ones in gportal's ftp files: username(number); e.g. boss612man(100)
+const login_log_steam_name_regex = /([a-zA-Z0-9 ._-]+\([1-32]{1,10}\))/g
+
+// The localhost port on which the nodejs server will listen for connections
 const server_port = 3000;
 
 const gportal_ftp_server_target_directory = 'SCUM\\Saved\\SaveFiles\\Logs\\';
@@ -42,6 +46,8 @@ app.use(session({
     saveUninitialized: true
 }));
 
+let current_file_content_hash = '';
+let cached_file_content_hash = '';
 async function handleGportalFtpFileProcessing(request, response) {
     try {
         const ftpClient = new FTPClient();
@@ -89,18 +95,28 @@ async function handleGportalFtpFileProcessing(request, response) {
         let file_contents = '';
         await new Promise((resolve, reject) => {
             stream.on('data', (chunk) => {
-                console.log(`Stream data is incoming from the specific FTP server log`);
+                //console.log(`Stream data is incoming from the specific FTP server log`);
                 file_contents += chunk;
             });
 
             stream.on('end', () => {
-                console.log(`Data stream from the specific FTP server log has completed successfully`);
-                console.log('File contents retrieved from the data stream: ', file_contents);
+                //console.log(`Data stream from the specific FTP server log has completed successfully`);
+                //console.log('File contents retrieved from the data stream: ', file_contents);
                 resolve();
             });
 
             stream.on('error', reject);
         });
+
+        const current_file_content_hash = crypto.createHash('md5').update(file_contents).digest('hex');
+
+        if (current_file_content_hash === cached_file_content_hash) {
+            console.log('The current stored hash for the ftp login file is the same as the new one');
+            return;
+        } else {
+            console.log('The current stored hash for the ftp login file is not the same as the new one');
+            cached_file_content_hash = current_file_content_hash;
+        }
 
         const browser_file_contents = file_contents.replace(/\u0000/g, '');
 
@@ -131,12 +147,11 @@ async function handleGportalFtpFileProcessing(request, response) {
     }
 }
 
-// startFileProcessingInterval();
-readSteamUsersFromDatabase();
+startFileProcessingInterval();
 handleGportalFtpFileProcessing();
-/*function startFileProcessingInterval() {
+function startFileProcessingInterval() {
     read_login_ftp_file_interval = setInterval(handleGportalFtpFileProcessing, 5000);
-}*/
+}
 
 function stopFileProcessingInterval() {
     clearInterval(read_login_ftp_file_interval);
@@ -159,13 +174,13 @@ async function insertSteamUsersIntoDatabase(steam_user_ids_array, steam_user_nam
     // database_manager = new DatabaseConnectionManager();
     // userRepository = new UserRepository();
 
-    console.log(steam_user_ids_array);
-    console.log(steam_user_names_array); 
+    //console.log(steam_user_ids_array);
+    //console.log(steam_user_names_array); 
 
-    for (let i = 0; i < steam_user_ids_array.length; i++) {
+    /*for (let i = 0; i < steam_user_ids_array.length; i++) {
         const create_user_result = userRepository.createUser(steam_user_ids_array[i], steam_user_names_array[i]);
         console.log(`Create user result: ${create_user_result}`);
-    }
+    }*/
 }
 
 // view engine setup

@@ -23,7 +23,7 @@ module.exports = class DatabaseConnectionManager {
                     }
                 });
                 await client.connect();
-                return client.db(this.data)
+                return client.db(this.database_name)
             },
             destroy: async (database_instance) => {
                 await database_instance.close();
