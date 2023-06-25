@@ -8,7 +8,7 @@ module.exports = class UserRepository {
         const database_connection = await database_connection_manager.getConnection();
         try {
             const user_collection = database_connection.collection('Users');
-            const user = await user_collection.findOne({ _id: user_steam_id });
+            const user = await user_collection.findOne({ user_steam_id: user_steam_id });
             return user;
         } finally {
             await this.releaseConnectionSafely(database_connection);
@@ -26,21 +26,55 @@ module.exports = class UserRepository {
         }
     } 
 
+    async findAdminUserByUsername(admin_username) {
+        const database_connection = await database_connection_manager.getConnection();
+        try {
+            const user_collection = database_connection.collection('Administrators');
+            const user = await user_collection.findOne({ user_username: admin_username });
+            return user;
+        } finally {
+            await this.releaseConnectionSafely(database_connection);
+        }
+    }
+
+    async createAdminUser(user_username, user_password) {
+        const database_connection = await database_connection_manager.getConnection();
+
+        try {
+            const user_collection = database_connection.collection('Administrators');
+
+            const new_admin_user_document = {
+                user_username: user_username,
+                user_password: user_password
+            };
+
+            await user_collection.updateOne(
+                { user_username: user_username },
+                { $setOnInsert: new_admin_user_document },
+                { upsert: true }
+            );
+
+        } finally {
+            await this.releaseConnectionSafely(database_connection);
+        }
+    }
+
     async createUser(user_steam_name, user_steam_id) {
         const database_connection = await database_connection_manager.getConnection();
         try {
             const user_collection = database_connection.collection('Users');
-
-            await user_collection.createIndex({ user_steam_id: 1 }, { unique: true });
-            await user_collection.createIndex({ user_steam_name: 1 }, { Unique: true });
 
             const new_user_document = {
                 user_steam_name: user_steam_name,
                 user_steam_id: user_steam_id
             };
 
-            const user_insertion_result = await user_collection.insertOne(new_user_document);
-            return user_insertion_result.insertedId;
+            await user_collection.updateOne(
+                { user_steam_id: user_steam_id },
+                { $setOnInsert: new_user_document },
+                { upsert: true }  
+            );
+
         } finally {
             await this.releaseConnectionSafely(database_connection);
         }
@@ -50,7 +84,7 @@ module.exports = class UserRepository {
         const database_connection = await database_connection_manager.getConnection();
         try {
             const user_collection_result = database_connection.collection('Users');
-            const user_update_result = await user_collection_result.updateOne({ _id: user_steam_id }, { $set: user_data });
+            const user_update_result = await user_collection_result.updateOne({ user_steam_id: user_steam_id }, { $set: user_data });
             return user_updat_result.modifiedCount > 0;
         } finally {
             await this.releaseConnectionSafely(database_connection);
@@ -61,7 +95,7 @@ module.exports = class UserRepository {
         const database_connection = await database_connection_manager.getConnection();
         try {
             const user_collection_result = database_connection.collection('Users');
-            const user_deletion_result = await user_collection_result.deleteOne({ _id: user_steam_id });
+            const user_deletion_result = await user_collection_result.deleteOne({ user_steam_id: user_steam_id });
             return user_deletion_result.deletedCount > 0;
         } finally {
             await this.releaseConnectionSafely(database_connection);

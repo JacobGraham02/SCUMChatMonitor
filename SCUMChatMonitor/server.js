@@ -23,7 +23,7 @@ const UserRepository = require('./database/UserRepository');
 const login_log_steam_id_regex = /([0-9]{17})/g;
 
 // The following regex string is for steam names which match the same format as the ones in gportal's ftp files: username(number); e.g. boss612man(100)
-const login_log_steam_name_regex = /([a-zA-Z0-9 ._-]+\([1-32]{1,10}\))/g
+const login_log_steam_name_regex = /([a-zA-Z0-9 ._-]{0,32}\([0-9]{1,10}\))/g
 
 // The localhost port on which the nodejs server will listen for connections
 const server_port = 3000;
@@ -132,12 +132,6 @@ async function handleGportalFtpFileProcessing(request, response) {
             user_steam_ids[file_contents_steam_ids_array[i]] = file_contents_steam_name_array[i];
         }
 
-        /* The following json response is used in development when you want to see JSON-encoded user login data */
-       /* response.json({
-            'File contents': browser_file_contents,
-            'User steam identities': user_steam_ids,
-        });*/
-
         await insertSteamUsersIntoDatabase(Object.keys(user_steam_ids), Object.values(user_steam_ids));
 
         ftpClient.end();
@@ -147,9 +141,10 @@ async function handleGportalFtpFileProcessing(request, response) {
     }
 }
 
-startFileProcessingInterval();
-handleGportalFtpFileProcessing();
-function startFileProcessingInterval() {
+
+// startFtpFileProcessingInterval();
+
+function startFtpFileProcessingInterval() {
     read_login_ftp_file_interval = setInterval(handleGportalFtpFileProcessing, 5000);
 }
 
@@ -162,6 +157,13 @@ function enableDevelopmentModeForReadingLoginFile() {
     app.get('/process-login-ftp-file', handleGportalFtpFileProcessing);
 }
 
+function insertAdminUserIntoDatabase(admin_user_username, admin_user_password) {
+    database_manager = new DatabaseConnectionManager();
+    userRepository = new UserRepository();
+
+    userRepository.createAdminUser(admin_user_username, admin_user_password);
+}
+
 async function readSteamUsersFromDatabase() {
     database_manager = new DatabaseConnectionManager();
     userRepository = new UserRepository();
@@ -171,18 +173,31 @@ async function readSteamUsersFromDatabase() {
 async function insertSteamUsersIntoDatabase(steam_user_ids_array, steam_user_names_array) {
     database_manager = new DatabaseConnectionManager();
     userRepository = new UserRepository();
-    // database_manager = new DatabaseConnectionManager();
-    // userRepository = new UserRepository();
 
-    //console.log(steam_user_ids_array);
-    //console.log(steam_user_names_array); 
-
-    /*for (let i = 0; i < steam_user_ids_array.length; i++) {
-        const create_user_result = userRepository.createUser(steam_user_ids_array[i], steam_user_names_array[i]);
-        console.log(`Create user result: ${create_user_result}`);
-    }*/
+    for (let i = 0; i < steam_user_ids_array.length; i++) {
+        userRepository.createUser(steam_user_names_array[i], steam_user_ids_array[i]);
+    }
 }
 
+const verifyCallback = (username, password, done) => {
+    userRepository.findAdminByUsername(username).then((results) => {
+        if (results.length === 0) {
+            return done(null, false);
+        }
+        const admin_data = results[0];
+
+        const is_valid_administrator_account = encryptAndValidatePassword.validatePassword(password, admin_data.password, admin_data.salt);
+        const admin = {
+            username: admin_data.username,
+            password: admin_data.password
+        };
+        if (is_valid_administrator_account) {
+            return done(null, admin);
+        } else {
+            return done(null, false);
+        }
+    });
+}
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
