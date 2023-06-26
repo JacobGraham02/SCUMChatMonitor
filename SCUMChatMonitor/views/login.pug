@@ -11,10 +11,11 @@ block header
 	
 block content
 	form#login_fields_form(action='/login' method='post') 
-		ul.login_form_fields
-			li#login_username_field
-				label.form_login_username_label(for='username') Email address:
-				input.form_login_username_input(type='text' name='username')
-			li#login_password_field
-				label.form_login_password_label(for='password') Password:
-				input.form_login_password_input(type='text' name='password')
+		fieldset#login_username_field
+			label.form_login_username_label(for='username') Email address:
+			input.form_login_username_input(type='text' name='username')
+
+		fieldset#login_password_field
+			label.form_login_password_label(for='password') Password:
+			input.form_login_password_input(type='text' name='password')
+		button#button_submit_login(action='submit') Log in

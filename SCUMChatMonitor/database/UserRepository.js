@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const DatabaseConnectionManager = require("./DatabaseConnectionManager");
 
 const database_connection_manager = new DatabaseConnectionManager();
@@ -26,30 +27,43 @@ module.exports = class UserRepository {
         }
     } 
 
-    async findAdminUserByUsername(admin_username) {
+    async findAdminByUsername(admin_username) {
         const database_connection = await database_connection_manager.getConnection();
         try {
             const user_collection = database_connection.collection('Administrators');
-            const user = await user_collection.findOne({ user_username: admin_username });
+            const user = await user_collection.findOne({ admin_username: admin_username });
             return user;
         } finally {
             await this.releaseConnectionSafely(database_connection);
         }
     }
 
-    async createAdminUser(user_username, user_password) {
+    async findAdminByUuid(admin_uuid) {
+        const database_connection = await database_connection_manager.getConnection();
+        try {
+            const user_collection = database_connection.collection('Administrators');
+            const user = await user_collection.findOne({ admin_id: admin_uuid });
+            return user;
+        } finally {
+            await this.releaseConnectionSafely(database_connection);
+        }
+    }
+
+    async createAdminUser(admin_username, admin_password) {
         const database_connection = await database_connection_manager.getConnection();
 
         try {
             const user_collection = database_connection.collection('Administrators');
 
             const new_admin_user_document = {
-                user_username: user_username,
-                user_password: user_password
+                admin_id: crypto.randomUUID(),
+                admin_username: admin_username,
+                admin_password_hash: admin_password.salt + admin_password.hash,
+                admin_password_salt: admin_password.salt
             };
 
             await user_collection.updateOne(
-                { user_username: user_username },
+                { admin_username: admin_username },
                 { $setOnInsert: new_admin_user_document },
                 { upsert: true }
             );

@@ -7,17 +7,17 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var session = require('express-session');
 var indexRouter = require('./routes/index');
-var database_manager = require('./database/DatabaseConnectionManager');
-var userRepository = require('./database/UserRepository'); 
 
-const { v4: uuidv4 } = require('uuid');
 const crypto = require('crypto');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
-const encryptAndValidatePassword = require('./modules/encryptionAndValidation');
+const hashAndValidatePassword = require('./modules/hashAndValidatePassword');
 const FTPClient = require('ftp');
 const DatabaseConnectionManager = require('./database/DatabaseConnectionManager');
 const UserRepository = require('./database/UserRepository');
+
+databaseConnectionManager = new DatabaseConnectionManager();
+userRepository = new UserRepository();
 
 // The following regex string is for steam ids associated with a steam name. They are saved as a 17-digit number; (e.g. 12345678912345678)
 const login_log_steam_id_regex = /([0-9]{17})/g;
@@ -37,6 +37,12 @@ const gportal_ftp_config = {
     user: process.env.gportal_ftp_username,
     password: process.env.gportal_ftp_password,
 };
+
+const username_and_password_fields = {
+    username_field: 'username',
+    password_field: 'password'
+}
+
 
 var app = express();
 
@@ -144,6 +150,8 @@ async function handleGportalFtpFileProcessing(request, response) {
 
 // startFtpFileProcessingInterval();
 
+//insertAdminUserIntoDatabase('jacobg', 'test123');
+
 function startFtpFileProcessingInterval() {
     read_login_ftp_file_interval = setInterval(handleGportalFtpFileProcessing, 5000);
 }
@@ -159,45 +167,70 @@ function enableDevelopmentModeForReadingLoginFile() {
 
 function insertAdminUserIntoDatabase(admin_user_username, admin_user_password) {
     database_manager = new DatabaseConnectionManager();
-    userRepository = new UserRepository();
+    user_repository = new UserRepository();
 
-    userRepository.createAdminUser(admin_user_username, admin_user_password);
+    const hashed_admin_user_password = hashAndValidatePassword.hashPassword(admin_user_password);
+
+    user_repository.createAdminUser(admin_user_username, hashed_admin_user_password);
 }
 
 async function readSteamUsersFromDatabase() {
     database_manager = new DatabaseConnectionManager();
-    userRepository = new UserRepository();
-    userRepository.findAllUsers().then((results) => { console.log(results) });
+    user_repository = new UserRepository();
+    user_repository.findAllUsers().then((results) => { console.log(results) });
 }
 
 async function insertSteamUsersIntoDatabase(steam_user_ids_array, steam_user_names_array) {
     database_manager = new DatabaseConnectionManager();
-    userRepository = new UserRepository();
+    user_repository = new UserRepository();
 
     for (let i = 0; i < steam_user_ids_array.length; i++) {
-        userRepository.createUser(steam_user_names_array[i], steam_user_ids_array[i]);
+        user_repository.createUser(steam_user_names_array[i], steam_user_ids_array[i]);
     }
 }
 
 const verifyCallback = (username, password, done) => {
-    userRepository.findAdminByUsername(username).then((results) => {
-        if (results.length === 0) {
+    database_manager = new DatabaseConnectionManager();
+    user_repository = new UserRepository();
+    user_repository.findAdminByUsername(username).then((admin_data_results) => {
+        if (admin_data_results === null) {
             return done(null, false);
         }
-        const admin_data = results[0];
+        const admin_uuid = admin_data_results.admin_id;
+        const admin_password_hash = admin_data_results.admin_password_hash;
+        const admin_password_salt = admin_data_results.admin_password_salt; 
 
-        const is_valid_administrator_account = encryptAndValidatePassword.validatePassword(password, admin_data.password, admin_data.salt);
+        const is_valid_administrator_account = hashAndValidatePassword.validatePassword(password, admin_password_hash, admin_password_salt);
+
         const admin = {
-            username: admin_data.username,
-            password: admin_data.password
+            uuid: admin_uuid,
+            username: admin_data_results.username,
+            password: admin_data_results.password
         };
+
         if (is_valid_administrator_account) {
             return done(null, admin);
         } else {
             return done(null, false);
         }
-    });
+    })/*.catch((error) => console.error(`An error has occured during the execution of verifyCallback: ${error}`))*/;
 }
+
+const strategy = new LocalStrategy(username_and_password_fields, verifyCallback);
+passport.use(strategy);
+
+passport.serializeUser(function (admin, done) {
+    done(null, admin.uuid);
+});
+
+passport.deserializeUser(function(admin_uuid, done) {
+    database_manager = new DatabaseConnectionManager();
+    user_repository = new UserRepository();
+    user_repository.findAdminByUuid(admin.uuid).then(function(admin_data_results) {
+        done(null, admin_data_results);
+    });
+});
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
@@ -210,16 +243,18 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 
-const usernameAndPasswordFields = {
-    username_field: 'username',
-    password_field: 'password'
-}
+app.post('/login', passport.authenticate('local', {
+    successRedirect: '/login-success',
+    failureRedirect: '/login-failure'
+}));
 
-/*const verifyCallback = (username, password, done) => {
-    userRepository.findUserById()
-}
+app.get('/login-success', function (request, response, next) {
+    response.render('admin/index', {title: 'Admin dashboard', message: 'You have successfully logged in', admin: request.admin})
+});
 
-const strategy = new LocalStrategy()*/
+app.get('/login-failure', function (request, response, next) {
+    response.render('login', { title: "Invalid login", message: 'Invalid login credentials. Please try again with a different set of credentials' });
+});
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
