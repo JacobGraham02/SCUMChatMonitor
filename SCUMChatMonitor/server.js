@@ -13,6 +13,7 @@ const crypto = require('crypto');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const hashAndValidatePassword = require('./modules/hashAndValidatePassword');
+const fs = require('fs');
 const FTPClient = require('ftp');
 const DatabaseConnectionManager = require('./database/DatabaseConnectionManager');
 const UserRepository = require('./database/UserRepository');

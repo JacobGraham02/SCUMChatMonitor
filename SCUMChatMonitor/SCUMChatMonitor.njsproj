@@ -75,7 +75,13 @@
       <SubType>Code</SubType>
     </Content>
     <Content Include="routes\index.js" />
+    <Content Include="routes\admin.js">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="server.js">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="views\admin\index.pug">
       <SubType>Code</SubType>
     </Content>
     <Content Include="views\error.pug" />
@@ -101,6 +107,7 @@
     <Folder Include="public\stylesheets\" />
     <Folder Include="routes\" />
     <Folder Include="views\" />
+    <Folder Include="views\admin\" />
   </ItemGroup>
   <Import Project="$(VSToolsPath)\Node.js Tools\Microsoft.NodejsToolsV2.targets" />
 </Project>
