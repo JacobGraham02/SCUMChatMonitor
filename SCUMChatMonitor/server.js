@@ -7,6 +7,7 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var session = require('express-session');
 var indexRouter = require('./routes/index');
+var adminRouter = require('./routes/admin');
 
 const crypto = require('crypto');
 const passport = require('passport');
@@ -45,11 +46,10 @@ const username_and_password_fields = {
 
 
 var app = express();
-
 app.use(session({
     secret: process.env.express_session_key,
     resave: false,
-    saveUninitialized: true
+    saveUninitialized: false,
 }));
 
 let current_file_content_hash = '';
@@ -216,20 +216,6 @@ const verifyCallback = (username, password, done) => {
     })/*.catch((error) => console.error(`An error has occured during the execution of verifyCallback: ${error}`))*/;
 }
 
-const strategy = new LocalStrategy(username_and_password_fields, verifyCallback);
-passport.use(strategy);
-
-passport.serializeUser(function (admin, done) {
-    done(null, admin.uuid);
-});
-
-passport.deserializeUser(function(admin_uuid, done) {
-    database_manager = new DatabaseConnectionManager();
-    user_repository = new UserRepository();
-    user_repository.findAdminByUuid(admin.uuid).then(function(admin_data_results) {
-        done(null, admin_data_results);
-    });
-});
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -240,20 +226,34 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.use('/', indexRouter);
+app.use('/admin', adminRouter);
 
 app.post('/login', passport.authenticate('local', {
-    successRedirect: '/login-success',
-    failureRedirect: '/login-failure'
+    successRedirect: 'admin/login-success',
+    failureRedirect: 'login-failure'
 }));
-
-app.get('/login-success', function (request, response, next) {
-    response.render('admin/index', {title: 'Admin dashboard', message: 'You have successfully logged in', admin: request.admin})
-});
 
 app.get('/login-failure', function (request, response, next) {
     response.render('login', { title: "Invalid login", message: 'Invalid login credentials. Please try again with a different set of credentials' });
+});
+
+const strategy = new LocalStrategy(username_and_password_fields, verifyCallback);
+passport.use(strategy);
+
+passport.serializeUser(function (admin, done) {
+    done(null, admin.uuid);
+});
+
+passport.deserializeUser(function (uuid, done) {
+    database_manager = new DatabaseConnectionManager();
+    user_repository = new UserRepository();
+    user_repository.findAdminByUuid(uuid).then(function (admin_data_results) {
+        done(null, admin_data_results);
+    });
 });
 
 // catch 404 and forward to error handler
