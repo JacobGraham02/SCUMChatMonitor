@@ -36,6 +36,7 @@ router.get('/commands/:file', (request, response) => {
             console.error(error);
             return;
         }
+        
         response.render('admin/command', { code: data, filename: file_name });
     });
 });
@@ -51,8 +52,8 @@ router.get('/commands/:file', (request, response) => {
         }
         response.redirect('admin/command/' + file_name);
     });
-});
-*/
+});*/
+
 
 router.get('/', isLoggedIn, function (request, response, next) {
     response.render('admin/index', { title: 'Test title' });

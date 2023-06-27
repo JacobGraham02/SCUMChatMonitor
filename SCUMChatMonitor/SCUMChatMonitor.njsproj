@@ -49,6 +49,7 @@
     <Content Include="config.json">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="modules\extractDataFromCommands.js" />
     <Content Include="modules\hashAndValidatePassword.js">
       <SubType>Code</SubType>
     </Content>

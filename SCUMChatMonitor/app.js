@@ -47,7 +47,6 @@ client_instance.on('messageCreate', async (message) => {
     if (determineIfUserMessageInCorrectChannel(message) && determineIfUserMessageMatchesRegex(message_content) && determineIfUserCanUseCommand(message.member, client_command_values)) {
         const client_command_message = client_command_values.command_data;
         type_in_global_chat(client_command_message);
-        console.log(client_command_message);
     }
     // message.channel.name === game_chat_channel_name && message_regex_pattern.test(message_content)) {
 
