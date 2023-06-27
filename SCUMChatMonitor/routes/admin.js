@@ -54,24 +54,6 @@ router.get('/commands/:file', (request, response) => {
 });
 */
 
-/*router.get('commands/:file', (request, response) => {
-    const file_name = request.params.file;
-    response.render('admin/index');
-    console.log(file_name);
-    fs.readFile(path.join(__dirname, '/commands'))
-});*/
-/*router.get('commands/:file', (request, response) => {
-    const file_name = request.params.file;
-
-    fs.readFile(path.join(__dirname, '../commands', file_name), 'utf8', (error, data) => {
-        if (error) {
-            console.error(error);
-            return;
-        }
-        response.json({ content: data });
-    });
-});*/
-
 router.get('/', isLoggedIn, function (request, response, next) {
     response.render('admin/index', { title: 'Test title' });
 });

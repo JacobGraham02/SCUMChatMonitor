@@ -10,7 +10,7 @@ function isLoggedIn(request, response, next) {
 }
 
 /* GET home page. */
-router.get('/', isLoggedIn, function(request, response, next) {
+router.get('/', function(request, response, next) {
   response.render('index');
 });
 
