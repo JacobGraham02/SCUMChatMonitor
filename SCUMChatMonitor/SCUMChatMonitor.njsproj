@@ -81,7 +81,11 @@
     <Content Include="server.js">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="views\admin\command.pug" />
     <Content Include="views\admin\index.pug">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="views\admin\layout.pug">
       <SubType>Code</SubType>
     </Content>
     <Content Include="views\error.pug" />

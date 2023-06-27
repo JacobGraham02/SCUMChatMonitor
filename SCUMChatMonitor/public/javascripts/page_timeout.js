@@ -29,5 +29,5 @@ function addIdleTime(time) {
 function resetIdleTimer() {
     let idle_interval = startTimeoutForIdle();
     clearInterval(idle_interval);
-    localStorage.setTime('expiredTime', time_until_logout_milliseconds);
+    localStorage.setItem('expiredTime', time_until_logout_milliseconds);
 }

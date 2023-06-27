@@ -12,7 +12,9 @@ function isLoggedIn(request, response, next) {
 }
 
 router.get('/login-success', isLoggedIn, function (request, response, next) {
-    fs.readdir(path.join(__dirname, '../commands'), (error, files) => {
+    const parent_directory_from_routes_folder = path.resolve(__dirname, '..');
+    fs.readdir(path.join(parent_directory_from_routes_folder, '/commands'), (error, files) => {
+        
         if (error) {
             console.error(error);
             return;
@@ -26,6 +28,38 @@ router.get('/login-success', isLoggedIn, function (request, response, next) {
     });
 });
 
+router.get('/commands/:file', (request, response) => {
+    const file_name = request.params.file;
+    const parent_directory_from_routes = path.resolve(__dirname, '..');   
+    fs.readFile(path.join(parent_directory_from_routes, '/commands', file_name), 'utf-8', function (error, data) {
+        if (error) {
+            console.error(error);
+            return;
+        }
+        response.render('admin/command', { code: data, filename: file_name });
+    });
+});
+
+/*router.post('commands/:file', (request, response) => {
+    const file_name = request.params.file;
+    const parent_directory_from_routes = path.resolve(__dirname, '..');
+    const new_form_script_code = request.body.code;
+    fs.readFile(path.join(parent_directory_from_routes, '/commands', file_name), 'utf-8', function (error, data) {
+        if (error) {
+            console.error(error);
+            return response.status(500).send("There was a file saving error. Please try again");
+        }
+        response.redirect('admin/command/' + file_name);
+    });
+});
+*/
+
+/*router.get('commands/:file', (request, response) => {
+    const file_name = request.params.file;
+    response.render('admin/index');
+    console.log(file_name);
+    fs.readFile(path.join(__dirname, '/commands'))
+});*/
 /*router.get('commands/:file', (request, response) => {
     const file_name = request.params.file;
 

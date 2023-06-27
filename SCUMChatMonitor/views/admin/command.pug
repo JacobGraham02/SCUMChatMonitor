@@ -1,0 +1,24 @@
+extends layout
+
+
+block variables
+	- var page_title = 'Command editor'
+
+
+block header
+	
+
+
+block content
+	h1 File editor
+	form#commands_file_javascript_form(method='POST', action='/commands/' + filename, enctype='application/x-www-form-urlencoded')
+		fieldset#commands_file_javascript_fieldset
+			textarea#commands_file_javascript_textarea(name='code', rows='30', cols='70')= code
+		
+		button#commands_file_submit_button(type='submit') Submit
+		
+		
+
+
+block footer
+
