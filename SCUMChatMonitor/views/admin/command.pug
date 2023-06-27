@@ -11,14 +11,27 @@ block header
 
 block content
 	h1 File editor
-	form#commands_file_javascript_form(method='POST', action='/commands/' + filename, enctype='application/x-www-form-urlencoded')
-		fieldset#commands_file_javascript_fieldset
-			textarea#commands_file_javascript_textarea(name='code', rows='30', cols='70')= code
+	form#commands_file_javascript_form(method='POST', action='/editCommand/' + file_name, enctype='application/x-www-form-urlencoded')
+		fieldset#commands_file_data
+			label#command_data_label(for='command_data') Command data:
+			textarea#command_data_textarea(name='command_data', rows='5', cols='70')= command_data
+			
+
+		fieldset#commands_file_authorized_roles
+			label#authorized_roles_label(for='authorization_role_name') Authorization role name:
+			textarea#authorization_role_name_textarea(name='authorization_role_name', rows='5' cols='70')= authorization_roles
+
+
+		fieldset#save_command_changes
+			button#save_changes_to_command_file(type='submit') Save changes to javascript code
+
+
+		fieldset#commands_file_javascript_code
+			label#javascript_command_code(for='javascript_command_code') Command javascript code:
+			textarea#commands_file_javascript_textarea(name='javascript_command_code', rows='30', cols='70')= code
 		
+
 		button#commands_file_submit_button(type='submit') Submit
 		
-		
-
-
 block footer
 

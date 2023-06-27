@@ -238,6 +238,28 @@ app.post('/login', passport.authenticate('local', {
     failureRedirect: 'login-failure'
 }));
 
+app.post('/editCommand/:filename', function (request, response) {
+    const file_name = request.params.filename;
+    const form_authorized_roles = request.body.authorization_role_name;
+    const form_command_data = request.body.command_data;
+
+    console.log(`form authorized roles ${form_authorized_roles}`);
+    console.log(`form command data ${form_command_data}`);
+    console.log(`file name ${file_name}`);
+
+    const parent_directory_from_routes = path.resolve(__dirname, '..');
+
+    const file_path = path.join(__dirname, '/commands', file_name);
+    const file_content = fs.readFileSync(file_path, 'utf-8');
+
+    const updated_file_content = file_content.replace(/command_data:\s*'([\s\S]*?)',/, `command_data: '${form_command_data}',`)
+                                            .replace(/authorization_role_name:\s*\[(.*?)\],/, `authorization_role_name: [${form_authorized_roles}],`);    
+
+    fs.writeFileSync(file_path, updated_file_content, 'utf-8');
+    console.log(updated_file_content);
+    
+});
+
 app.get('/login-failure', function (request, response, next) {
     response.render('login', { title: "Invalid login", message: 'Invalid login credentials. Please try again with a different set of credentials' });
 });

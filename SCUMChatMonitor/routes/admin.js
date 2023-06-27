@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 const fs = require('fs');
 var path = require('path');
+const extractFromUserCommands = require('../modules/extractDataFromCommands');
 
 function isLoggedIn(request, response, next) {
     if (request.isAuthenticated()) {
@@ -29,15 +30,17 @@ router.get('/login-success', isLoggedIn, function (request, response, next) {
 });
 
 router.get('/commands/:file', (request, response) => {
-    const file_name = request.params.file;
+    const file_path = request.params.file;
+    const javascript_file_name = path.basename(file_path);
     const parent_directory_from_routes = path.resolve(__dirname, '..');   
-    fs.readFile(path.join(parent_directory_from_routes, '/commands', file_name), 'utf-8', function (error, data) {
+    fs.readFile(path.join(parent_directory_from_routes, '/commands', javascript_file_name), 'utf-8', function (error, data) {
         if (error) {
             console.error(error);
             return;
         }
-        
-        response.render('admin/command', { code: data, filename: file_name });
+        const command_data_text = extractFromUserCommands.fetchCommandDataFromCommand(data);
+        const authorization_roles_data_text = extractFromUserCommands.fetchAuthorizationRolesFromCommand(data);
+        response.render('admin/command', { code: data, command_data: command_data_text, authorization_roles: authorization_roles_data_text, file_name: javascript_file_name });
     });
 });
 
@@ -53,7 +56,6 @@ router.get('/commands/:file', (request, response) => {
         response.redirect('admin/command/' + file_name);
     });
 });*/
-
 
 router.get('/', isLoggedIn, function (request, response, next) {
     response.render('admin/index', { title: 'Test title' });

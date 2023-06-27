@@ -8,7 +8,7 @@ module.exports = {
             options.setName('test_option')
                 .setDescription('The description of test option')),
     command_data: 'Discord: https://discord.gg/4BYPXWSFkv',
-    authorization_role_name: [],
+    authorization_role_name: [test],
 
 
     async execute(message) {
