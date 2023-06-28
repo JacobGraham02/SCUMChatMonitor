@@ -11,7 +11,7 @@ block header
 
 block content
 	h1 File editor
-	form#commands_file_javascript_form(method='POST', action='/editCommand/' + file_name, enctype='application/x-www-form-urlencoded')
+	form#commands_file_javascript_form(method='POST', action='/commands/' + file_name, enctype='application/x-www-form-urlencoded')
 		fieldset#commands_file_data
 			label#command_data_label(for='command_data') Command data:
 			textarea#command_data_textarea(name='command_data', rows='5', cols='70')= command_data

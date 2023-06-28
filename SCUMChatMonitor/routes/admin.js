@@ -12,7 +12,7 @@ function isLoggedIn(request, response, next) {
     }
 }
 
-router.get('/login-success', isLoggedIn, function (request, response, next) {
+router.get(['/login-success','/commands'], isLoggedIn, function (request, response, next) {
     const parent_directory_from_routes_folder = path.resolve(__dirname, '..');
     fs.readdir(path.join(parent_directory_from_routes_folder, '/commands'), (error, files) => {
         
@@ -23,7 +23,6 @@ router.get('/login-success', isLoggedIn, function (request, response, next) {
         response.render('admin/index', {
             title: `Admin dashboard`,
             message: `You have successfully logged in`,
-            admin: request.admin,
             command_files: files
         });
     });
@@ -44,6 +43,11 @@ router.get('/commands/:file', (request, response) => {
     });
 });
 
+function fetchAllCommandFilesData(request) {
+    const file_path = request.params.file;
+
+}
+
 /*router.post('commands/:file', (request, response) => {
     const file_name = request.params.file;
     const parent_directory_from_routes = path.resolve(__dirname, '..');
@@ -58,7 +62,16 @@ router.get('/commands/:file', (request, response) => {
 });*/
 
 router.get('/', isLoggedIn, function (request, response, next) {
-    response.render('admin/index', { title: 'Test title' });
+    const parent_directory_from_routes_folder = path.resolve(__dirname, '..');
+    fs.readdir(path.join(parent_directory_from_routes_folder, '/commands'), (error, files) => {
+
+        if (error) {
+            console.error(error);
+            return; 
+        }
+
+        response.render('admin/index', { title: 'Test title', command_files: files });
+    });
 });
 
 module.exports = router;

@@ -18,6 +18,7 @@
   "dependencies": {
     "@discordjs/builders": "^1.6.3",
     "@discordjs/rest": "^1.7.1",
+    "connect-mongo": "^5.0.0",
     "cookie-parser": "~1.4.4",
     "crypto": "^1.0.1",
     "debug": "~2.6.9",
@@ -37,7 +38,10 @@
     "uuid": "^9.0.0"
   },
   "pkg": {
-    "scripts": [ "app.js", "commands/**/*.js" ],
+    "scripts": [
+      "app.js",
+      "commands/**/*.js"
+    ],
     "targets": [
       "node18-win-x64"
     ]
