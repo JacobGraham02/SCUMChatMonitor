@@ -13,7 +13,7 @@ block content
 			- for (let i = 0; i < command_files.length; i++) {
 				li#bot_command_list_item
 					a#bot_command_list_item_edit(href=`/admin/commands/${command_files[i]}`)= command_files[i]
-					a#bot_command_list_item_delete(href=`/admin/commands/delete/${command_files[i]}`) Delete this command
+					a.bot_command_list_item_delete(href=`/admin/commands/delete/${command_files[i]}`) Delete this command
 			-}
 	a#create_new_command_link(href='/admin/commands/new') Create new command
 

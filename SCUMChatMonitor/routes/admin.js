@@ -51,6 +51,11 @@ router.delete('/commands/delete/:file', (request, response) => {
     const file_path = request.params.file;
     const javascript_file_path = path.basename(file_path);
     const parent_directory_from_routes = path.resolve(__dirname, '..');
+    const full_path = path.join(parent_directory_from_routes, '/commands', javascript_file_path);
+
+    fs.unlinkSync(full_path);
+    console.log(`File ${full_path} was successfully deleted`);
+    response.status(200).send(`File ${full_path} was successfully deleted`);
 
     // fs.unlinkSync(parent_directory_from_routes, javascript_file_path);
     /*if (file_path !== undefined) {
