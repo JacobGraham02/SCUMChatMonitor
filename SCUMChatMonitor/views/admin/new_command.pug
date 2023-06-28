@@ -1,0 +1,31 @@
+extends layout
+
+block variables
+	- var page_title = title
+
+block header
+	h1#create_command_header_h1 Create a new command for the bot
+
+block content
+		form#create_commands_file_form(method='POST', action='/admin/commands/new', enctype='application/x-www-form-urlencoded') 
+			fieldset#new_command_name
+				label#new_command_name_label(for='command_name_input') Command name:
+				input#command_name_input(type='text' name='command_name_input')
+
+			fieldset#new_command_description
+				label#new_command_description_label(for='command_description_input') Command description:
+				input#command_description_input(type='text' name='command_description_input')
+
+			fieldset#new_command_data
+				label#new_command_data_label(for='command_data_input') Command data:
+				input#command_data_input(type='text' name='command_data_input')
+
+			fieldset#new_command_authorized_roles
+				label#new_command_authorized_roles_label(for='command_authorized_roles_input') Command authorized roles:
+				input#command_authorized_roles_input(type='text' name='command_authorized_roles_input')
+
+
+			button#create_new_command_button(type='submit') Create new command
+
+block footer
+	footer

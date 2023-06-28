@@ -89,6 +89,7 @@
     <Content Include="views\admin\layout.pug">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="views\admin\test.pug" />
     <Content Include="views\error.pug" />
     <Content Include="views\index.pug" />
     <Content Include="views\layout.pug" />

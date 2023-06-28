@@ -4,7 +4,8 @@ html
   head
     title= page_title
     link(rel='stylesheet', href='/stylesheets/style.css')
-    script(src='/javascripts/page_timeout.js')
+    script(src='/javascripts/page_timeout.js' defer)
+    
   body
     block header
     block content
