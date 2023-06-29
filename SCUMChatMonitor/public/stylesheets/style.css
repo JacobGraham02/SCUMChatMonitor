@@ -6,3 +6,7 @@ body {
 a {
   color: #00B7FF;
 }
+
+.bot_command_list_item_edit {
+    display: block;
+}

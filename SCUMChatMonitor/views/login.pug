@@ -5,8 +5,8 @@ block variables
 
 block header
 	h1.welcome_message Log in to your account
-	-if (failed_login_message !== undefined) {
-		p.failed_login_details = message
+	-if (invalid_login_message !== undefined) {
+		p#failed_login_message= invalid_login_message
 	-}
 	
 block content

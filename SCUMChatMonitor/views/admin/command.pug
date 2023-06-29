@@ -23,15 +23,16 @@ block content
 
 
 		fieldset#save_command_changes
-			button#save_changes_to_command_file(type='submit') Save changes to javascript code
+			button#save_changes_to_command_file(type='submit') Save changes
+
+		fieldset#cancel_command_changes
+			button#cancel_changes_to_command_file(type='button') Cancel changes
 
 
 		fieldset#commands_file_javascript_code
 			label#javascript_command_code(for='javascript_command_code') Command javascript code:
 			textarea#commands_file_javascript_textarea(name='javascript_command_code', rows='30', cols='70')= code
 		
-
-		button#commands_file_submit_button(type='submit') Submit
-		
+		script(src='/javascripts/commands_form.js')
 block footer
 	footer

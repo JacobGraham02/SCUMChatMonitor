@@ -25,14 +25,24 @@ userRepository = new UserRepository();
 // The following regex string is for steam ids associated with a steam name. They are saved as a 17-digit number; (e.g. 12345678912345678)
 const login_log_steam_id_regex = /([0-9]{17})/g;
 
+
+const chat_log_steam_id_regex = /'([0-9]{17}):/g;
+
 // The following regex string is for steam names which match the same format as the ones in gportal's ftp files: username(number); e.g. boss612man(100)
-const login_log_steam_name_regex = /([a-zA-Z0-9 ._-]{0,32}\([0-9]{1,10}\))/g
+const login_log_steam_name_regex = /([a-zA-Z0-9 ._-]{0,32}\([0-9]{1,10}\))/g;
+
+
+const chat_log_steam_name_regex = /([a-zA-Z0-9 ._-]{0,32}\([0-9]{1,10}\))/g;
+
+
+const chat_log_message_from_wilson_regex = /('76561199505530387:Wilson\24\' '?:Local|Global|Admin:.*)'/g;
 
 // The localhost port on which the nodejs server will listen for connections
 const server_port = 3000;
 
 const gportal_ftp_server_target_directory = 'SCUM\\Saved\\SaveFiles\\Logs\\';
-const gportal_ftp_server_filename_prefix = 'login_';
+const gportal_ftp_server_filename_prefix_login = 'login_';
+const gportal_ftp_server_filename_prefix_chat = 'chat_';
 
 const gportal_ftp_config = {
     host: process.env.gportal_ftp_hostname,
@@ -59,7 +69,7 @@ app.use(passport.session());
 
 let current_file_content_hash = '';
 let cached_file_content_hash = '';
-async function handleGportalFtpFileProcessing(request, response) {
+async function handleGportalFtpFileProcessingLogins(request, response) {
     try {
         const ftpClient = new FTPClient();
         await new Promise((resolve, reject) => {
@@ -82,11 +92,11 @@ async function handleGportalFtpFileProcessing(request, response) {
         });
 
         const matching_files = files
-            .filter(file => file.name.startsWith(gportal_ftp_server_filename_prefix))
+            .filter(file => file.name.startsWith(gportal_ftp_server_filename_prefix_login))
             .sort((file_one, file_two) => file_two.date - file_one.date);
 
         if (matching_files.length === 0) {
-            response.status(500).json({ message: `No files were found that started with the prefix ${gportal_ftp_server_filename_prefix}` });
+            response.status(500).json({ message: `No files were found that started with the prefix ${gportal_ftp_server_filename_prefix_login}` });
             ftpClient.end();
             return;
         }
@@ -132,8 +142,8 @@ async function handleGportalFtpFileProcessing(request, response) {
         const browser_file_contents = file_contents.replace(/\u0000/g, '');
 
         // The below values return as an object containing values
-        const file_contents_steam_ids = browser_file_contents.match(login_log_steam_id_regex);
-        const file_contents_steam_names = browser_file_contents.match(login_log_steam_name_regex);
+        const file_contents_steam_ids = browser_file_contents.match(chat_log_steam_id_regex);
+        const file_contents_steam_messages = browser_file_contents.match(login_log_steam_name_regex);
 
         const file_contents_steam_ids_array = Object.values(file_contents_steam_ids);
         const file_contents_steam_name_array = Object.values(file_contents_steam_names);
@@ -151,6 +161,98 @@ async function handleGportalFtpFileProcessing(request, response) {
         response.status(500).json({ error: 'Failed to process files' });
     }
 }
+async function handleGportalFtpFileProcessingChat(request, response) {
+    try {
+        const ftpClient = new FTPClient();
+        await new Promise((resolve, reject) => {
+            ftpClient.on('ready', resolve);
+            ftpClient.on('error', reject);
+            ftpClient.connect(gportal_ftp_config);
+        });
+
+        console.log('FTP client connected and authenticated');
+
+        const files = await new Promise((resolve, reject) => {
+            ftpClient.list(gportal_ftp_server_target_directory, (error, files) => {
+                if (error) {
+                    console.log('Error retrieving file listing:', error);
+                    reject('Failed to retrieve file listing');
+                } else {
+                    resolve(files);
+                }
+            });
+        });
+
+        const matching_files = files
+            .filter(file => file.name.startsWith(gportal_ftp_server_filename_prefix_chat))
+            .sort((file_one, file_two) => file_two.date - file_one.date);
+
+        if (matching_files.length === 0) {
+            response.status(500).json({ message: `No files were found that started with the prefix ${gportal_ftp_server_filename_prefix_login}` });
+            ftpClient.end();
+            return;
+        }
+
+        const filePath = `${gportal_ftp_server_target_directory}${matching_files[0].name}`;
+
+        const stream = await new Promise((resolve, reject) => {
+            ftpClient.get(filePath, (error, stream) => {
+                if (error) {
+                    reject(`The file was present in gportal, but could not be fetched. ${error}`);
+                } else {
+                    resolve(stream);
+                }
+            });
+        });
+
+        let file_contents = '';
+        await new Promise((resolve, reject) => {
+            stream.on('data', (chunk) => {
+                //console.log(`Stream data is incoming from the specific FTP server log`);
+                file_contents += chunk;
+            });
+
+            stream.on('end', () => {
+                //console.log(`Data stream from the specific FTP server log has completed successfully`);
+                //console.log('File contents retrieved from the data stream: ', file_contents);
+                resolve();
+            });
+
+            stream.on('error', reject);
+        });
+
+        const current_file_content_hash = crypto.createHash('md5').update(file_contents).digest('hex');
+
+        if (current_file_content_hash === cached_file_content_hash) {
+            console.log('The current stored hash for the ftp login file is the same as the new one');
+            return;
+        } else {
+            console.log('The current stored hash for the ftp login file is not the same as the new one');
+            cached_file_content_hash = current_file_content_hash;
+        }
+
+        const browser_file_contents = file_contents.replace(/\u0000/g, '');
+
+        // The below values return as an object containing values
+        const file_contents_steam_ids = browser_file_contents.match(chat_log_steam_id_regex);
+        const file_contents_steam_names = browser_file_contents.match(chat_log_steam_name_regex);
+
+        const file_contents_steam_ids_array = Object.values(file_contents_steam_ids);
+        const file_contents_steam_name_array = Object.values(file_contents_steam_names);
+
+        const user_steam_id_and_chat_messages = {};
+        for (let i = 0; i < file_contents_steam_ids_array.length; i++) {
+            user_steam_id_and_chat_messages[file_contents_steam_ids_array[i]] = file_contents_steam_name_array[i];
+        }
+
+        await insertSteamUsersIntoDatabase(Object.keys(user_steam_ids), Object.values(user_steam_ids));
+
+        ftpClient.end();
+    } catch (error) {
+        console.log('Error processing files:', error);
+        response.status(500).json({ error: 'Failed to process files' });
+    }
+}
 
 
 // startFtpFileProcessingInterval();
@@ -158,7 +260,7 @@ async function handleGportalFtpFileProcessing(request, response) {
 //insertAdminUserIntoDatabase('jacobg', 'test123');
 
 function startFtpFileProcessingInterval() {
-    read_login_ftp_file_interval = setInterval(handleGportalFtpFileProcessing, 5000);
+    read_login_ftp_file_interval = setInterval(handleGportalFtpFileProcessingLogins, 5000);
 }
 
 function stopFileProcessingInterval() {
@@ -167,7 +269,7 @@ function stopFileProcessingInterval() {
 
 function enableDevelopmentModeForReadingLoginFile() {
     stopFileProcessingInterval();
-    app.get('/process-login-ftp-file', handleGportalFtpFileProcessing);
+    app.get('/process-login-ftp-file', handleGportalFtpFileProcessingLogins);
 }
 
 function insertAdminUserIntoDatabase(admin_user_username, admin_user_password) {
@@ -241,7 +343,8 @@ app.post('/login', passport.authenticate('local', {
 }));
 
 app.get('/login-failure', function (request, response, next) {
-    response.render('login', { title: "Invalid login", message: 'Invalid login credentials. Please try again with a different set of credentials' });
+    response.render('login', {
+        title: "Invalid login", invalid_login_message: 'Invalid login credentials. Please try again with a different set of credentials. Alternatively, you can contact the site administrator'});
 });
 
 const strategy = new LocalStrategy(username_and_password_fields, verifyCallback);

@@ -85,7 +85,7 @@ router.post('/commands/new', isLoggedIn, (request, response, next) => {
 module.exports = {
     data: new SlashCommandBuilder()
          .setName('${new_command_name}')
-         .setDescription('${new_command_description}')),
+         .setDescription('${new_command_description}'),
     command_data: '${new_command_data}',
     authorization_role_name: [${new_command_authorized_roles}],
 
