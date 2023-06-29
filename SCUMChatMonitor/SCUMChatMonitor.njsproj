@@ -43,9 +43,6 @@
     <Content Include="commands\discord.js">
       <SubType>Code</SubType>
     </Content>
-    <Content Include="commands\test.js">
-      <SubType>Code</SubType>
-    </Content>
     <Content Include="config.json">
       <SubType>Code</SubType>
     </Content>
@@ -64,6 +61,7 @@
     <Content Include="public\home.pug">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="public\javascripts\delete_bot_command.js" />
     <Content Include="public\javascripts\page_timeout.js">
       <SubType>Code</SubType>
     </Content>
@@ -89,6 +87,7 @@
     <Content Include="views\admin\layout.pug">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="views\admin\new_command.pug" />
     <Content Include="views\admin\test.pug" />
     <Content Include="views\error.pug" />
     <Content Include="views\index.pug" />

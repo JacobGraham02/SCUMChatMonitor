@@ -11,14 +11,14 @@ function isLoggedIn(request, response, next) {
 
 /* GET home page. */
 router.get('/', function(request, response, next) {
-  response.render('index');
+    response.render('index', {user: request.user});
 });
 
 router.get('/login', function (request, response, next) {
     response.render('login', { title: "Login page", user: request.user });
 }); 
 
-router.get('/logout', isLoggedIn, function (request, response, next) {
+router.post('/logout', isLoggedIn, function (request, response, next) {
     request.logout(function (error) {
         if (error) {
             return next(error);

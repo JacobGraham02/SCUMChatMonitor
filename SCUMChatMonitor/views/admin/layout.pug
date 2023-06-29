@@ -8,7 +8,13 @@ html
     
   body
     block header
+        nav#global_site_navigation_nav
+            ul#global_site_navigation_nav_ul
+                form#global_site_navigation_logout_form(action='/logout' method='POST')
+                    button#global_site_navigation_logout_form_input(type="submit") Log out
+
     block content
     block footer
-     p.copyright Copyright © 2023 Jacob Graham. All rights reserved. 
-     p.github https://github.com/JacobGraham02/ChatMonitorMan.git (privated)
+        p.copyright Copyright © 2023 Jacob Graham. All rights reserved. 
+        p.html5elements https://developer.mozilla.org/en-US/docs/Web/HTML/Element
+        p.github https://github.com/JacobGraham02/ChatMonitorMan.git (privated)
