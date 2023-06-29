@@ -69,6 +69,7 @@ app.use(passport.session());
 
 let current_file_content_hash = '';
 let cached_file_content_hash = '';
+let ftp_login_file_lines_already_processed = 0;
 async function handleGportalFtpFileProcessingLogins(request, response) {
     try {
         const ftpClient = new FTPClient();
@@ -141,12 +142,27 @@ async function handleGportalFtpFileProcessingLogins(request, response) {
 
         const browser_file_contents = file_contents.replace(/\u0000/g, '');
 
+        const lines = browser_file_contents.split('\n');
+
+        // If we have already processed the lines that exist in the ftp file, remove them
+        if (ftp_login_file_lines_already_processed < lines.length) {
+            lines.splice(0, ftp_login_file_lines_already_processed);
+        }
+        // Update the number of lines processed
+        ftp_login_file_lines_already_processed += lines.length;
+
+        const new_file_content = lines.join('\n');
+
+        console.log(`New file content: ${new_file_content}`);
+
+        // console.log(`Browser file contents: ${browser_file_contents}`);
+
         // The below values return as an object containing values
-        const file_contents_steam_ids = browser_file_contents.match(chat_log_steam_id_regex);
+        const file_contents_steam_ids = browser_file_contents.match(login_log_steam_id_regex);
         const file_contents_steam_messages = browser_file_contents.match(login_log_steam_name_regex);
 
         const file_contents_steam_ids_array = Object.values(file_contents_steam_ids);
-        const file_contents_steam_name_array = Object.values(file_contents_steam_names);
+        const file_contents_steam_name_array = Object.values(file_contents_steam_messages);
 
         const user_steam_ids = {};
         for (let i = 0; i < file_contents_steam_ids_array.length; i++) {
@@ -161,7 +177,7 @@ async function handleGportalFtpFileProcessingLogins(request, response) {
         response.status(500).json({ error: 'Failed to process files' });
     }
 }
-async function handleGportalFtpFileProcessingChat(request, response) {
+/*async function handleGportalFtpFileProcessingChat(request, response) {
     try {
         const ftpClient = new FTPClient();
         await new Promise((resolve, reject) => {
@@ -235,14 +251,14 @@ async function handleGportalFtpFileProcessingChat(request, response) {
 
         // The below values return as an object containing values
         const file_contents_steam_ids = browser_file_contents.match(chat_log_steam_id_regex);
-        const file_contents_steam_names = browser_file_contents.match(chat_log_steam_name_regex);
+        const file_contents_steam_id_messages = browser_file_contents.match(chat_log_steam_name_regex);
 
         const file_contents_steam_ids_array = Object.values(file_contents_steam_ids);
-        const file_contents_steam_name_array = Object.values(file_contents_steam_names);
+        const file_contents_steam_id_messages_array = Object.values(file_contents_steam_names);
 
         const user_steam_id_and_chat_messages = {};
         for (let i = 0; i < file_contents_steam_ids_array.length; i++) {
-            user_steam_id_and_chat_messages[file_contents_steam_ids_array[i]] = file_contents_steam_name_array[i];
+            user_steam_id_and_chat_messages[file_contents_steam_id_messages[i]] = file_contents_steam_id_messages_array[i];
         }
 
         await insertSteamUsersIntoDatabase(Object.keys(user_steam_ids), Object.values(user_steam_ids));
@@ -252,12 +268,14 @@ async function handleGportalFtpFileProcessingChat(request, response) {
         console.log('Error processing files:', error);
         response.status(500).json({ error: 'Failed to process files' });
     }
-}
+}*/
 
 
-// startFtpFileProcessingInterval();
+startFtpFileProcessingInterval();
 
 //insertAdminUserIntoDatabase('jacobg', 'test123');
+// extractNewLinesFromFtpFile(browser_file_contents);
+
 
 function startFtpFileProcessingInterval() {
     read_login_ftp_file_interval = setInterval(handleGportalFtpFileProcessingLogins, 5000);

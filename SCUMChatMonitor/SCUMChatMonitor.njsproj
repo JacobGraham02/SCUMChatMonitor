@@ -61,7 +61,8 @@
     <Content Include="public\home.pug">
       <SubType>Code</SubType>
     </Content>
-    <Content Include="public\javascripts\delete_bot_command.js" />
+    <Content Include="public\javascripts\commands_form.js" />
+    <Content Include="public\javascripts\admin_index_page.js" />
     <Content Include="public\javascripts\page_timeout.js">
       <SubType>Code</SubType>
     </Content>
