@@ -58,9 +58,7 @@
     <Content Include="pkg-options.json">
       <SubType>Code</SubType>
     </Content>
-    <Content Include="public\home.pug">
-      <SubType>Code</SubType>
-    </Content>
+    <Content Include="public\images\wilson.ico" />
     <Content Include="public\javascripts\commands_form.js" />
     <Content Include="public\javascripts\admin_index_page.js" />
     <Content Include="public\javascripts\page_timeout.js">
@@ -90,7 +88,6 @@
       <SubType>Code</SubType>
     </Content>
     <Content Include="views\admin\new_command.pug" />
-    <Content Include="views\admin\test.pug" />
     <Content Include="views\error.pug" />
     <Content Include="views\index.pug" />
     <Content Include="views\layout.pug" />

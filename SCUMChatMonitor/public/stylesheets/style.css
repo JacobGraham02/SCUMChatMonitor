@@ -1,6 +1,107 @@
+@import url('https://fonts.googleapis.com/css2?family=Bacasime+Antique&display=swap');
+
 body {
-  padding: 50px;
-  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    font-family: 'Bacasime Antique', serif;
+    height: 100vh;
+    max-height: 100vh;
+    width: 100vw;
+    max-width: 100vw;
+    grid-template-columns: 1fr;
+    grid-auto-rows: minmax(min-content, max-content) 1fr minmax(min-content, max-content);
+    grid-template-areas:
+    "header"
+    "main"
+    "footer";
+}
+
+#header {
+    display: flex;
+    justify-content: center;
+    border: 1px dashed red;
+    grid-area: header;
+}
+
+#main {
+    border: 1px dashed purple;
+    grid-area: main;
+}
+
+#login_section {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid blue;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
+}
+
+#login_section #login_username_field {
+    height: 40%;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#login_section #login_username_field input {
+    height: 20%;
+    width: 70%;
+}
+
+#login_section #login_password_field {
+    height: 40%;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#login_section #login_password_field input {
+    height: 20%;
+    width: 70%;
+}
+
+.login_fieldset {
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    width: 80%;
+}
+#invalid_login_message {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border: 2px dotted red;
+}
+#login_form_submit_button_article {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 1px;
+}
+
+#login_form_submit_button_article #button_submit_login {
+    border: 2px dashed red;
+    width: 25%;
+}
+
+#login_fields_form {
+    width: 50%;
+    height: 50%;
+    border: 2px dotted blue;
+}
+
+#footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    border: 1px dashed yellow;
+    grid-area: footer;
 }
 
 a {
@@ -9,4 +110,15 @@ a {
 
 .bot_command_list_item_edit {
     display: block;
+}
+
+@media screen and (max-width: 600px) {
+    body {
+        
+    }
+
+    #login_fields_form {
+        width: 90%;
+        height: 90%;
+    }
 }

@@ -4,19 +4,25 @@ block variables
 	- var login_page_title = "Log in to your account"
 
 block header
-	h2.welcome_message Log in to your account
-	-if (invalid_login_message !== undefined) {
-		p#failed_login_message= invalid_login_message
-	-}
+	header#header
+		h2.welcome_message Log in to your account
 	
 block content
-	form#login_fields_form(action='/login' method='post') 
-		fieldset#login_username_field
-			label.form_login_username_label(for='username') Email address:
-			input.form_login_username_input(type='text' name='username')
+	main#main
+		section#login_section
+			aside#invalid_login_message
+				-if (invalid_login_message !== undefined) {
+					p#failed_login_message= invalid_login_message
+				-}
+			form#login_fields_form(action='/login' method='post') 
+				fieldset#login_username_field.login_fieldset
+					label#form_login_username_label(for='username') Email address:
+					input#form_login_username_input(type='text' name='username')
 
-		fieldset#login_password_field
-			label.form_login_password_label(for='password') Password:
-			input.form_login_password_input(type='text' name='password')
-		button#button_submit_login(action='submit') Log in
+				fieldset#login_password_field.login_fieldset
+					label#form_login_password_label(for='password') Password:
+					input#form_login_password_input(type='text' name='password')
+
+				article#login_form_submit_button_article
+					button#button_submit_login(action='submit') Log in
 	
