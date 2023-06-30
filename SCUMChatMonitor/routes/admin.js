@@ -3,6 +3,7 @@ var router = express.Router();
 const fs = require('fs');
 var path = require('path');
 const extractFromUserCommands = require('../modules/extractDataFromCommands');
+const { body, param, validationResult } = require('express-validator');
 
 function isLoggedIn(request, response, next) {
     if (request.isAuthenticated()) {
@@ -56,22 +57,19 @@ router.delete('/commands/delete/:file', (request, response) => {
     fs.unlinkSync(full_path);
     console.log(`File ${full_path} was successfully deleted`);
     response.status(200).send(`File ${full_path} was successfully deleted`);
-
-    // fs.unlinkSync(parent_directory_from_routes, javascript_file_path);
-    /*if (file_path !== undefined) {
-        fs.unlinkSync(parent_directory_from_routes, javascript_file_path), (error) => {
-            if (error) {
-                console.error(`There was an error when attempting to delete the specified command file: ${error}`);
-                response.status(500).send(`An error occurred when attempting to delete the specified command file: ${error}`);
-            } else {
-                console.log(`File ${file_path} was successfully deleted`);
-                response.status(500).send(`File ${file_path} was successfully deleted`);
-            }
-        };
-    };*/
 });
 
-router.post('/commands/new', isLoggedIn, (request, response, next) => {
+router.post('/commands/new', isLoggedIn, [
+    body('command_name_input').trim().escape(),
+    body('command_description_input').trim().escape(),
+    body('command_data_input').trim().escape(),
+    body('command_authorized_roles_input').isArray().optional()
+
+], (request, response, next) => {
+    const express_validator_errors = validationResult(request);
+    if (!express_validator_errors.isEmpty()) {
+        response.redirect('/admin/')
+    }
     const new_command_name = request.body.command_name_input;
     const new_command_description = request.body.command_description_input;
     const new_command_data = request.body.command_data_input;
@@ -98,14 +96,19 @@ module.exports = {
     response.redirect('/admin/');
 });
 
-router.post('/commands/:filename', function (request, response) {
+router.post('/commands/:filename', [
+    param('filename').trim().escape(),
+    body('authorization_role_name').isArray().optional(),
+    body('command_data').trim().escape(),
+
+], function (request, response) {
+    const express_validator_errors = validationResult(request);
+    if (!express_validator_errors.isEmpty()) {
+        response.redirect('/admin/');
+    }
     const file_name = request.params.filename;
     const form_authorized_roles = request.body.authorization_role_name;
     const form_command_data = request.body.command_data;
-
-    console.log(`form authorized roles ${form_authorized_roles}`);
-    console.log(`form command data ${form_command_data}`);
-    console.log(`file name ${file_name}`);
 
     const parent_directory_from_routes = path.resolve(__dirname, '..');
     const file_path = path.join(parent_directory_from_routes, '/commands', file_name);

@@ -13,7 +13,6 @@ const crypto = require('crypto');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const hashAndValidatePassword = require('./modules/hashAndValidatePassword');
-const fs = require('fs');
 const FTPClient = require('ftp');
 const DatabaseConnectionManager = require('./database/DatabaseConnectionManager');
 const UserRepository = require('./database/UserRepository');
@@ -44,6 +43,10 @@ const gportal_ftp_server_target_directory = 'SCUM\\Saved\\SaveFiles\\Logs\\';
 const gportal_ftp_server_filename_prefix_login = 'login_';
 const gportal_ftp_server_filename_prefix_chat = 'chat_';
 
+const five_minutes_in_milliseconds = 300000;
+const ip_login_request_limit = 5;
+const ip_login_request_limit_message = "There have been too many login attempts from this IP address. Please try logging in again after 5 minutes"; 
+
 const gportal_ftp_config = {
     host: process.env.gportal_ftp_hostname,
     port: process.env.gportal_ftp_hostname_port,
@@ -54,8 +57,7 @@ const gportal_ftp_config = {
 const username_and_password_fields = {
     username_field: 'username',
     password_field: 'password'
-}
-
+};
 
 var app = express();
 app.use(session({
@@ -271,7 +273,7 @@ async function handleGportalFtpFileProcessingLogins(request, response) {
 }*/
 
 
-startFtpFileProcessingInterval();
+// startFtpFileProcessingInterval();
 
 //insertAdminUserIntoDatabase('jacobg', 'test123');
 // extractNewLinesFromFtpFile(browser_file_contents);
@@ -362,7 +364,7 @@ app.post('/login', passport.authenticate('local', {
 
 app.get('/login-failure', function (request, response, next) {
     response.render('login', {
-        title: "Invalid login", invalid_login_message: 'Invalid login credentials. Please try again with a different set of credentials. Alternatively, you can contact the site administrator'});
+        title: "Invalid login", invalid_login_message: 'Invalid login credentials. Please try again with a different set of credentials.'});
 });
 
 const strategy = new LocalStrategy(username_and_password_fields, verifyCallback);
