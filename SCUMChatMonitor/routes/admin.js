@@ -24,7 +24,8 @@ router.get(['/login-success','/commands'], isLoggedIn, function (request, respon
         response.render('admin/index', {
             title: `Admin dashboard`,
             message: `You have successfully logged in`,
-            command_files: files
+            command_files: files,
+            user: request.user
         });
     });
 });
@@ -132,8 +133,8 @@ router.get('/', isLoggedIn, function (request, response, next) {
             console.error(error);
             return; 
         }
-
-        response.render('admin/index', { title: 'Test title', command_files: files });
+        console.log(`Request user is: ${(request.user.admin_username)}`);
+        response.render('admin/index', { title: 'Test title', command_files: files, user: request.user });
     });
 });
 

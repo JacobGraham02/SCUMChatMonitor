@@ -324,6 +324,7 @@ const verifyCallback = (username, password, done) => {
             return done(null, false);
         }
         const admin_uuid = admin_data_results.admin_id;
+        const admin_username = admin_data_results.admin_username;
         const admin_password_hash = admin_data_results.admin_password_hash;
         const admin_password_salt = admin_data_results.admin_password_salt; 
 
@@ -331,10 +332,9 @@ const verifyCallback = (username, password, done) => {
 
         const admin = {
             uuid: admin_uuid,
-            username: admin_data_results.username,
-            password: admin_data_results.password
+            username: admin_username,
         };
-
+        
         if (is_valid_administrator_account) {
             return done(null, admin);
         } else {
@@ -379,6 +379,8 @@ passport.deserializeUser(function (uuid, done) {
     user_repository = new UserRepository();
     user_repository.findAdminByUuid(uuid).then(function (admin_data_results) {
         done(null, admin_data_results);
+    }).catch(error => {
+        done(error, null);
     });
 });
 // catch 404 and forward to error handler
@@ -389,11 +391,6 @@ app.use(function (req, res, next) {
 app.listen(server_port, function () {
     console.log(`Server is running on port ${server_port}`);
 })
-
-/*app.get('/home', (request, response) => {
-    console.log('Home route');
-    response.render('public/home');
-});*/
 
 // error handler
 app.use(function (err, req, res, next) {

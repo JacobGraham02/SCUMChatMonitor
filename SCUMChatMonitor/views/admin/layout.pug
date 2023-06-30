@@ -4,10 +4,15 @@ html
   head
     title= page_title
     link(rel='stylesheet', href='/stylesheets/style.css')
+    link(rel='icon', type='image/x-icon', href='/images/wilson.ico') 
     script(src='/javascripts/page_timeout.js' defer)
-    
   body
     block header
+        section#global_site_navigation_section
+        -if (user.admin_username !== undefined) {
+            h1#user_administrator_name_heading Welcome, #{user.admin_username}
+              
+        -}
         nav#global_site_navigation_nav
             ul#global_site_navigation_nav_ul
                 form#global_site_navigation_logout_form(action='/logout' method='POST')
@@ -15,6 +20,7 @@ html
 
     block content
     block footer
+        p.discord_invite Join the official Real Castaways&copy discord server 
+           a#anchor_tag_discord_invite(href='https://discord.gg/4BYPXWSFkv') here 
         p.copyright Copyright © 2023 Jacob Graham. All rights reserved. 
-        p.html5elements https://developer.mozilla.org/en-US/docs/Web/HTML/Element
         p.github https://github.com/JacobGraham02/ChatMonitorMan.git (privated)

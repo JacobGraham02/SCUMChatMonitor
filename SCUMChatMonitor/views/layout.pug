@@ -4,11 +4,14 @@ html
   head
     title= page_title
     link(rel='stylesheet', href='/stylesheets/style.css')
+    link(rel='icon', type='image/x-icon', href='/images/wilson.ico') 
     script(src='/javascripts/page_timeout.js')
   body
+    h1#welcome_to_true_castaways_message Welcome to TheRealCastaways&trade; bot interface
     block header
     block content   
     block footer
+        p.disclaimer_message This site may lack features because it is currently in development
         p.discord_invite Join the official Real Castaways&copy discord server 
             a#anchor_tag_discord_invite(href='https://discord.gg/4BYPXWSFkv') here 
         p.copyright Copyright &copy 2023 Jacob Graham and Gary Graham. All rights reserved. 

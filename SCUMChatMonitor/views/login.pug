@@ -4,7 +4,7 @@ block variables
 	- var login_page_title = "Log in to your account"
 
 block header
-	h1.welcome_message Log in to your account
+	h2.welcome_message Log in to your account
 	-if (invalid_login_message !== undefined) {
 		p#failed_login_message= invalid_login_message
 	-}
