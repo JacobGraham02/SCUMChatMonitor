@@ -34,7 +34,9 @@ const login_log_steam_name_regex = /([a-zA-Z0-9 ._-]{0,32}\([0-9]{1,10}\))/g;
 const chat_log_steam_name_regex = /([a-zA-Z0-9 ._-]{0,32}\([0-9]{1,10}\))/g;
 
 
-const chat_log_message_from_wilson_regex = /('76561199505530387:Wilson\24\' '?:Local|Global|Admin:.*)'/g;
+const chat_log_messages_from_wilson_regex = /('76561199505530387:Wilson\24\' '?:Local|Global|Admin:.*)'/g;
+
+const chat_log_messages_regex = /(?<=Global: |Local: |Admin: )[^\n]*/g;
 
 // The localhost port on which the nodejs server will listen for connections
 const server_port = 3000;
@@ -43,7 +45,7 @@ const gportal_ftp_server_target_directory = 'SCUM\\Saved\\SaveFiles\\Logs\\';
 const gportal_ftp_server_filename_prefix_login = 'login_';
 const gportal_ftp_server_filename_prefix_chat = 'chat_';
 
-const five_minutes_in_milliseconds = 300000;
+const five_seconds_in_milliseconds = 5000;
 const ip_login_request_limit = 5;
 const ip_login_request_limit_message = "There have been too many login attempts from this IP address. Please try logging in again after 5 minutes"; 
 
@@ -69,10 +71,9 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-let current_file_content_hash = '';
-let cached_file_content_hash = '';
+let existing_cached_file_content_hash = '';
 let ftp_login_file_lines_already_processed = 0;
-async function handleGportalFtpFileProcessingLogins(request, response) {
+async function readAndFormatGportalFtpServerLoginLog(request, response) {
     try {
         const ftpClient = new FTPClient();
         await new Promise((resolve, reject) => {
@@ -134,12 +135,12 @@ async function handleGportalFtpFileProcessingLogins(request, response) {
 
         const current_file_content_hash = crypto.createHash('md5').update(file_contents).digest('hex');
 
-        if (current_file_content_hash === cached_file_content_hash) {
+        if (current_file_content_hash === existing_cached_file_content_hash) {
             console.log('The current stored hash for the ftp login file is the same as the new one');
             return;
         } else {
             console.log('The current stored hash for the ftp login file is not the same as the new one');
-            cached_file_content_hash = current_file_content_hash;
+            existing_cached_file_content_hash = current_file_content_hash;
         }
 
         const browser_file_contents = file_contents.replace(/\u0000/g, '');
@@ -179,7 +180,7 @@ async function handleGportalFtpFileProcessingLogins(request, response) {
         response.status(500).json({ error: 'Failed to process files' });
     }
 }
-/*async function handleGportalFtpFileProcessingChat(request, response) {
+async function readAndFormatGportalFtpServerChatLog(request, response) {
     try {
         const ftpClient = new FTPClient();
         await new Promise((resolve, reject) => {
@@ -206,7 +207,7 @@ async function handleGportalFtpFileProcessingLogins(request, response) {
             .sort((file_one, file_two) => file_two.date - file_one.date);
 
         if (matching_files.length === 0) {
-            response.status(500).json({ message: `No files were found that started with the prefix ${gportal_ftp_server_filename_prefix_login}` });
+            response.status(500).json({ message: `No files were found that started with the prefix ${gportal_ftp_server_filename_prefix_chat}` });
             ftpClient.end();
             return;
         }
@@ -241,48 +242,53 @@ async function handleGportalFtpFileProcessingLogins(request, response) {
 
         const current_file_content_hash = crypto.createHash('md5').update(file_contents).digest('hex');
 
-        if (current_file_content_hash === cached_file_content_hash) {
-            console.log('The current stored hash for the ftp login file is the same as the new one');
+        if (current_file_content_hash === existing_cached_file_content_hash) {
+            console.log('The current stored hash for the ftp chat log file is the same as the new one');
             return;
         } else {
-            console.log('The current stored hash for the ftp login file is not the same as the new one');
-            cached_file_content_hash = current_file_content_hash;
+            console.log('The current stored hash for the ftp chat log file is not the same as the new one');
+            existing_cached_file_content_hash = current_file_content_hash;
         }
 
         const browser_file_contents = file_contents.replace(/\u0000/g, '');
 
         // The below values return as an object containing values
         const file_contents_steam_ids = browser_file_contents.match(chat_log_steam_id_regex);
-        const file_contents_steam_id_messages = browser_file_contents.match(chat_log_steam_name_regex);
+        const file_contents_steam_id_messages = browser_file_contents.match(chat_log_messages_regex);
 
         const file_contents_steam_ids_array = Object.values(file_contents_steam_ids);
-        const file_contents_steam_id_messages_array = Object.values(file_contents_steam_names);
+        const file_contents_steam_id_messages_array = Object.values(file_contents_steam_id_messages);
 
         const user_steam_id_and_chat_messages = {};
         for (let i = 0; i < file_contents_steam_ids_array.length; i++) {
-            user_steam_id_and_chat_messages[file_contents_steam_id_messages[i]] = file_contents_steam_id_messages_array[i];
+            user_steam_id_and_chat_messages[file_contents_steam_ids_array[i]] = file_contents_steam_id_messages_array[i];
         }
 
-        await insertSteamUsersIntoDatabase(Object.keys(user_steam_ids), Object.values(user_steam_ids));
+        console.log(user_steam_id_and_chat_messages);
+
+        // await insertSteamUsersIntoDatabase(Object.keys(user_steam_ids), Object.values(user_steam_ids));
 
         ftpClient.end();
     } catch (error) {
         console.log('Error processing files:', error);
         response.status(500).json({ error: 'Failed to process files' });
     }
-}*/
+}
 
 
-// startFtpFileProcessingInterval();
+startFtpFileProcessingIntervalChatLog();
 
 //insertAdminUserIntoDatabase('jacobg', 'test123');
 // extractNewLinesFromFtpFile(browser_file_contents);
 
 
-function startFtpFileProcessingInterval() {
-    read_login_ftp_file_interval = setInterval(handleGportalFtpFileProcessingLogins, 5000);
+function startFtpFileProcessingIntervalChatLog() {
+    read_login_ftp_file_interval = setInterval(readAndFormatGportalFtpServerChatLog, five_seconds_in_milliseconds);
 }
 
+function startFtpFileProcessingIntervalLoginLog() {
+    read_login_ftp_file_interval = setInterval(readAndFormatGportalFtpServerLoginLog, five_seconds_in_milliseconds);
+}
 function stopFileProcessingInterval() {
     clearInterval(read_login_ftp_file_interval);
 }
