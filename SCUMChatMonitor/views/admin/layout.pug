@@ -8,19 +8,23 @@ html
     script(src='/javascripts/page_timeout.js' defer)
   body
     block header
-        section#global_site_navigation_section
-        -if (user.admin_username !== undefined) {
-            h1#user_administrator_name_heading Welcome, #{user.admin_username}
-              
-        -}
-        nav#global_site_navigation_nav
-            ul#global_site_navigation_nav_ul
-                form#global_site_navigation_logout_form(action='/logout' method='POST')
-                    button#global_site_navigation_logout_form_input(type="submit") Log out
+        header#header
+            section#global_site_navigation_section
+            -if (user.admin_username !== undefined) {
+                h1#user_administrator_name_heading Welcome, #{user.admin_username}
+            -}
+            nav#global_site_navigation_nav
+                ul#global_site_navigation_nav_ul
+                    form#global_site_navigation_logout_form(action='/logout' method='POST')
+                        button#global_site_navigation_logout_form_input(type="submit") Log out
 
     block content
+        main#main
+
     block footer
-        p.discord_invite Join the official Real Castaways&copy discord server 
-           a#anchor_tag_discord_invite(href='https://discord.gg/4BYPXWSFkv') here 
-        p.copyright Copyright © 2023 Jacob Graham. All rights reserved. 
-        p.github https://github.com/JacobGraham02/ChatMonitorMan.git (privated)
+        footer#footer
+            p.disclaimer_message This site may lack features because it is currently in development
+            p.discord_invite Join the official Real Castaways&copy discord server 
+                a#anchor_tag_discord_invite(href='https://discord.gg/4BYPXWSFkv') here 
+            p.copyright Copyright &copy 2023 Jacob Graham and Gary Graham. All rights reserved. 
+            p.github https://github.com/JacobGraham02/ChatMonitorMan.git (privated)

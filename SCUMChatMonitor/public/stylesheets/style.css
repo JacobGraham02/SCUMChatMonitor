@@ -96,11 +96,11 @@ body {
 }
 
 #footer {
+    border: 2px dashed red;
     display: flex;
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    border: 1px dashed yellow;
     grid-area: footer;
 }
 

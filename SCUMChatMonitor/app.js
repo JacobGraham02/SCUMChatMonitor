@@ -165,10 +165,6 @@ function type_in_global_chat(content) {
     runCommand(`${content}`);
 }
 
-function fetchSteamIdFromSteamUsername() {
-
-}
-
 
 /*function checkIfScumGameRunning(callback) {
     const processName = 'SCUM';
