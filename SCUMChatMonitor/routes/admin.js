@@ -3,7 +3,6 @@ var router = express.Router();
 const fs = require('fs');
 var path = require('path');
 const extractFromUserCommands = require('../modules/extractDataFromCommands');
-const { body, param, validationResult } = require('express-validator');
 
 function isLoggedIn(request, response, next) {
     if (request.isAuthenticated()) {
@@ -60,17 +59,7 @@ router.delete('/commands/delete/:file', (request, response) => {
     response.status(200).send(`File ${full_path} was successfully deleted`);
 });
 
-router.post('/commands/new', isLoggedIn, [
-    body('command_name_input').trim().escape(),
-    body('command_description_input').trim().escape(),
-    body('command_data_input').trim().escape(),
-    body('command_authorized_roles_input').isArray().optional()
-
-], (request, response, next) => {
-    const express_validator_errors = validationResult(request);
-    if (!express_validator_errors.isEmpty()) {
-        response.redirect('/admin/')
-    }
+router.post('/commands/new', isLoggedIn, (request, response, next) => {
     const new_command_name = request.body.command_name_input;
     const new_command_description = request.body.command_description_input;
     const new_command_data = request.body.command_data_input;
@@ -86,7 +75,7 @@ module.exports = {
          .setName('${new_command_name}')
          .setDescription('${new_command_description}'),
     command_data: '${new_command_data}',
-    authorization_role_name: [${new_command_authorized_roles}],
+    authorization_role_name: ['${new_command_authorized_roles}'],
 
     async execute(message) {
 
@@ -97,16 +86,8 @@ module.exports = {
     response.redirect('/admin/');
 });
 
-router.post('/commands/:filename', [
-    param('filename').trim().escape(),
-    body('authorization_role_name').isArray().optional(),
-    body('command_data').trim().escape(),
+router.post('/commands/:filename', function (request, response) {
 
-], function (request, response) {
-    const express_validator_errors = validationResult(request);
-    if (!express_validator_errors.isEmpty()) {
-        response.redirect('/admin/');
-    }
     const file_name = request.params.filename;
     const form_authorized_roles = request.body.authorization_role_name;
     const form_command_data = request.body.command_data;

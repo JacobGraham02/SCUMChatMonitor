@@ -9,8 +9,8 @@
     "name": "Jacob Graham"
   },
   "scripts": {
-    "start": "start node app.js & start node server.js",
-    "debug": "nodemon --inspect server.js"
+    "start": "start node app.js",
+    "debug": "nodemon --inspect app.js"
   },
   "devDependencies": {
     "eslint": "^8.42.0"
@@ -27,7 +27,6 @@
     "dotenv": "^16.1.4",
     "express": "^4.18.2",
     "express-session": "^1.17.3",
-    "express-validator": "^7.0.1",
     "ftp": "^0.3.10",
     "generic-pool": "^3.9.0",
     "http-errors": "~1.6.3",

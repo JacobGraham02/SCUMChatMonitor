@@ -43,9 +43,12 @@
     <Content Include="commands\discord.js">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="commands\pvpzones.js" />
+    <Content Include="commands\test.js" />
     <Content Include="config.json">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="deploy-commands.js" />
     <Content Include="modules\extractDataFromCommands.js" />
     <Content Include="modules\hashAndValidatePassword.js">
       <SubType>Code</SubType>
@@ -77,9 +80,6 @@
       <SubType>Code</SubType>
     </Content>
     <Content Include="scumchatmonitor.exe" />
-    <Content Include="server.js">
-      <SubType>Code</SubType>
-    </Content>
     <Content Include="views\admin\command.pug" />
     <Content Include="views\admin\index.pug">
       <SubType>Code</SubType>
