@@ -19,9 +19,9 @@ const UserRepository = require('./database/UserRepository');
 const MongoStore = require('connect-mongo');
 const { exec } = require('child_process');
 const fs = require('node:fs');
-const { discord_bot_token, discord_public_key, discord_secret_key, discord_client_id, discord_guild_id, discord_channel_id } = require('./config.json');
-const { Client, Collection, Intents, GatewayIntentBits } = require('discord.js');
-const { channel } = require('diagnostics_channel');
+const { discord_bot_token } = require('./config.json');
+const { Client, Collection, GatewayIntentBits } = require('discord.js');
+
 const client_instance = new Client({
     intents: [GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
@@ -30,11 +30,7 @@ const client_instance = new Client({
     GatewayIntentBits.GuildPresences,
     ]
 });
-const message_regex_pattern = /(!discord|\/discord|!join discord|\/join discord)/g;
 const message_content_command_regex = /([!/a-zA-Z]{1,20})/g;
-const message_contains_discord_regex_pattern = "Discord: https://discord.gg/4BYPXWSFkv";
-const scum_discord_invite_message = 'Discord: https://discord.gg/4BYPXWSFkv';
-const discord_chat_channel_chat_scum = 'chat-scum';
 const discord_chat_channel_bot_commands = '1125874103757328494';
 
 databaseConnectionManager = new DatabaseConnectionManager();
@@ -51,10 +47,7 @@ const chat_log_steam_id_regex = /([0-9]{17})/g;
 const login_log_steam_name_regex = /([a-zA-Z0-9 ._-]{0,32}\([0-9]{1,10}\))/g;
 
 
-const chat_log_steam_name_regex = /([a-zA-Z0-9 ._-]{0,32}\([0-9]{1,10}\))/g;
-
-
-const chat_log_messages_from_wilson_regex = /('76561199505530387:Wilson\24\' '?:Local|Global|Admin:.*)'/g;
+// const chat_log_messages_from_wilson_regex = /('76561199505530387:Wilson\24\' '?:Local|Global|Admin:.*)'/g;
 
 
 const chat_log_messages_regex = /(?<=Global: |Local: |Admin: )[^\n]*[^'\n]/g;
@@ -337,12 +330,11 @@ async function insertSteamUsersIntoDatabase(steam_user_ids_array, steam_user_nam
     }
 }
 
-startFtpFileProcessingIntervalChatLog();
-//handleIngameSCUMChatMessages();
+//startFtpFileProcessingIntervalChatLog();
+//startFtpFileProcessingIntervalLoginLog();
+handleIngameSCUMChatMessages();
 
 //insertAdminUserIntoDatabase('jacobg', 'test123');
-// extractNewLinesFromFtpFile(browser_file_contents);
-// startFtpFileProcessingIntervalLoginLog();
 
 const verifyCallback = (username, password, done) => {
     database_manager = new DatabaseConnectionManager();
@@ -370,7 +362,6 @@ const verifyCallback = (username, password, done) => {
         }
     }).catch((error) => console.error(`An error has occured during the execution of verifyCallback: ${error}`));
 }
-
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -433,7 +424,6 @@ app.use(function (err, req, res, next) {
 });
 
 const commands_path = path.join(__dirname, 'commands');
-// Block the main thread from executing further until we have fetched all of the javascript command files from the 'command' directory
 const command_files_list = fs.readdirSync(commands_path).filter(file => file.endsWith('.js'));
 
 client_instance.commands = new Collection();
@@ -459,6 +449,11 @@ client_instance.on('interactionCreate', async (interaction) => {
         return;
     }
 
+    if (!(determineIfUserMessageInCorrectChannel(interaction.channel.id, discord_chat_channel_bot_commands))) {
+        await interaction.reply({ content: `You are using this command in the wrong channel` });
+        
+    }
+    
     if (determineIfUserCanUseCommand(interaction.member, command.authorization_role_name)) { 
         try {
             await command.execute(interaction);
@@ -497,17 +492,6 @@ async function handleIngameSCUMChatMessages() {
         }
     });
 }
-/*
-2023.07.05-20.11.10: Game version: 0.8.522.69551
-2023.07.06-01.40.33: '76561198244922296:jacobdgraham02(2)' 'Local: !test'
-2023.07.06-01.40.37: '76561198244922296:jacobdgraham02(2)' 'Local: This is a test message'
-2023.07.06-01.40.40: '76561198244922296:jacobdgraham02(2)' 'Local: !pvpzones'
-2023.07.06-01.40.42: '76561198244922296:jacobdgraham02(2)' 'Local: !discord'
-2023.07.06-01.40.47: '76561198244922296:jacobdgraham02(2)' 'Local: !quizme'
-2023.07.06-01.40.51: '76561198244922296:jacobdgraham02(2)' 'Local: This is a second test message'
-2023.07.06-01.41.33: '76561199505530387:Wilson(24)' 'Local: Discord: https://discord.gg/4BYPXWSFkv'
-*/
-
 client_instance.login(discord_bot_token);
 
 function determineIfUserCanUseCommand(message_sender, client_command_values) {
