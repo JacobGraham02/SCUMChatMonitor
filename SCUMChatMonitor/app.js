@@ -50,7 +50,7 @@ const login_log_steam_name_regex = /([a-zA-Z0-9 ._-]{0,32}\([0-9]{1,10}\))/g;
 // const chat_log_messages_from_wilson_regex = /('76561199505530387:Wilson\24\' '?:Local|Global|Admin:.*)'/g;
 
 
-const chat_log_messages_regex = /(?<=Global: |Local: |Admin: )[^\n]*[^'\n]/g;
+const chat_log_messages_regex = /(?<=Global: |Local: |Admin: )![^\n]*[^'\n]/g;
 
 
 const gportal_ftp_server_target_directory = 'SCUM\\Saved\\SaveFiles\\Logs\\';
@@ -89,6 +89,7 @@ app.use(passport.session());
 
 let existing_cached_file_content_hash = '';
 let ftp_login_file_lines_already_processed = 0;
+let last_line_processed = 0;
 
 async function readAndFormatGportalFtpServerLoginLog(request, response) {
     try {
@@ -213,7 +214,6 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
                 }
             });
         });
-
         const matching_files = files
             .filter(file => file.name.startsWith(gportal_ftp_server_filename_prefix_chat))
             .sort((file_one, file_two) => file_two.date - file_one.date);
@@ -252,7 +252,28 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
             stream.on('error', reject);
         });
 
-        const current_file_content_hash = crypto.createHash('md5').update(file_contents).digest('hex');
+        const browser_file_contents = file_contents.replace(/\u0000/g, '');
+
+        const browser_file_contents_lines = browser_file_contents.split('\n');
+
+        const file_contents_steam_id_and_messages = [];
+
+        
+
+        for (let i = last_line_processed; i < browser_file_contents_lines.length; i++) {
+            if (browser_file_contents_lines[i].match(chat_log_messages_regex)) {
+                file_contents_steam_id_and_messages.push({
+                    key: browser_file_contents_lines[i].match(chat_log_steam_id_regex),
+                    value: browser_file_contents_lines[i].match(chat_log_messages_regex)
+                });
+            }
+        }
+
+        last_line_processed = browser_file_contents_lines.length;
+
+        const json_string_representation = JSON.stringify(file_contents_steam_id_and_messages);
+
+        const current_file_content_hash = crypto.createHash('md5').update(json_string_representation).digest('hex');
 
         if (current_file_content_hash === existing_cached_file_content_hash) {
             return;
@@ -261,19 +282,25 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
             existing_cached_file_content_hash = current_file_content_hash;
         }
 
-        const browser_file_contents = file_contents.replace(/\u0000/g, '');
+        return file_contents_steam_id_and_messages;
 
         // The below values return as an object containing values
-        if (!browser_file_contents.match(chat_log_steam_id_regex) && browser_file_contents.match(chat_log_messages_regex)) {
+     /*   if (!browser_file_contents.match(chat_log_steam_id_regex) && browser_file_contents.match(chat_log_messages_regex)) {
             return;
         } 
-        const file_contents_steam_ids = browser_file_contents.match(chat_log_steam_id_regex);
+        //const file_contents_steam_ids = browser_file_contents.match(chat_log_steam_id_regex);
         const file_contents_steam_id_messages = browser_file_contents.match(chat_log_messages_regex);
+        const file_contents_steam_ids = [];
 
-        const file_contents_steam_ids_array = Object.values(file_contents_steam_ids);
-        const file_contents_steam_id_messages_array = Object.values(file_contents_steam_id_messages); 
+        for (let line of file_contents_steam_id_messages) {
+            let substring = line.match(chat_log_steam_id_regex);
+            file_contents_steam_ids.push(substring);
+        }
+        console.log(file_contents_steam_ids);
+        //const file_contents_steam_ids_array = Object.values(file_contents_steam_ids);
+        const file_contents_steam_id_messages_array = Object.values(file_contents_steam_id_messages); */
 
-        const user_steam_id_and_chat_messages = [];
+       /* const user_steam_id_and_chat_messages = [];
         for (let i = 0; i < file_contents_steam_ids_array.length; i++) {
             user_steam_id_and_chat_messages.push({
                 key: file_contents_steam_ids_array[i],
@@ -281,7 +308,10 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
             });
         }
 
-        return user_steam_id_and_chat_messages;
+        console.log(user_steam_id_and_chat_messages);
+
+        return user_steam_id_and_chat_messages;*/
+        
 
         ftpClient.end();
     } catch (error) {
@@ -289,7 +319,24 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
         response.status(500).json({ error: 'Failed to process files' });
     }
 }
+/*
 
+2023.07.05-20.11.10: Game version: 0.8.522.69551
+2023.07.06-01.40.33: '76561198244922296:jacobdgraham02(2)' 'Local: !test'
+2023.07.06-01.40.37: '76561198244922296:jacobdgraham02(2)' 'Local: This is a test message'
+2023.07.06-01.40.40: '76561198244922296:jacobdgraham02(2)' 'Local: !pvpzones'
+2023.07.06-01.40.42: '76561198244922296:jacobdgraham02(2)' 'Local: !discord'
+2023.07.06-01.40.47: '76561198244922296:jacobdgraham02(2)' 'Local: !quizme'
+2023.07.06-01.40.51: '76561198244922296:jacobdgraham02(2)' 'Local: This is a second test message'
+2023.07.06-01.41.33: '76561199505530387:Wilson(24)' 'Local: Discord: https://discord.gg/4BYPXWSFkv'
+2023.07.06-12.17.56: '76561198244922296:jacobdgraham02(2)' 'Local: !discord\'
+2023.07.06-12.17.59: '76561198244922296:jacobdgraham02(2)' 'Local: !discord'
+2023.07.06-12.18.28: '76561199505530387:Wilson(24)' 'Local: Discord: https://discord.gg/4BYPXWSFkv'
+2023.07.06-12.19.48: '76561198244922296:jacobdgraham02(2)' 'Local: Discord: https://discord.gg/4BYPXWSFkvDiscord: https://discord.gg/4BYPXWSFkvDiscord: https://discord.gg/4BYPXWSFkvDiscord: https://discord.gg/4BYPXWSFkv'
+2023.07.06-12.19.58: '76561198244922296:jacobdgraham02(2)' 'Local: !pvpzones'
+2023.07.06-12.21.10: '76561198244922296:jacobdgraham02(2)' 'Local: This is another test messageThis is another test messageThis is another test messageThis is another test messageThis is another test messageThis is another test message'
+2023.07.06-12.21.14: '76561198244922296:jacobdgraham02(2)' 'Local: This is another test messageThis is another test messageThis is another test messageThis is another test messageThis is another test messageThis is another test message'
+*/
 function startFtpFileProcessingIntervalChatLog() {
     read_login_ftp_file_interval = setInterval(handleIngameSCUMChatMessages, five_seconds_in_milliseconds);
 }
@@ -330,10 +377,9 @@ async function insertSteamUsersIntoDatabase(steam_user_ids_array, steam_user_nam
     }
 }
 
-//startFtpFileProcessingIntervalChatLog();
 //startFtpFileProcessingIntervalLoginLog();
-handleIngameSCUMChatMessages();
-
+//handleIngameSCUMChatMessages();
+startFtpFileProcessingIntervalChatLog();
 //insertAdminUserIntoDatabase('jacobg', 'test123');
 
 const verifyCallback = (username, password, done) => {
@@ -475,18 +521,16 @@ async function handleIngameSCUMChatMessages() {
         if (user_steam_ids_and_messages === undefined) {
             return;
         }
-        
         for (let i = 0; i < user_steam_ids_and_messages.length; i++) {
             let object = user_steam_ids_and_messages[i];
-
-            const command_to_execute = object.value.startsWith('!') ? object.value.substring(1) : null;
+            
+            const command_to_execute = object.value[0].substring(1);
 
             if (client_instance.commands.get(command_to_execute)) {
                 const client_command_data = client_instance.commands.get(command_to_execute).command_data;
 
                 for (const command_data of client_command_data) {
-                    //type_in_global_chat(command_data);
-                    console.log(`Command data: ${command_data}`);
+                    type_in_global_chat(command_data);
                 }
             }
         }
@@ -585,13 +629,13 @@ async function runCommand(command) {
         return;
     }
 
-    await sleep(one_hundred_milliseconds);
+    await sleep(500);
     pressCharacterKeyT();
-    await sleep(one_hundred_milliseconds);
+    await sleep(500);
     pressBackspaceKey();
-    await sleep(one_hundred_milliseconds);
+    await sleep(500);
     pasteFromClipboard();
-    await sleep(one_hundred_milliseconds);
+    await sleep(500);
     pressEnterKey();
 }
 function sleep(milliseconds) {

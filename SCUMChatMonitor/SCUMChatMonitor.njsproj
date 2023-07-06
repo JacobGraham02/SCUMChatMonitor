@@ -44,7 +44,6 @@
       <SubType>Code</SubType>
     </Content>
     <Content Include="commands\pvpzones.js" />
-    <Content Include="commands\test.js" />
     <Content Include="config.json">
       <SubType>Code</SubType>
     </Content>
