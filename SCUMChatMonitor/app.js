@@ -44,7 +44,7 @@ userRepository = new UserRepository();
 const login_log_steam_id_regex = /([0-9]{17})/g;
 
 
-const chat_log_steam_id_regex = /'([0-9]{17}):/g;
+const chat_log_steam_id_regex = /([0-9]{17})/g;
 
 
 // The following regex string is for steam names which match the same format as the ones in gportal's ftp files: username(number); e.g. boss612man(100)
@@ -68,6 +68,7 @@ const gportal_ftp_server_filename_prefix_chat = 'chat_';
 const server_port = 3000;
 
 const five_seconds_in_milliseconds = 5000;
+const one_hundred_milliseconds = 100;
 
 const gportal_ftp_config = {
     host: process.env.gportal_ftp_hostname,
@@ -159,7 +160,6 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
         const current_file_content_hash = crypto.createHash('md5').update(file_contents).digest('hex');
 
         if (current_file_content_hash === existing_cached_file_content_hash) {
-            console.log('The current stored hash for the ftp login file is the same as the new one');
             return;
         } else {
             console.log('The current stored hash for the ftp login file is not the same as the new one');
@@ -178,10 +178,6 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
         ftp_login_file_lines_already_processed += lines.length;
 
         const new_file_content = lines.join('\n');
-
-        console.log(`New file content: ${new_file_content}`);
-
-        // console.log(`Browser file contents: ${browser_file_contents}`);
 
         // The below values return as an object containing values
         const file_contents_steam_ids = browser_file_contents.match(login_log_steam_id_regex);
@@ -266,7 +262,6 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
         const current_file_content_hash = crypto.createHash('md5').update(file_contents).digest('hex');
 
         if (current_file_content_hash === existing_cached_file_content_hash) {
-            console.log('The current stored hash for the ftp chat log file is the same as the new one');
             return;
         } else {
             console.log('The current stored hash for the ftp chat log file is not the same as the new one');
@@ -276,15 +271,21 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
         const browser_file_contents = file_contents.replace(/\u0000/g, '');
 
         // The below values return as an object containing values
+        if (!browser_file_contents.match(chat_log_steam_id_regex) && browser_file_contents.match(chat_log_messages_regex)) {
+            return;
+        } 
         const file_contents_steam_ids = browser_file_contents.match(chat_log_steam_id_regex);
         const file_contents_steam_id_messages = browser_file_contents.match(chat_log_messages_regex);
 
         const file_contents_steam_ids_array = Object.values(file_contents_steam_ids);
-        const file_contents_steam_id_messages_array = Object.values(file_contents_steam_id_messages);
+        const file_contents_steam_id_messages_array = Object.values(file_contents_steam_id_messages); 
 
-        const user_steam_id_and_chat_messages = {};
+        const user_steam_id_and_chat_messages = [];
         for (let i = 0; i < file_contents_steam_ids_array.length; i++) {
-            user_steam_id_and_chat_messages[file_contents_steam_ids_array[i]] = file_contents_steam_id_messages_array[i];
+            user_steam_id_and_chat_messages.push({
+                key: file_contents_steam_ids_array[i],
+                value: file_contents_steam_id_messages_array[i]
+            });
         }
 
         return user_steam_id_and_chat_messages;
@@ -296,19 +297,7 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
     }
 }
 
-
-startFtpFileProcessingIntervalChatLog();
-//handleIngameSCUMChatMessages();
-
-//insertAdminUserIntoDatabase('jacobg', 'test123');
-// extractNewLinesFromFtpFile(browser_file_contents);
-
-
 function startFtpFileProcessingIntervalChatLog() {
-    /*read_login_ftp_file_interval = setInterval(async () => {
-        let result = await readAndFormatGportalFtpServerChatLog();
-        handleIngameSCUMChatMessages(result);
-    }, five_seconds_in_milliseconds);*/
     read_login_ftp_file_interval = setInterval(handleIngameSCUMChatMessages, five_seconds_in_milliseconds);
 }
 
@@ -347,6 +336,13 @@ async function insertSteamUsersIntoDatabase(steam_user_ids_array, steam_user_nam
         user_repository.createUser(steam_user_names_array[i], steam_user_ids_array[i]);
     }
 }
+
+startFtpFileProcessingIntervalChatLog();
+//handleIngameSCUMChatMessages();
+
+//insertAdminUserIntoDatabase('jacobg', 'test123');
+// extractNewLinesFromFtpFile(browser_file_contents);
+// startFtpFileProcessingIntervalLoginLog();
 
 const verifyCallback = (username, password, done) => {
     database_manager = new DatabaseConnectionManager();
@@ -481,77 +477,35 @@ client_instance.on('interactionCreate', async (interaction) => {
  */
 async function handleIngameSCUMChatMessages() {
     readAndFormatGportalFtpServerChatLog().then((user_steam_ids_and_messages) => {
-        for (let key in user_steam_ids_and_messages) {
-            console.log('Key: ' + key + ' Value: ' + user_steam_ids_and_messages[key]);
+        if (user_steam_ids_and_messages === undefined) {
+            return;
+        }
+        
+        for (let i = 0; i < user_steam_ids_and_messages.length; i++) {
+            let object = user_steam_ids_and_messages[i];
 
-            const command_to_execute = user_steam_ids_and_messages[key].startsWith('!') ? user_steam_ids_and_messages[key].substring(1) : null;
+            const command_to_execute = object.value.startsWith('!') ? object.value.substring(1) : null;
 
             if (client_instance.commands.get(command_to_execute)) {
                 const client_command_data = client_instance.commands.get(command_to_execute).command_data;
-                const client_command_authorization_roles = client_instance.commands.get(command_to_execute).authorization_role_name;
-                console.log(`Client command data: ${client_command_data}`);
-                console.log(`Client command authorization roles: ${client_command_authorization_roles}`);
+
+                for (const command_data of client_command_data) {
+                    //type_in_global_chat(command_data);
+                    console.log(`Command data: ${command_data}`);
+                }
             }
         }
     });
-
 }
-/*if (determineIfUserMessageInCorrectChannel(interaction.channel.id, discord_chat_channel_bot_commands)) {
-
-    } else {
-        await interaction.reply({ content: `You have sent this bot message in the wrong channel. Please use the channel defined here: test` });
-    }*/
-
-/*if (determineIfUserMessageInCorrectChannel(message, discord_chat_channel_bot_commands)) {
-    console.log('Client command message: ' + client_command_message);
-    const client_command_message = client_command_values.command_data;
-    message.channel.send(client_command_message);
-    //type_in_global_chat(client_command_message);
-} else {
-    message.channel.send('Incorrect channel usage');
-}*/
-/*console.log('message created');
-
-
-console.log('Client message command' + client_instance.commands.get(message.commandName));
-// console.log('Client instance commands:' + client_instance.commands.get(message.commandName));
-
-const message_content = message.content;
-
-*//*
-* The .match(regex_pattern) function returns an array containing the following in order: the matching (sub)string, the starting index of the (sub)string, and the input
-*//* 
-const message_content_command_array = message_content.match(message_content_command_regex);
-console.log(`Message regex does match: ${message_content.match(message_content_command_regex)}`);
-
-*//* 
-* If the command the user typed in discord is not registered in the bot, e.g. !test5 instead of !test, the bot will not respond and instead do nothing.
-* In addition to preventing unnecessary computing resources on generating a reply for a command that does not exist, this provides a weak layer of protection against
-* attacks
-*//*
-if (message_content_command_array === null) {
-    return; 
-}
-*//*
-* Because the first index of the message_content_command_array is the (sub)string that matches the regex pattern, we have to fetch that portion. 
-*//*
-const message_content_command = message_content_command_array[0].trim();
-
-*//*
-* Because this bot identifies commands without using the first '!' character, we have to strip that character off any commands which the bot detects 
-*//*
-const client_command_without_first_character = message_content_command.substring(1);
-
-*//*
-* Initially, the bot iterates over each .js file in the 'commands' directory, collecting each filename into a collection of objects key-value pairs. Each key is a 
-* string, and the value is an object associated with that string. Each key is taken from the file names in the directory 'commands' with the '.js' ending removed.
-* Therefore, each value associated with a key contains all of the properties defined in the {key}.js file defined in the 'commands' directory. 
-*//* 
-const client_command_values = client_instance.commands.get(client_command_without_first_character);
- 
-*//*
-* Specifically here, we are only interested in the data that the bot can send back into the global chat in SCUM. Therefore, we access the property 'command_data' 
-* and take the value from there.
+/*
+2023.07.05-20.11.10: Game version: 0.8.522.69551
+2023.07.06-01.40.33: '76561198244922296:jacobdgraham02(2)' 'Local: !test'
+2023.07.06-01.40.37: '76561198244922296:jacobdgraham02(2)' 'Local: This is a test message'
+2023.07.06-01.40.40: '76561198244922296:jacobdgraham02(2)' 'Local: !pvpzones'
+2023.07.06-01.40.42: '76561198244922296:jacobdgraham02(2)' 'Local: !discord'
+2023.07.06-01.40.47: '76561198244922296:jacobdgraham02(2)' 'Local: !quizme'
+2023.07.06-01.40.51: '76561198244922296:jacobdgraham02(2)' 'Local: This is a second test message'
+2023.07.06-01.41.33: '76561199505530387:Wilson(24)' 'Local: Discord: https://discord.gg/4BYPXWSFkv'
 */
 
 client_instance.login(discord_bot_token);
@@ -647,13 +601,13 @@ async function runCommand(command) {
         return;
     }
 
-    await sleep(250);
+    await sleep(one_hundred_milliseconds);
     pressCharacterKeyT();
-    await sleep(250);
+    await sleep(one_hundred_milliseconds);
     pressBackspaceKey();
-    await sleep(250);
+    await sleep(one_hundred_milliseconds);
     pasteFromClipboard();
-    await sleep(250);
+    await sleep(one_hundred_milliseconds);
     pressEnterKey();
 }
 function sleep(milliseconds) {

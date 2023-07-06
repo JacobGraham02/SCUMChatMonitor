@@ -80,7 +80,8 @@ module.exports = class UserRepository {
 
             const new_user_document = {
                 user_steam_name: user_steam_name,
-                user_steam_id: user_steam_id
+                user_steam_id: user_steam_id,
+                user_used_welcome_pack: 0
             };
 
             await user_collection.updateOne(
