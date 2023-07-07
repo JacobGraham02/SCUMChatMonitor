@@ -283,60 +283,14 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
         }
 
         return file_contents_steam_id_and_messages;
-
-        // The below values return as an object containing values
-     /*   if (!browser_file_contents.match(chat_log_steam_id_regex) && browser_file_contents.match(chat_log_messages_regex)) {
-            return;
-        } 
-        //const file_contents_steam_ids = browser_file_contents.match(chat_log_steam_id_regex);
-        const file_contents_steam_id_messages = browser_file_contents.match(chat_log_messages_regex);
-        const file_contents_steam_ids = [];
-
-        for (let line of file_contents_steam_id_messages) {
-            let substring = line.match(chat_log_steam_id_regex);
-            file_contents_steam_ids.push(substring);
-        }
-        console.log(file_contents_steam_ids);
-        //const file_contents_steam_ids_array = Object.values(file_contents_steam_ids);
-        const file_contents_steam_id_messages_array = Object.values(file_contents_steam_id_messages); */
-
-       /* const user_steam_id_and_chat_messages = [];
-        for (let i = 0; i < file_contents_steam_ids_array.length; i++) {
-            user_steam_id_and_chat_messages.push({
-                key: file_contents_steam_ids_array[i],
-                value: file_contents_steam_id_messages_array[i]
-            });
-        }
-
-        console.log(user_steam_id_and_chat_messages);
-
-        return user_steam_id_and_chat_messages;*/
         
-
         ftpClient.end();
     } catch (error) {
         console.log('Error processing files:', error);
         response.status(500).json({ error: 'Failed to process files' });
     }
 }
-/*
 
-2023.07.05-20.11.10: Game version: 0.8.522.69551
-2023.07.06-01.40.33: '76561198244922296:jacobdgraham02(2)' 'Local: !test'
-2023.07.06-01.40.37: '76561198244922296:jacobdgraham02(2)' 'Local: This is a test message'
-2023.07.06-01.40.40: '76561198244922296:jacobdgraham02(2)' 'Local: !pvpzones'
-2023.07.06-01.40.42: '76561198244922296:jacobdgraham02(2)' 'Local: !discord'
-2023.07.06-01.40.47: '76561198244922296:jacobdgraham02(2)' 'Local: !quizme'
-2023.07.06-01.40.51: '76561198244922296:jacobdgraham02(2)' 'Local: This is a second test message'
-2023.07.06-01.41.33: '76561199505530387:Wilson(24)' 'Local: Discord: https://discord.gg/4BYPXWSFkv'
-2023.07.06-12.17.56: '76561198244922296:jacobdgraham02(2)' 'Local: !discord\'
-2023.07.06-12.17.59: '76561198244922296:jacobdgraham02(2)' 'Local: !discord'
-2023.07.06-12.18.28: '76561199505530387:Wilson(24)' 'Local: Discord: https://discord.gg/4BYPXWSFkv'
-2023.07.06-12.19.48: '76561198244922296:jacobdgraham02(2)' 'Local: Discord: https://discord.gg/4BYPXWSFkvDiscord: https://discord.gg/4BYPXWSFkvDiscord: https://discord.gg/4BYPXWSFkvDiscord: https://discord.gg/4BYPXWSFkv'
-2023.07.06-12.19.58: '76561198244922296:jacobdgraham02(2)' 'Local: !pvpzones'
-2023.07.06-12.21.10: '76561198244922296:jacobdgraham02(2)' 'Local: This is another test messageThis is another test messageThis is another test messageThis is another test messageThis is another test messageThis is another test message'
-2023.07.06-12.21.14: '76561198244922296:jacobdgraham02(2)' 'Local: This is another test messageThis is another test messageThis is another test messageThis is another test messageThis is another test messageThis is another test message'
-*/
 function startFtpFileProcessingIntervalChatLog() {
     read_login_ftp_file_interval = setInterval(handleIngameSCUMChatMessages, five_seconds_in_milliseconds);
 }
@@ -477,7 +431,8 @@ client_instance.commands = new Collection();
 for (const command_file of command_files_list) {
     const command_file_path = path.join(commands_path, command_file);
     const command = require(command_file_path);
-    client_instance.commands.set(command.data.name, command);
+    const command_object = command('test');
+    client_instance.commands.set(command_object.data.name, command);
 }
 
 client_instance.on('ready', () => {
@@ -516,46 +471,6 @@ client_instance.on('interactionCreate', async (interaction) => {
  * The value returned from the function readAndFormatGportalFtpServerChatLog() is a Promise containing an object of steam user ids and messages contained in gportal's
  * ftp log file. We must use the .then() function 
  */
-async function handleIngameSCUMChatMessages() {
-    readAndFormatGportalFtpServerChatLog().then((user_steam_ids_and_messages) => {
-        if (user_steam_ids_and_messages === undefined) {
-            return;
-        }
-        for (let i = 0; i < user_steam_ids_and_messages.length; i++) {
-            let object = user_steam_ids_and_messages[i];
-            
-            const command_to_execute = object.value[0].substring(1);
-
-            if (client_instance.commands.get(command_to_execute)) {
-                const client_command_data = client_instance.commands.get(command_to_execute).command_data;
-
-                for (const command_data of client_command_data) {
-                    type_in_global_chat(command_data);
-                }
-            }
-        }
-    });
-}
-client_instance.login(discord_bot_token);
-
-function determineIfUserCanUseCommand(message_sender, client_command_values) {
-    if (client_command_values.authorization_role_name === undefined) {
-        return true;
-    }
-    return message_sender.roles.cache.some(role => client_command_values.authorization_role_name.includes(role.name));
-}
-
-function determineIfUserMessageMatchesRegex(user_message) {
-    console.log(`User message matches regex: ${message_content_command_regex.test(user_message)}`);
-    return message_content_command_regex.test(user_message);
-}
-
-function determineIfUserMessageInCorrectChannel(channel_message_was_sent, channel_name) {
-    console.log(`Channel message was sent: ${channel_message_was_sent}`);
-    console.log(`Channel name: ${channel_name}`);
-    return channel_message_was_sent === channel_name;
-}
-
 function copyToClipboard(text) {
     const command = `powershell.exe -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Clipboard]::SetText('${text.replace(/'/g, "''")}')"`
     exec(command, (error) => {
@@ -621,7 +536,9 @@ function pressEnterKey() {
         }
     });
 }
-
+function sleep(milliseconds) {
+    return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
 async function runCommand(command) {
     copyToClipboard(command);
     const scumProcess = exec('powershell.exe -c "Add-Type -TypeDefinition \'using System; using System.Runtime.InteropServices; public class User32 { [DllImport(\"user32.dll\")] public static extern bool SetForegroundWindow(IntPtr hWnd); }\'"');
@@ -629,22 +546,57 @@ async function runCommand(command) {
         return;
     }
 
-    await sleep(500);
-    pressCharacterKeyT();
-    await sleep(500);
-    pressBackspaceKey();
-    await sleep(500);
+    await sleep(1000);
     pasteFromClipboard();
-    await sleep(500);
+    await sleep(1000);
     pressEnterKey();
 }
-function sleep(milliseconds) {
-    return new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+async function handleIngameSCUMChatMessages() {
+    readAndFormatGportalFtpServerChatLog().then(async (user_steam_ids_and_messages) => {
+        if (user_steam_ids_and_messages === undefined) {
+            return;
+        }
+
+        for (let i = 0; i < user_steam_ids_and_messages.length; i++) {
+            let object = user_steam_ids_and_messages[i];
+            
+            const command_to_execute = object.value[0].substring(1);
+            const command_to_execute_steam_id = object.key[0];
+
+            if (client_instance.commands.get(command_to_execute)) {
+                const function_property_data = client_instance.commands.get(command_to_execute)(command_to_execute_steam_id);
+                const client_command_data = function_property_data.command_data;
+                pressCharacterKeyT();
+                pressBackspaceKey();
+
+                for (let i = 0; i < client_command_data.length; i++) {
+                    //await runCommand(client_command_data[i]);
+                    await console.log(client_command_data[i]);
+                }
+            }
+        }
+        pressEnterKey();
+    });
+}
+client_instance.login(discord_bot_token);
+
+function determineIfUserCanUseCommand(message_sender, client_command_values) {
+    if (client_command_values.authorization_role_name === undefined) {
+        return true;
+    }
+    return message_sender.roles.cache.some(role => client_command_values.authorization_role_name.includes(role.name));
 }
 
-function type_in_global_chat(content) {
-    console.log(`Global chat announcement ${content}`);
-    runCommand(`${content}`);
+function determineIfUserMessageMatchesRegex(user_message) {
+    console.log(`User message matches regex: ${message_content_command_regex.test(user_message)}`);
+    return message_content_command_regex.test(user_message);
+}
+
+function determineIfUserMessageInCorrectChannel(channel_message_was_sent, channel_name) {
+    console.log(`Channel message was sent: ${channel_message_was_sent}`);
+    console.log(`Channel name: ${channel_name}`);
+    return channel_message_was_sent === channel_name;
 }
 
 
