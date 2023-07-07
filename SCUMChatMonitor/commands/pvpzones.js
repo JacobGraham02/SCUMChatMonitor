@@ -6,7 +6,7 @@ module.exports = function (player_steam_id) {
         data: new SlashCommandBuilder()
             .setName('pvpzones')
             .setDescription('This is a sample command that will show pvp zones'),
-        command_data: [`${player_steam_id} The pvp zones on this server are the areas in red. They include the large red circle on the North and South of the map.`, `#ListPlayers true`],
+        command_data: [`The pvp zones on this server are the areas in red. They include the large red circle on the North and South of the map.`],
         authorization_role_name: ['Admin'],
 
         async execute(interaction) {

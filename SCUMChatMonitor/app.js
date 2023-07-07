@@ -540,15 +540,15 @@ function sleep(milliseconds) {
     return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 async function runCommand(command) {
-    copyToClipboard(command);
     const scumProcess = exec('powershell.exe -c "Add-Type -TypeDefinition \'using System; using System.Runtime.InteropServices; public class User32 { [DllImport(\"user32.dll\")] public static extern bool SetForegroundWindow(IntPtr hWnd); }\'"');
     if (!scumProcess) {
         return;
     }
-
-    await sleep(1000);
+    await sleep(100);
+    copyToClipboard(command);
+    await sleep(100);
     pasteFromClipboard();
-    await sleep(1000);
+    await sleep(100);
     pressEnterKey();
 }
 
@@ -571,12 +571,10 @@ async function handleIngameSCUMChatMessages() {
                 pressBackspaceKey();
 
                 for (let i = 0; i < client_command_data.length; i++) {
-                    //await runCommand(client_command_data[i]);
-                    await console.log(client_command_data[i]);
+                    await runCommand(client_command_data[i]);
                 }
             }
         }
-        pressEnterKey();
     });
 }
 client_instance.login(discord_bot_token);
