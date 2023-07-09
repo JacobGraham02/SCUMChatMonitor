@@ -28,6 +28,7 @@ const hashAndValidatePassword = require('./modules/hashAndValidatePassword');
 const DatabaseConnectionManager = require('./database/DatabaseConnectionManager');
 const UserRepository = require('./database/UserRepository');
 const { discord_bot_token } = require('./config.json');
+const sendEmail = require('./mailer');
 var indexRouter = require('./routes/index');
 var adminRouter = require('./routes/admin');
 
@@ -105,6 +106,9 @@ const username_and_password_fields = {
 
 var app = express();
 
+/**
+ * Initial configuration to enable express to use Mongodb as a storage location for session information
+ */
 app.use(session({
     secret: process.env.express_session_key,
     resave: false,
@@ -118,6 +122,8 @@ app.use(passport.session());
 let existing_cached_file_content_hash = '';
 let ftp_login_file_lines_already_processed = 0;
 let last_line_processed = 0;
+
+sendEmail(process.env.scumbot_chat_monitor_email_source, 'SCUMChatMonitor test subject', 'This is a test message for functionality purposes');
 
 async function readAndFormatGportalFtpServerLoginLog(request, response) {
     try {
@@ -217,6 +223,7 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
 
         ftpClient.end();
     } catch (error) {
+        sendEmail(process.env.scumbot_chat_monitor_email_source, 'SCUMChatMonitor error', 'There was an error reading the FTP logs from gportal, and the bot has crashed');
         console.log('Error processing files:', error);
         response.status(500).json({ error: 'Failed to process files' });
     }
@@ -319,22 +326,41 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
     }
 }
 
+/**
+ * Start an interval of reading chat log messages from gportal which repeats every 5 seconds
+ */
 function startFtpFileProcessingIntervalChatLog() {
     read_login_ftp_file_interval = setInterval(handleIngameSCUMChatMessages, 5000);
 }
 
+/**
+ * Start an interval of reading login log messages from gportal which repeats every 5 seconds
+ */
 function startFtpFileProcessingIntervalLoginLog() {
     read_login_ftp_file_interval = setInterval(readAndFormatGportalFtpServerLoginLog, 5000);
 }
-function stopFileProcessingInterval() {
+
+/**
+ * Terminate any existing intervals for the gportal login file
+ */
+function stopFileProcessingIntervalLoginFile() {
     clearInterval(read_login_ftp_file_interval);
 }
 
-function enableDevelopmentModeForReadingLoginFile() {
-    stopFileProcessingInterval();
-    app.get('/process-login-ftp-file', handleGportalFtpFileProcessingLogins);
+/**
+ * Terminate any existing intervals for the gportal ingame chat file
+ */
+function stopFileProcessingIntervalChatFile() {
+    clearInterval(read_login_ftp_file_interval);
 }
 
+/**
+ * Inserts a document into the mongodb collection 'Administrators'. These users are the only ones who can access the bot web interface.
+ * The admin username is passed in plain text (Effective July 09, 2023) and will be hashed at a later date. 
+ * The admin password is both hashed and salted.
+ * @param {any} admin_user_username A string representation of the data submitted on the login form
+ * @param {any} admin_user_password A string representation of the data submitted on the login form
+ */
 function insertAdminUserIntoDatabase(admin_user_username, admin_user_password) {
     database_manager = new DatabaseConnectionManager();
     user_repository = new UserRepository();
@@ -343,13 +369,20 @@ function insertAdminUserIntoDatabase(admin_user_username, admin_user_password) {
 
     user_repository.createAdminUser(admin_user_username, hashed_admin_user_password);
 }
-
+/**
+ * Reads all of the documents from a specified collection in mongodb. 
+ */
 async function readSteamUsersFromDatabase() {
     database_manager = new DatabaseConnectionManager();
     user_repository = new UserRepository();
-    user_repository.findAllUsers().then((results) => { console.log(results) });
+    user_repository.findAllUsers().then((results) => { return(results) });
 }
 
+/**
+ * Inserts a specified steam user into the database along with their associated steam id
+ * @param {any} steam_user_ids_array An array containing only 17-digit string representation of only digits 0-9
+ * @param {any} steam_user_names_array An array containing only string representations of a steam username
+ */
 async function insertSteamUsersIntoDatabase(steam_user_ids_array, steam_user_names_array) {
     database_manager = new DatabaseConnectionManager();
     user_repository = new UserRepository();
@@ -361,9 +394,24 @@ async function insertSteamUsersIntoDatabase(steam_user_ids_array, steam_user_nam
 
 //startFtpFileProcessingIntervalLoginLog();
 //handleIngameSCUMChatMessages();
-startFtpFileProcessingIntervalChatLog();
+//startFtpFileProcessingIntervalChatLog();
 //insertAdminUserIntoDatabase('jacobg', 'test123');
 
+/**
+ * verifyCallback() is a subjectively necessary function to use in all web applications when using express and passport. In this instance, verifyCallback() is the 
+ * function that is called internally when you are storing a user object in a session after logging in. Here are the steps in sequence:
+ * 1) verifyCallback first attempts to find a user by their submitted username and password
+ *  1a) If a user cannot be found, the result is null. The user is not permitted to go to any pages requiring a session with a user object.
+ * 2) When the asyncronous database operation returns a user found, the properties from the returned object are stored in local variables. From there, the password 
+ *    submitted on the login page by the user is hashed & salted and compared with the password existing in the database.
+ * 3) An 'admin' object is created to attach to the established user session. This object contains the uuid and username of the admin, so relevant details can be fetched
+ *    from the database if needed.
+ * 4) If the hashed and salted user submitted password matches what was found in the database, express establishes a session, stores a session key in mongodb for 
+ *    persistence, and attaches the admin object to the session. 
+ * @param {any} username
+ * @param {any} password
+ * @param {any} done
+ */
 const verifyCallback = (username, password, done) => {
     database_manager = new DatabaseConnectionManager();
     user_repository = new UserRepository();

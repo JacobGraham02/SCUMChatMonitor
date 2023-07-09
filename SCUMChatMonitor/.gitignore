@@ -8,7 +8,5 @@ scumchat-monitor.exe
 .idea
 .vs
 pkg-options.json
-.\scumchat-monitor.exe
-scumchatmonitor.exe
-C:\Users\Jacob\source\repos\SCUMChatMonitor\SCUMChatMonitor\scumchatmonitor.exe
-.\gmail-credentials.json
+/SCUMChatMonitor/scumchatmonitor.exe
+/SCUMChatMonitor/gmail-credentials.json

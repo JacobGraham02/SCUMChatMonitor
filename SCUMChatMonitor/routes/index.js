@@ -8,7 +8,7 @@ const oauth2_client = new OAuth2Client(
     process.env.google_cloud_console_client_id,
     process.env.google_cloud_console_client_secret,
     'http://localhost:3000/botcallback'
-)
+);
 
 function isLoggedIn(request, response, next) {
     if (request.isAuthenticated()) {
@@ -52,7 +52,7 @@ router.get('/botcallback', async function(request, response, next) {
 });
 
 router.get('/sendemail', function (request, response, next) {
-    sendEmail(scumbot_chat_monitor_email_source, 'Test', 'Test');
+    sendEmail(process.env.scumbot_chat_monitor_email_source, 'Test', 'Test');
 
     response.render('index', { user: request.user });
 });
