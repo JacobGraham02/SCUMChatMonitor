@@ -1,5 +1,3 @@
-// `#Location ${player_steam_id} true`, `#SpawnItem Cal_22`
-
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = function (player_steam_id) {
@@ -11,7 +9,7 @@ module.exports = function (player_steam_id) {
         authorization_role_name: ['Admin'],
 
         async execute(interaction) { 
-            await interaction.reply(`Please log into TheTrueCastaways SCUM server and type the following message to get this pack: !testpackage`);
+            await interaction.reply(`Please log into TheTrueCastaways SCUM server and type the following command to get this pack: !welcomepack`);
         }
     }
     return object;

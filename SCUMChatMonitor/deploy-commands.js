@@ -11,7 +11,8 @@ const commands_files = fs.readdirSync(commands_path).filter(file => file.endsWit
 for (const command_file of commands_files) {
     const command_file_path = path.join(commands_path, command_file);
     const command = require(command_file_path);
-    commands.push(command.data);
+    const command_object = command('test');
+    commands.push(command_object.data);
 }
 
 const rest = new REST({ version: '9' }).setToken(discord_bot_token);
