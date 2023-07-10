@@ -108,6 +108,17 @@ module.exports = class UserRepository {
         }
     }
 
+    async updateUserAccountBalance(user_steam_id, user_account_balance) {
+        const database_connection = await database_connection_manager.getConnection();
+        try {
+            const user_collection_result = database_connection.collection('Users');
+            const user_update_result = await user_collection_result.updateOne({ user_steam_id: user_steam_id }, { $inc: user_account_balance });
+            return user_update_result.modifiedCount > 0;
+        } finally {
+            await this.releaseConnectionSafely(database_connection);
+        }
+    }
+
     async deleteUser(user_steam_id) {
         const database_connection = await database_connection_manager.getConnection();
         try {

@@ -135,34 +135,17 @@ let ftp_login_file_lines_already_processed = 0;
  */
 let last_line_processed = 0;
 
-//sendEmail(process.env.scumbot_chat_monitor_email_source, 'SCUMChatMonitor test subject', 'This is a test message for functionality purposes');
-
-const test_content = [
-    "2023.07.06-14.23.03: Game version: 0.8.530.70162",
-"2023.07.06-14.27.42: '72.140.43.39 76561199505530387:Wilson(24)' logged in at: X=9.260 Y=-36.700 Z=142.150 (as drone)",
-"2023.07.06-17.08.07: '212.79.110.126 76561198850062142:2Pac(96)' logged in at: X=437285.313 Y=-522988.906 Z=2538.730",
-"2023.07.06-17.10.05: '212.79.110.126 76561198850062142:2Pac(96)' logged out at: X=437174.188 Y=-522964.344 Z=2540.670",
-"2023.07.06-17.29.45: '72.140.43.39 76561198244922296:jacobdgraham02(2)' logged in at: X=-97073.195 Y=-600403.000 Z=117.150",
-"2023.07.06-17.57.01: '72.140.43.39 76561198244922296:jacobdgraham02(2)' logged out at: X=149105.938 Y=-18042.379 Z=31855.850",
-"2023.07.06-18.59.43: '72.140.43.39 76561198244922296:jacobdgraham02(2)' logged in at: X=149105.938 Y=-18042.379 Z=31855.850",
-"2023.07.06-19.41.47: '72.140.43.39 76561198244922296:jacobdgraham02(2)' logged out at: X=150114.703 Y=-19177.773 Z=32047.129",
-"2023.07.06-20.02.29: '72.140.43.39 76561199204132694:vmaxforum(1)' logged in at: X=375177.000 Y=108526.000 Z=16609.000",
-"2023.07.06-20.09.44: '72.140.43.39 76561199204132694:vmaxforum(1)' logged out at: X=375177.000 Y=108526.000 Z=16609.000",
-"2023.07.07-03.21.02: '145.53.29.248 76561198821564624:420smoker666 [nl](117)' logged in at: X=62728.465 Y=603263.875 Z=37138.395",
-"2023.07.07-03.40.13: '145.53.29.248 76561198821564624:420smoker666 [nl](117)' logged out at: X=206928.328 Y=-512779.469 Z=1529.300",
-"2023.07.07-06.06.58: '72.140.43.39 76561199505530387:Wilson(24)' logged out at: X=0.000 Y=0.000 Z=0.000",
-"2023.07.07-06.30.15: '72.140.43.39 76561199505530387:Wilson(24)' logged in at: X=9.260 Y=-36.700 Z=142.150 (as drone)"
-];
-
 const login_times = new Map();
-const session_durations = new Map();
 
-function determineDifferenceBetween(logs) {
+function determinePlayerLoginSessionMoney(logs) {
     for (const log of logs) {
+        if (log.includes("Game version: ") || log === '') {
+            continue;
+        } 
         const [logTimestamp, logMessage] = log.split(": ");
         const matchResult = logMessage.match(/'(.*?) (.*?):(.*?)'(.*?)(logged in|logged out)/);
         if (matchResult != null) {
-            const [matching_string, ip_address, user_steam_id, user_username, blank, user_logged_in_or_out] = matchResult;
+            const [, , user_steam_id, , , user_logged_in_or_out] = matchResult;
             const formatted_date_and_time = new Date(logTimestamp.replace('-', 'T').replace(/\./g, '-').replace(/(?<=T.*)-/g, ':'));
 
             if (user_logged_in_or_out === 'logged in') {
@@ -173,11 +156,8 @@ function determineDifferenceBetween(logs) {
                 if (login_time) {
                     const calculated_elapsed_time = ((formatted_date_and_time - login_time) / 1000 / 60 / 60);
                     const user_account_balance = Math.round(calculated_elapsed_time * 1000);
-
-                    database_manager = new DatabaseConnectionManager();
-                    user_repository = new UserRepository();
-
-                    user_repository.updateUser(user_steam_id, { user_money: user_account_balance });
+                    
+                    userRepository.updateUserAccountBalance(user_steam_id, { user_money: user_account_balance });
                     login_times.delete(user_steam_id);
                 }
             }
@@ -231,13 +211,17 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
         let file_contents = '';
         await new Promise((resolve, reject) => {
             stream.on('data', (chunk) => {
-                //console.log(`Stream data is incoming from the specific FTP server log`);
+                /**
+                 * console.log(`Stream data is incoming from the specific FTP server log`);
+                 */
                 file_contents += chunk;
             });
 
             stream.on('end', () => {
-                //console.log(`Data stream from the specific FTP server log has completed successfully`);
-                //console.log('File contents retrieved from the data stream: ', file_contents);
+                /**
+                 * console.log(`Data stream from the specific FTP server log has completed successfully`);
+                 * console.log('File contents retrieved from the data stream: ', file_contents);
+                 */
                 resolve();
             });
 
@@ -255,18 +239,23 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
 
         const browser_file_contents = file_contents.replace(/\u0000/g, '');
 
+
         const lines = browser_file_contents.split('\n');
 
         // If we have already processed the lines that exist in the ftp file, remove them
         if (ftp_login_file_lines_already_processed < lines.length) {
             lines.splice(0, ftp_login_file_lines_already_processed);
         }
-        // Update the number of lines processed
+        /**
+         * Update the number of lines already processed in the log file from gportal. This will prevent the entire log file from being read again when the file changes
+         */
         ftp_login_file_lines_already_processed += lines.length;
 
         const new_file_content = lines.join('\n');
 
-        // The below values return as an object containing values
+        /**
+         * The return values from the .match() function return an object containing the substrings which match the pattern specified in the regex string
+         */
         const file_contents_steam_ids = browser_file_contents.match(login_log_steam_id_regex);
         const file_contents_steam_messages = browser_file_contents.match(login_log_steam_name_regex);
 
@@ -278,15 +267,18 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
             user_steam_ids[file_contents_steam_ids_array[i]] = file_contents_steam_name_array[i];
         }
 
+        determinePlayerLoginSessionMoney(lines);
         await insertSteamUsersIntoDatabase(Object.keys(user_steam_ids), Object.values(user_steam_ids));
 
         ftpClient.end();
     } catch (error) {
-        sendEmail(process.env.scumbot_chat_monitor_email_source, 'SCUMChatMonitor error', 'There was an error reading the FTP logs from gportal, and the bot has crashed');
+        sendEmail(process.env.scumbot_chat_monitor_email_source, 'SCUMChatMonitor error', 'There was an error reading the login log file from gportal, and the bot may have crashed');
         console.log('Error processing files:', error);
         response.status(500).json({ error: 'Failed to process files' });
     }
 }
+
+readAndFormatGportalFtpServerLoginLog();
 //readAndFormatGportalFtpServerLoginLog();
 async function readAndFormatGportalFtpServerChatLog(request, response) {
     try {
@@ -381,6 +373,7 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
         
         ftpClient.end();
     } catch (error) {
+        sendEmail(process.env.scumbot_chat_monitor_email_source, 'SCUMChatMonitor error', 'There was an error reading the chat log file from gportal, and the bot may have crashed');
         console.log('Error processing files:', error);
         response.status(500).json({ error: 'Failed to process files' });
     }
