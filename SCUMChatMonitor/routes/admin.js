@@ -70,18 +70,20 @@ router.post('/commands/new', isLoggedIn, (request, response, next) => {
     const command_content = `
     const { SlashCommandBuilder } = require('@discordjs/builders');
     
-module.exports = {
-    data: new SlashCommandBuilder()
+module.exports = function (player_steam_id) {
+    const object = {
+        data: new SlashCommandBuilder()
          .setName('${new_command_name}')
          .setDescription('${new_command_description}'),
-    command_data: '${new_command_data}',
-    authorization_role_name: ['${new_command_authorized_roles}'],
+        command_data: '${new_command_data}',
+        authorization_role_name: ['${new_command_authorized_roles}'],
 
-    async execute(message) {
-
+        async execute(interaction) {
+            await interaction.reply('Please log into TheTrueCastaways SCUM server and type ${new_command_name} into local or global chat');
+        }
     }
+    return object;
 }`;
-
     fs.writeFileSync(file_path, command_content, 'utf-8');
     response.redirect('/admin/');
 });

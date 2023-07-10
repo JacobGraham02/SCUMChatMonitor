@@ -81,7 +81,9 @@ module.exports = class UserRepository {
             const new_user_document = {
                 user_steam_name: user_steam_name,
                 user_steam_id: user_steam_id,
-                user_used_welcome_pack: 0
+                user_welcome_pack_uses: 0,
+                user_welcome_pack_cost: 0,
+                user_money: 0
             };
 
             await user_collection.updateOne(
@@ -100,7 +102,7 @@ module.exports = class UserRepository {
         try {
             const user_collection_result = database_connection.collection('Users');
             const user_update_result = await user_collection_result.updateOne({ user_steam_id: user_steam_id }, { $set: user_data });
-            return user_updat_result.modifiedCount > 0;
+            return user_update_result.modifiedCount > 0;
         } finally {
             await this.releaseConnectionSafely(database_connection);
         }

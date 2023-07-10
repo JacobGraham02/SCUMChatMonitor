@@ -119,12 +119,71 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+/**
+ * existing_cached_file_content_hash is a variable which stores a hashed version of the raw file contents retrieved from the ftp log files in gportal
+ */
 let existing_cached_file_content_hash = '';
+
+/**
+ * ftp_login_file_lines_already_processed stores a value which holds the number of lines in a file already processed. When a new line appears in the chat log, instead of
+ * dealing with all commands in the current file, this variable will ensure only the lines after the specified line are acted upon
+ */
 let ftp_login_file_lines_already_processed = 0;
+
+/**
+ * last_line_processed stores the last line processed as another safeguard so that only lines in the file after the specified one are executed
+ */
 let last_line_processed = 0;
 
-sendEmail(process.env.scumbot_chat_monitor_email_source, 'SCUMChatMonitor test subject', 'This is a test message for functionality purposes');
+//sendEmail(process.env.scumbot_chat_monitor_email_source, 'SCUMChatMonitor test subject', 'This is a test message for functionality purposes');
 
+const test_content = [
+    "2023.07.06-14.23.03: Game version: 0.8.530.70162",
+"2023.07.06-14.27.42: '72.140.43.39 76561199505530387:Wilson(24)' logged in at: X=9.260 Y=-36.700 Z=142.150 (as drone)",
+"2023.07.06-17.08.07: '212.79.110.126 76561198850062142:2Pac(96)' logged in at: X=437285.313 Y=-522988.906 Z=2538.730",
+"2023.07.06-17.10.05: '212.79.110.126 76561198850062142:2Pac(96)' logged out at: X=437174.188 Y=-522964.344 Z=2540.670",
+"2023.07.06-17.29.45: '72.140.43.39 76561198244922296:jacobdgraham02(2)' logged in at: X=-97073.195 Y=-600403.000 Z=117.150",
+"2023.07.06-17.57.01: '72.140.43.39 76561198244922296:jacobdgraham02(2)' logged out at: X=149105.938 Y=-18042.379 Z=31855.850",
+"2023.07.06-18.59.43: '72.140.43.39 76561198244922296:jacobdgraham02(2)' logged in at: X=149105.938 Y=-18042.379 Z=31855.850",
+"2023.07.06-19.41.47: '72.140.43.39 76561198244922296:jacobdgraham02(2)' logged out at: X=150114.703 Y=-19177.773 Z=32047.129",
+"2023.07.06-20.02.29: '72.140.43.39 76561199204132694:vmaxforum(1)' logged in at: X=375177.000 Y=108526.000 Z=16609.000",
+"2023.07.06-20.09.44: '72.140.43.39 76561199204132694:vmaxforum(1)' logged out at: X=375177.000 Y=108526.000 Z=16609.000",
+"2023.07.07-03.21.02: '145.53.29.248 76561198821564624:420smoker666 [nl](117)' logged in at: X=62728.465 Y=603263.875 Z=37138.395",
+"2023.07.07-03.40.13: '145.53.29.248 76561198821564624:420smoker666 [nl](117)' logged out at: X=206928.328 Y=-512779.469 Z=1529.300",
+"2023.07.07-06.06.58: '72.140.43.39 76561199505530387:Wilson(24)' logged out at: X=0.000 Y=0.000 Z=0.000",
+"2023.07.07-06.30.15: '72.140.43.39 76561199505530387:Wilson(24)' logged in at: X=9.260 Y=-36.700 Z=142.150 (as drone)"
+];
+
+const login_times = new Map();
+const session_durations = new Map();
+
+function determineDifferenceBetween(logs) {
+    for (const log of logs) {
+        const [logTimestamp, logMessage] = log.split(": ");
+        const matchResult = logMessage.match(/'(.*?) (.*?):(.*?)'(.*?)(logged in|logged out)/);
+        if (matchResult != null) {
+            const [matching_string, ip_address, user_steam_id, user_username, blank, user_logged_in_or_out] = matchResult;
+            const formatted_date_and_time = new Date(logTimestamp.replace('-', 'T').replace(/\./g, '-').replace(/(?<=T.*)-/g, ':'));
+
+            if (user_logged_in_or_out === 'logged in') {
+                login_times.set(user_steam_id, formatted_date_and_time);
+            } else if (user_logged_in_or_out === 'logged out') {
+                const login_time = login_times.get(user_steam_id);
+
+                if (login_time) {
+                    const calculated_elapsed_time = ((formatted_date_and_time - login_time) / 1000 / 60 / 60);
+                    const user_account_balance = Math.round(calculated_elapsed_time * 1000);
+
+                    database_manager = new DatabaseConnectionManager();
+                    user_repository = new UserRepository();
+
+                    user_repository.updateUser(user_steam_id, { user_money: user_account_balance });
+                    login_times.delete(user_steam_id);
+                }
+            }
+        }
+    }
+}
 async function readAndFormatGportalFtpServerLoginLog(request, response) {
     try {
         const ftpClient = new FTPClient();
@@ -228,6 +287,7 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
         response.status(500).json({ error: 'Failed to process files' });
     }
 }
+//readAndFormatGportalFtpServerLoginLog();
 async function readAndFormatGportalFtpServerChatLog(request, response) {
     try {
         const ftpClient = new FTPClient();
