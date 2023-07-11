@@ -10,6 +10,7 @@ module.exports = function (player_steam_id) {
                     .setDescription('The description of test option')),
         command_data: ['Discord: https://discord.gg/4BYPXWSFkv'],
         authorization_role_name: ['Admin'],
+        command_cost: 0,
 
         async execute(interaction) {
             await interaction.reply(`This is the test discord.js message: `)

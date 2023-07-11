@@ -240,18 +240,18 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
         const browser_file_contents = file_contents.replace(/\u0000/g, '');
 
 
-        const lines = browser_file_contents.split('\n');
+        const browser_file_content_individual_lines = browser_file_contents.split('\n');
 
         // If we have already processed the lines that exist in the ftp file, remove them
-        if (ftp_login_file_lines_already_processed < lines.length) {
-            lines.splice(0, ftp_login_file_lines_already_processed);
+        if (ftp_login_file_lines_already_processed < browser_file_content_individual_lines.length) {
+            browser_file_content_individual_lines.splice(0, ftp_login_file_lines_already_processed);
         }
         /**
          * Update the number of lines already processed in the log file from gportal. This will prevent the entire log file from being read again when the file changes
          */
-        ftp_login_file_lines_already_processed += lines.length;
+        ftp_login_file_lines_already_processed += browser_file_content_individual_lines.length;
 
-        const new_file_content = lines.join('\n');
+        const new_file_content = browser_file_content_individual_lines.join('\n');
 
         /**
          * The return values from the .match() function return an object containing the substrings which match the pattern specified in the regex string
@@ -267,7 +267,7 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
             user_steam_ids[file_contents_steam_ids_array[i]] = file_contents_steam_name_array[i];
         }
 
-        determinePlayerLoginSessionMoney(lines);
+        determinePlayerLoginSessionMoney(browser_file_content_individual_lines);
         await insertSteamUsersIntoDatabase(Object.keys(user_steam_ids), Object.values(user_steam_ids));
 
         ftpClient.end();
@@ -278,7 +278,9 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
     }
 }
 
-readAndFormatGportalFtpServerLoginLog();
+//readAndFormatGportalFtpServerLoginLog();
+//readSteamUsersFromDatabase();
+
 //readAndFormatGportalFtpServerLoginLog();
 async function readAndFormatGportalFtpServerChatLog(request, response) {
     try {
@@ -344,8 +346,6 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
         const browser_file_contents_lines = browser_file_contents.split('\n');
 
         const file_contents_steam_id_and_messages = [];
-
-        
 
         for (let i = last_line_processed; i < browser_file_contents_lines.length; i++) {
             if (browser_file_contents_lines[i].match(chat_log_messages_regex)) {
@@ -428,7 +428,7 @@ function insertAdminUserIntoDatabase(admin_user_username, admin_user_password) {
 async function readSteamUsersFromDatabase() {
     database_manager = new DatabaseConnectionManager();
     user_repository = new UserRepository();
-    user_repository.findAllUsers().then((results) => { return(results) });
+    user_repository.findAllUsers().then((results) => { console.log(results) });
 }
 
 /**
@@ -446,7 +446,7 @@ async function insertSteamUsersIntoDatabase(steam_user_ids_array, steam_user_nam
 }
 
 //startFtpFileProcessingIntervalLoginLog();
-//handleIngameSCUMChatMessages();
+handleIngameSCUMChatMessages();
 //startFtpFileProcessingIntervalChatLog();
 //insertAdminUserIntoDatabase('jacobg', 'test123');
 
@@ -759,6 +759,7 @@ async function runCommand(command) {
     pasteFromClipboard();
     await sleep(100);
     pressEnterKey();
+    await sleep(100);
 }
 
 /**
@@ -785,31 +786,54 @@ async function runCommand(command) {
  *  4. The 't' character key and backspace key will both be pressed to open the in-game chat in SCUM. 
  *  5. Operations will execute sequentially in sync by the system awaiting the completion of one command before executing another. 
  */
+let command_queue = [];
+let isProcessing = false;
+function enqueueCommand(user_chat_message_object) {
+    command_queue.push(user_chat_message_object);
+}
+
 async function handleIngameSCUMChatMessages() {
-    readAndFormatGportalFtpServerChatLog().then(async (user_steam_ids_and_messages) => {
-        if (user_steam_ids_and_messages === undefined) {
-            return;
-        }
+    const ftp_server_chat_log = await readAndFormatGportalFtpServerChatLog();
 
-        for (let i = 0; i < user_steam_ids_and_messages.length; i++) {
-            let user_chat_message_object = user_steam_ids_and_messages[i];
-            
-            const command_to_execute = user_chat_message_object.value[0].substring(1);
-            const command_to_execute_steam_id = user_chat_message_object.key[0];
+    for (let i = 0; i < ftp_server_chat_log.length; i++) {
+        let user_chat_message_object = ftp_server_chat_log[i];
+        enqueueCommand(user_chat_message_object);
+    }
+    if (!isProcessing) {
+        processQueue();
+    }
+}
+async function processQueue() {
+    isProcessing = true;
 
-            if (client_instance.commands.get(command_to_execute)) {
-                const function_property_data = client_instance.commands.get(command_to_execute)(command_to_execute_steam_id);
-                const client_command_data = function_property_data.command_data;
-                pressCharacterKeyT();
-                pressBackspaceKey();
+    while (command_queue.length > 0) { // While there are commands in the queue
+        const user_chat_message_object = command_queue.shift(); // Remove the next command from the queue
 
-                for (let i = 0; i < client_command_data.length; i++) {
-                    await runCommand(client_command_data[i]);
-                }
+        const command_to_execute = user_chat_message_object.value[0].substring(1);
+        const command_to_execute_steam_id = user_chat_message_object.key[0];
+
+        if (client_instance.commands.get(command_to_execute)) {
+            const user_account = await userRepository.findUserById(command_to_execute_steam_id);
+            const user_account_balance = user_account.user_money;
+            const function_property_data = client_instance.commands.get(command_to_execute)(command_to_execute_steam_id);
+            const client_command_data = function_property_data.command_data;
+            const client_command_data_cost = function_property_data.command_cost;
+
+            if (!(client_command_data_cost === undefined)) {
+                userRepository.updateUserAccountBalance(command_to_execute_steam_id, -client_command_data_cost);
+            }
+
+            pressCharacterKeyT();
+            pressBackspaceKey();
+
+            for (let i = 0; i < client_command_data.length; i++) {
+                await runCommand(client_command_data[i]);
             }
         }
-    });
+    }
+    isProcessing = false; // Set the processing flag to false when all commands have been processed
 }
+
 /**
  * Bot interacts with the discord API to 'log in' and become ready to start executing commands
  */
