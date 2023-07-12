@@ -136,31 +136,45 @@ let ftp_login_file_lines_already_processed = 0;
 let last_line_processed = 0;
 
 const login_times = new Map();
+const user_balance_updates = new Map();
 
-function determinePlayerLoginSessionMoney(logs) {
+async function determinePlayerLoginSessionMoney(logs) {
     for (const log of logs) {
         if (log.includes("Game version: ") || log === '') {
             continue;
         } 
         const [logTimestamp, logMessage] = log.split(": ");
-        const matchResult = logMessage.match(/'(.*?) (.*?):(.*?)'(.*?)(logged in|logged out)/);
-        if (matchResult != null) {
-            const [, , user_steam_id, , , user_logged_in_or_out] = matchResult;
-            const formatted_date_and_time = new Date(logTimestamp.replace('-', 'T').replace(/\./g, '-').replace(/(?<=T.*)-/g, ':'));
 
-            if (user_logged_in_or_out === 'logged in') {
-                login_times.set(user_steam_id, formatted_date_and_time);
-            } else if (user_logged_in_or_out === 'logged out') {
-                const login_time = login_times.get(user_steam_id);
+        if (logMessage.includes('logged in') || logMessage.includes('logged out')) {
+            const matchResult = logMessage.match(/'(.*?) (.*?):(.*?)'(.*?)(logged in|logged out)/);
 
-                if (login_time) {
-                    const calculated_elapsed_time = ((formatted_date_and_time - login_time) / 1000 / 60 / 60);
-                    const user_account_balance = Math.round(calculated_elapsed_time * 1000);
-                    
-                    userRepository.updateUserAccountBalance(user_steam_id, { user_money: user_account_balance });
-                    login_times.delete(user_steam_id);
+            if (matchResult) {
+                const [, , user_steam_id, , , user_logged_in_or_out] = matchResult;
+                const formatted_date_and_time = new Date(logTimestamp.replace('-', 'T').replace(/\./g, '-').replace(/(?<=T.*)-/g, ':'));
+
+                if (user_logged_in_or_out === 'logged in') {
+                    login_times.set(user_steam_id, formatted_date_and_time);
+                } else if (user_logged_in_or_out === 'logged out') {
+                    const login_time = login_times.get(user_steam_id);
+
+                    if (login_time) {
+                        const calculated_elapsed_time = ((formatted_date_and_time - login_time) / 1000 / 60 / 60);
+                        const user_account_balance = Math.round(calculated_elapsed_time * 1000);
+
+                        user_balance_updates.set(user_steam_id, user_account_balance);
+                        login_times.delete(user_steam_id);
+                    }
                 }
             }
+        }
+    }
+
+    for (const [user_steam_id, update] of user_balance_updates) {
+        try {
+            await userRepository.updateUserAccountBalance(user_steam_id, update);
+        } catch (database_updated_error) {
+            sendEmail(process.env.scumbot_chat_monitor_email_source, "SCUMBotChatMonitor update account balance fail", `There was an error when the SCUM bot attempted to give the user ${user_steam_id} money for being online the server`);
+            console.error(`Failed to update user account balance for user with steam id ${user_steam_id}`);
         }
     }
 }
@@ -233,7 +247,6 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
         if (current_file_content_hash === existing_cached_file_content_hash) {
             return;
         } else {
-            console.log('The current stored hash for the ftp login file is not the same as the new one');
             existing_cached_file_content_hash = current_file_content_hash;
         }
 
@@ -272,16 +285,13 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
 
         ftpClient.end();
     } catch (error) {
-        sendEmail(process.env.scumbot_chat_monitor_email_source, 'SCUMChatMonitor error', 'There was an error reading the login log file from gportal, and the bot may have crashed');
+        sendEmail(process.env.scumbot_chat_monitor_email_source, 'SCUMChatMonitor error', `There was an error reading the login log file from gportal, and the bot may have crashed. The error message is below: ${error}`);
         console.log('Error processing files:', error);
         response.status(500).json({ error: 'Failed to process files' });
+        process.exit();
     }
 }
 
-//readAndFormatGportalFtpServerLoginLog();
-//readSteamUsersFromDatabase();
-
-//readAndFormatGportalFtpServerLoginLog();
 async function readAndFormatGportalFtpServerChatLog(request, response) {
     try {
         const ftpClient = new FTPClient();
@@ -340,6 +350,12 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
 
             stream.on('error', reject);
         });
+        const current_file_content_hash = crypto.createHash('md5').update(file_contents).digest('hex');
+        if (current_file_content_hash === existing_cached_file_content_hash) {
+            return;
+        } else {
+            existing_cached_file_content_hash = current_file_content_hash;
+        }
 
         const browser_file_contents = file_contents.replace(/\u0000/g, '');
 
@@ -358,24 +374,16 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
 
         last_line_processed = browser_file_contents_lines.length;
 
-        const json_string_representation = JSON.stringify(file_contents_steam_id_and_messages);
-
-        const current_file_content_hash = crypto.createHash('md5').update(json_string_representation).digest('hex');
-
-        if (current_file_content_hash === existing_cached_file_content_hash) {
-            return;
-        } else {
-            console.log('The current stored hash for the ftp chat log file is not the same as the new one');
-            existing_cached_file_content_hash = current_file_content_hash;
-        }
+        //const json_string_representation = JSON.stringify(file_contents_steam_id_and_messages);
 
         return file_contents_steam_id_and_messages;
         
         ftpClient.end();
     } catch (error) {
-        sendEmail(process.env.scumbot_chat_monitor_email_source, 'SCUMChatMonitor error', 'There was an error reading the chat log file from gportal, and the bot may have crashed');
+        sendEmail(process.env.scumbot_chat_monitor_email_source, 'SCUMChatMonitor error', `There was an error reading the chat log file from gportal, and the bot may have crashed. Below is the error message: ${error}`);
         console.log('Error processing files:', error);
         response.status(500).json({ error: 'Failed to process files' });
+        process.exit();
     }
 }
 
@@ -444,12 +452,6 @@ async function insertSteamUsersIntoDatabase(steam_user_ids_array, steam_user_nam
         user_repository.createUser(steam_user_names_array[i], steam_user_ids_array[i]);
     }
 }
-
-//startFtpFileProcessingIntervalLoginLog();
-handleIngameSCUMChatMessages();
-//startFtpFileProcessingIntervalChatLog();
-//insertAdminUserIntoDatabase('jacobg', 'test123');
-
 /**
  * verifyCallback() is a subjectively necessary function to use in all web applications when using express and passport. In this instance, verifyCallback() is the 
  * function that is called internally when you are storing a user object in a session after logging in. Here are the steps in sequence:
@@ -772,8 +774,13 @@ function enqueueCommand(user_chat_message_object) {
  * This function iterates through all of the SCUM in-game chat messages starting with '!' recorded into the gportal chat log into a queue in preparation 
  * for sequential execution.
  */
+startFtpFileProcessingIntervalChatLog();
 async function handleIngameSCUMChatMessages() {
     const ftp_server_chat_log = await readAndFormatGportalFtpServerChatLog();
+
+    if (!ftp_server_chat_log) {
+        return;
+    } 
 
     for (let i = 0; i < ftp_server_chat_log.length; i++) {
         let user_chat_message_object = ftp_server_chat_log[i];
@@ -799,22 +806,34 @@ async function processQueue() {
             const client_command_data = function_property_data.command_data;
             const client_command_data_cost = function_property_data.command_cost;
             const client_ingame_chat_name = user_account.user_steam_name.replace(/\([0-9]{1,4}\)/g, '');
+
+            if (command_to_execute === 'welcomepack') {
+                const welcome_pack_total_cost = user_account.user_welcome_pack_cost;
+
+                if (user_account_balance - welcome_pack_total_cost <= 0) {
+                    runCommand(`${client_ingame_chat_name} you do not have enough money to use your welcome pack again`);
+                    continue;
+                } else {
+                    await userRepository.updateUserWelcomePackUsesByOne(user_account.user_steam_id);
+                } 
+            }
+
             if (user_account_balance - client_command_data_cost <= 0) {
                 console.log(`${client_ingame_chat_name}, you do not have enough money to use this package. Use the command !balance to check your balance.`);
                 continue;
             }
 
             if (!(client_command_data_cost === undefined)) {
-                userRepository.updateUserAccountBalance(command_to_execute_steam_id, -client_command_data_cost);
+                await userRepository.updateUserAccountBalance(command_to_execute_steam_id, -client_command_data_cost);
             }
 
             pressCharacterKeyT();
             pressBackspaceKey();
 
-            for (let i = 0; i < client_command_data.length; i++) {
+           /* for (let i = 0; i < client_command_data.length; i++) {
                 console.log(client_command_data[i]);
                 await runCommand(client_command_data[i]);
-            }
+            }*/
         }
     }
     isProcessing = false; // Set the processing flag to false when all commands have been processed

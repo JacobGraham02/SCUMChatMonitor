@@ -40,6 +40,7 @@
     <Content Include="app.js" />
     <Content Include="bin\Microsoft.NodejsTools.WebRole.dll" />
     <Content Include="bin\www" />
+    <Content Include="commands\balance.js" />
     <Content Include="commands\discord.js">
       <SubType>Code</SubType>
     </Content>
