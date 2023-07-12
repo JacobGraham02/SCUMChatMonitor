@@ -1,7 +1,6 @@
-
-    const { SlashCommandBuilder } = require('@discordjs/builders');
+const { SlashCommandBuilder } = require('@discordjs/builders');
     
-module.exports = function (player_steam_id) {
+module.exports = function (user_account) {
     const object = {
         data: new SlashCommandBuilder()
             .setName('pvpzones')

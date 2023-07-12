@@ -753,45 +753,25 @@ async function runCommand(command) {
     if (!scumProcess) {
         return;
     }
-    await sleep(100);
+    await sleep(150);
     copyToClipboard(command);
-    await sleep(100);
+    await sleep(150);
     pasteFromClipboard();
-    await sleep(100);
+    await sleep(150);
     pressEnterKey();
-    await sleep(100);
+    await sleep(150);
 }
 
-/**
- * This function performs the following steps in sequence:
- *  1. Retrieves a Promise containing the gportal chat log file. This promise is then processed and passed into an anonymous asyncronous function for further execution
- *   1b) If the data contained within the promise is undefined, the function ceases execution
- *  2. The processed list of chat log messages is iterated through, and the various properties of those messages are described below:
- *   2a) user_chat_message_object contains the object which represents the actual chat message that the user sent. The object stores a key and associated value. 
- *       The key stores the user steam id, and the value contains their message
- * 
- *   2b) command_to_execute contains the first property value of the object 'user_chat_message_object', hence the value[0]; value[0] is the actual message contents.
- *       The code only takes messages which start with a '!' character. Because commands work without the '!' character, we must strip the '!' character from the message
- *       by taking the portion of the string which does contain '!'. !discord becomes discord
- * 
- *   2c) command_to_execute_steam_id follows the same pattern as command_to_execute. Because user_chat_message_object contains a key and value, this variable will hold
- *       the key associated with the chat message. It is worth noting the key is a 17-digit string containing only numbers.
- *   
- *  3. After we have captured the user steam id and their chat message, we then see if the collection of registered bot commands contains the message the user
- *     is attempting to execute. 
- *   3a) If we could find a valid command, we store the object the function returns into function_property_data. 
- * 
- *   3b) Next, we retrieve the property 'command_data' from the object function_property_data so that the bot will execute the correct commands
- * 
- *  4. The 't' character key and backspace key will both be pressed to open the in-game chat in SCUM. 
- *  5. Operations will execute sequentially in sync by the system awaiting the completion of one command before executing another. 
- */
-let command_queue = [];
+const command_queue = [];
 let isProcessing = false;
 function enqueueCommand(user_chat_message_object) {
     command_queue.push(user_chat_message_object);
 }
 
+/**
+ * This function iterates through all of the SCUM in-game chat messages starting with '!' recorded into the gportal chat log into a queue in preparation 
+ * for sequential execution.
+ */
 async function handleIngameSCUMChatMessages() {
     const ftp_server_chat_log = await readAndFormatGportalFtpServerChatLog();
 
@@ -815,9 +795,14 @@ async function processQueue() {
         if (client_instance.commands.get(command_to_execute)) {
             const user_account = await userRepository.findUserById(command_to_execute_steam_id);
             const user_account_balance = user_account.user_money;
-            const function_property_data = client_instance.commands.get(command_to_execute)(command_to_execute_steam_id);
+            const function_property_data = client_instance.commands.get(command_to_execute)(user_account);
             const client_command_data = function_property_data.command_data;
             const client_command_data_cost = function_property_data.command_cost;
+            const client_ingame_chat_name = user_account.user_steam_name.replace(/\([0-9]{1,4}\)/g, '');
+            if (user_account_balance - client_command_data_cost <= 0) {
+                console.log(`${client_ingame_chat_name}, you do not have enough money to use this package. Use the command !balance to check your balance.`);
+                continue;
+            }
 
             if (!(client_command_data_cost === undefined)) {
                 userRepository.updateUserAccountBalance(command_to_execute_steam_id, -client_command_data_cost);
@@ -827,6 +812,7 @@ async function processQueue() {
             pressBackspaceKey();
 
             for (let i = 0; i < client_command_data.length; i++) {
+                console.log(client_command_data[i]);
                 await runCommand(client_command_data[i]);
             }
         }
