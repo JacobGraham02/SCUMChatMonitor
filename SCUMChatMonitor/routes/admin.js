@@ -77,6 +77,7 @@ module.exports = function (player_steam_id) {
          .setDescription('${new_command_description}'),
         command_data: '${new_command_data}',
         authorization_role_name: ['${new_command_authorized_roles}'],
+        command_cost: ${command_cost}
 
         async execute(interaction) {
             await interaction.reply('Please log into TheTrueCastaways SCUM server and type ${new_command_name} into local or global chat');

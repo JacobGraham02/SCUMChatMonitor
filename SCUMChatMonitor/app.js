@@ -122,7 +122,8 @@ app.use(passport.session());
 /**
  * existing_cached_file_content_hash is a variable which stores a hashed version of the raw file contents retrieved from the ftp log files in gportal
  */
-let existing_cached_file_content_hash = '';
+let existing_cached_file_content_hash_chat_log = '';
+let existing_cached_file_content_hash_login_log = '';
 
 /**
  * ftp_login_file_lines_already_processed stores a value which holds the number of lines in a file already processed. When a new line appears in the chat log, instead of
@@ -159,6 +160,7 @@ async function determinePlayerLoginSessionMoney(logs) {
 
                     if (login_time) {
                         const calculated_elapsed_time = ((formatted_date_and_time - login_time) / 1000 / 60 / 60);
+                        console.log(`${user_steam_id} calculated balance is: ${calculated_elapsed_time}`);
                         const user_account_balance = Math.round(calculated_elapsed_time * 1000);
 
                         user_balance_updates.set(user_steam_id, user_account_balance);
@@ -186,8 +188,6 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
             ftpClient.on('error', reject);
             ftpClient.connect(gportal_ftp_config);
         });
-
-        console.log('FTP client connected and authenticated');
 
         const files = await new Promise((resolve, reject) => {
             ftpClient.list(gportal_ftp_server_target_directory, (error, files) => {
@@ -244,10 +244,10 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
 
         const current_file_content_hash = crypto.createHash('md5').update(file_contents).digest('hex');
 
-        if (current_file_content_hash === existing_cached_file_content_hash) {
+        if (current_file_content_hash === existing_cached_file_content_hash_login_log) {
             return;
         } else {
-            existing_cached_file_content_hash = current_file_content_hash;
+            existing_cached_file_content_hash_login_log = current_file_content_hash;
         }
 
         const browser_file_contents = file_contents.replace(/\u0000/g, '');
@@ -262,9 +262,9 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
         /**
          * Update the number of lines already processed in the log file from gportal. This will prevent the entire log file from being read again when the file changes
          */
-        ftp_login_file_lines_already_processed += browser_file_content_individual_lines.length;
+        ftp_login_file_lines_already_processed = browser_file_content_individual_lines.length;
 
-        const new_file_content = browser_file_content_individual_lines.join('\n');
+        //const new_file_content = browser_file_content_individual_lines.join('\n');
 
         /**
          * The return values from the .match() function return an object containing the substrings which match the pattern specified in the regex string
@@ -300,8 +300,6 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
             ftpClient.on('error', reject);
             ftpClient.connect(gportal_ftp_config);
         });
-
-        console.log('FTP client connected and authenticated');
 
         const files = await new Promise((resolve, reject) => {
             ftpClient.list(gportal_ftp_server_target_directory, (error, files) => {
@@ -351,10 +349,10 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
             stream.on('error', reject);
         });
         const current_file_content_hash = crypto.createHash('md5').update(file_contents).digest('hex');
-        if (current_file_content_hash === existing_cached_file_content_hash) {
+        if (current_file_content_hash === existing_cached_file_content_hash_chat_log) {
             return;
         } else {
-            existing_cached_file_content_hash = current_file_content_hash;
+            existing_cached_file_content_hash_chat_log = current_file_content_hash;
         }
 
         const browser_file_contents = file_contents.replace(/\u0000/g, '');
@@ -373,8 +371,6 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
         }
 
         last_line_processed = browser_file_contents_lines.length;
-
-        //const json_string_representation = JSON.stringify(file_contents_steam_id_and_messages);
 
         return file_contents_steam_id_and_messages;
         
@@ -774,6 +770,7 @@ function enqueueCommand(user_chat_message_object) {
  * This function iterates through all of the SCUM in-game chat messages starting with '!' recorded into the gportal chat log into a queue in preparation 
  * for sequential execution.
  */
+startFtpFileProcessingIntervalLoginLog();
 startFtpFileProcessingIntervalChatLog();
 async function handleIngameSCUMChatMessages() {
     const ftp_server_chat_log = await readAndFormatGportalFtpServerChatLog();
@@ -808,10 +805,9 @@ async function processQueue() {
             const client_ingame_chat_name = user_account.user_steam_name.replace(/\([0-9]{1,4}\)/g, '');
 
             if (command_to_execute === 'welcomepack') {
-                const welcome_pack_total_cost = user_account.user_welcome_pack_cost;
-
-                if (user_account_balance - welcome_pack_total_cost <= 0) {
-                    runCommand(`${client_ingame_chat_name} you do not have enough money to use your welcome pack again`);
+                const welcome_pack_cost = user_account.user_welcome_pack_cost;
+                if (user_account_balance - welcome_pack_cost <= 0) {
+                    runCommand(`${client_ingame_chat_name} you do not have enough money to use your welcome pack again. Use the command !balance to check your balance`);
                     continue;
                 } else {
                     await userRepository.updateUserWelcomePackUsesByOne(user_account.user_steam_id);
@@ -830,10 +826,9 @@ async function processQueue() {
             pressCharacterKeyT();
             pressBackspaceKey();
 
-           /* for (let i = 0; i < client_command_data.length; i++) {
-                console.log(client_command_data[i]);
+            for (let i = 0; i < client_command_data.length; i++) {
                 await runCommand(client_command_data[i]);
-            }*/
+            }
         }
     }
     isProcessing = false; // Set the processing flag to false when all commands have been processed
