@@ -16,9 +16,6 @@ const { exec } = require('child_process');
 const fs = require('node:fs');
 const FTPClient = require('ftp');
 const MongoStore = require('connect-mongo');
-const nodemailer = require('nodemailer');
-const { google } = require('googleapis');
-const { OAuth2Client } = require('google-auth-library');
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
 
 /**
@@ -41,8 +38,14 @@ const client_instance = new Client({
     ]
 });
 
+/** Each channel in a discord server is identified by a unique integer value
+ * 
+ */
 const discord_chat_channel_bot_commands = '1125874103757328494';
 
+/** Initialize utility classes before using them to increase speed and efficiently allocate memory
+ * 
+ */
 databaseConnectionManager = new DatabaseConnectionManager();
 userRepository = new UserRepository();
 
@@ -139,28 +142,54 @@ let last_line_processed = 0;
 const login_times = new Map();
 const user_balance_updates = new Map();
 
+/**
+ * This function loops through each of the strings located in the string array 'logs', and parses out various substrings to manipulate them.
+ * 
+ * @param {string[]} logs An array of strings that represents the contents of the FTP login file on gportal.  
+ * */
 async function determinePlayerLoginSessionMoney(logs) {
     for (const log of logs) {
         if (log.includes("Game version: ") || log === '') {
             continue;
         } 
+        /**
+         * The result of log.split(": ") is an array containing a substring before and after the ':' character in each string 'log'. The destructured array variable 'logTimestamp'
+         * contains the substring before the ':' character, and the array variable 'logMessage' contains the substring after the ':' character. 
+         */ 
         const [logTimestamp, logMessage] = log.split(": ");
 
         if (logMessage.includes('logged in') || logMessage.includes('logged out')) {
             const matchResult = logMessage.match(/'(.*?) (.*?):(.*?)'(.*?)(logged in|logged out)/);
 
             if (matchResult) {
+                /**
+                 * If a string is found to match all of the rules defined in the regex pattern /'(.*?) (.*?):(.*?)(logged in|logged out)/, an array containing 6 values will be returned.
+                 * We are only interested in the 3rd and 6th value, so we ignore the other values in the array by using the , character. 
+                 * By using the logTimestamp substring stored earlier, we can replace individual characters in the substring to construct a string which can be converted into a valid
+                 * javascript object. The format for a javascript Date object used here is as follows: YYYY-MM-DDTHH:mm:ss. If you are interested, this matches the pattern presented in widely-
+                 * accepted ISO 8601 date format. 
+                 */
                 const [, , user_steam_id, , , user_logged_in_or_out] = matchResult;
                 const formatted_date_and_time = new Date(logTimestamp.replace('-', 'T').replace(/\./g, '-').replace(/(?<=T.*)-/g, ':'));
 
+                /**
+                 * Each time the user logs in, a Map is updated with their log in steam id and time, so we can begin the process of giving them some amount of discord money depending
+                 * on the length of time that has spanned between their current log in time and their future log out time. Once the user has logged out, we need to fetch their log 
+                 * in time from the Map. 
+                 */
                 if (user_logged_in_or_out === 'logged in') {
                     login_times.set(user_steam_id, formatted_date_and_time);
                 } else if (user_logged_in_or_out === 'logged out') {
                     const login_time = login_times.get(user_steam_id);
 
+                    /**
+                     * The variable calculated_elapsed_time holds the value in milliseconds. Therefore, to get the time in hours, we have to perform the math calculation 1000 / 60 / 60.
+                     * Now that we have the play time in hours, we can multiply that play time by 1000 to get the amount of money they will get. Let us suppose initially a user has 0 
+                     * discord money. Next, they play on our server for 1.5 hours and log off. Then, their total amount of money earned will be 1500. 
+                     * After we record the user log in and log out time, we will delete that record from the Map to ensure we do not duplicate the money-giving operation.
+                     */
                     if (login_time) {
                         const calculated_elapsed_time = ((formatted_date_and_time - login_time) / 1000 / 60 / 60);
-                        console.log(`${user_steam_id} calculated balance is: ${calculated_elapsed_time}`);
                         const user_account_balance = Math.round(calculated_elapsed_time * 1000);
 
                         user_balance_updates.set(user_steam_id, user_account_balance);
@@ -171,6 +200,11 @@ async function determinePlayerLoginSessionMoney(logs) {
         }
     }
 
+    /**
+     * This is the loop which fetches both the user steam id and their total amount of discord money earned from the Map. For each user within the Map that has both a log in and log out time,
+     * their database record is updated with the amount of money they earned in this specific play session. 
+     * If the operation fails for whatever reason, the app developer will get an email stating this, and the app will also crash. 
+     */
     for (const [user_steam_id, update] of user_balance_updates) {
         try {
             await userRepository.updateUserAccountBalance(user_steam_id, update);
