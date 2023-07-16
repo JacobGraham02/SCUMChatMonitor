@@ -37,6 +37,7 @@
     "nodemailer": "^6.9.3",
     "passport": "^0.6.0",
     "passport-local": "^1.0.0",
+    "pkg": "^5.8.1",
     "pug": "^3.0.2",
     "uuid": "^9.0.0"
   },
@@ -47,6 +48,10 @@
     ],
     "targets": [
       "node18-win-x64"
+    ],
+    "assets": [
+      "gmail-credentials.json",
+      ".env"
     ]
   }
 }

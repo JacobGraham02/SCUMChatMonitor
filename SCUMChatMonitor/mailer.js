@@ -1,6 +1,7 @@
-const { google } = require('googleapis');
+/*const { google } = require('googleapis');
 const { OAuth2Client } = require('google-auth-library');
 const nodemailer = require('nodemailer');
+const pkg = require('pkg');
 const fs = require('fs');
 
 const oauth2_client = new OAuth2Client(
@@ -9,7 +10,16 @@ const oauth2_client = new OAuth2Client(
     'http://localhost:3000/botcallback'
 );
 
-const { access_token, refresh_token } = JSON.parse(fs.readFileSync('gmail-credentials.json', 'utf8'));
+let credentials;
+
+try {
+    const pkg = require('pkg');
+    credentials = JSON.parse(pkg.fs.readFileSync('gmail-credentials.json', 'utf8'));
+} catch (err) {
+    credentials = JSON.parse(fs.readFileSync('gmail-credentials.json', 'utf8'));
+}
+
+const { access_token, refresh_token } = credentials;
 
 oauth2_client.setCredentials({ access_token, refresh_token });
 
@@ -42,3 +52,4 @@ function sendEmail(to, subject, text) {
 }
 
 module.exports = sendEmail;
+*/

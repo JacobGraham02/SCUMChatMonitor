@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path:'.env' });
 
 /**
  * Nodejs and express specific dependencies
@@ -18,6 +18,7 @@ const FTPClient = require('ftp');
 const MongoStore = require('connect-mongo');
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
 
+
 /**
  * Modules and other files which are custom made for the application
  */
@@ -25,7 +26,7 @@ const hashAndValidatePassword = require('./modules/hashAndValidatePassword');
 const DatabaseConnectionManager = require('./database/DatabaseConnectionManager');
 const UserRepository = require('./database/UserRepository');
 const { discord_bot_token } = require('./config.json');
-const sendEmail = require('./mailer');
+//const sendEmail = require('./mailer');
 var indexRouter = require('./routes/index');
 var adminRouter = require('./routes/admin');
 
@@ -209,7 +210,7 @@ async function determinePlayerLoginSessionMoney(logs) {
         try {
             await userRepository.updateUserAccountBalance(user_steam_id, update);
         } catch (database_updated_error) {
-            sendEmail(process.env.scumbot_chat_monitor_email_source, "SCUMBotChatMonitor update account balance fail", `There was an error when the SCUM bot attempted to give the user ${user_steam_id} money for being online the server`);
+            //sendEmail(process.env.scumbot_chat_monitor_email_source, "SCUMBotChatMonitor update account balance fail", `There was an error when the SCUM bot attempted to give the user ${user_steam_id} money for being online the server`);
             console.error(`Failed to update user account balance for user with steam id ${user_steam_id}`);
         }
     }
@@ -319,7 +320,7 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
 
         ftpClient.end();
     } catch (error) {
-        sendEmail(process.env.scumbot_chat_monitor_email_source, 'SCUMChatMonitor error', `There was an error reading the login log file from gportal, and the bot may have crashed. The error message is below: ${error}`);
+        //sendEmail(process.env.scumbot_chat_monitor_email_source, 'SCUMChatMonitor error', `There was an error reading the login log file from gportal, and the bot may have crashed. The error message is below: ${error}`);
         console.log('Error processing files:', error);
         response.status(500).json({ error: 'Failed to process files' });
         process.exit();
@@ -410,7 +411,7 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
         
         ftpClient.end();
     } catch (error) {
-        sendEmail(process.env.scumbot_chat_monitor_email_source, 'SCUMChatMonitor error', `There was an error reading the chat log file from gportal, and the bot may have crashed. Below is the error message: ${error}`);
+        //sendEmail(process.env.scumbot_chat_monitor_email_source, 'SCUMChatMonitor error', `There was an error reading the chat log file from gportal, and the bot may have crashed. Below is the error message: ${error}`);
         console.log('Error processing files:', error);
         response.status(500).json({ error: 'Failed to process files' });
         process.exit();
