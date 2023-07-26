@@ -748,6 +748,30 @@ function pressBackspaceKey() {
     });
 }
 
+function moveMouseToContinueButtonXYLocation() {
+    const x_cursor_position = 470;
+    const y_cursor_position = 550;
+    const command = `powershell.exe -command "Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class P { [DllImport(\\"user32.dll\\")] public static extern bool SetCursorPos(int x, int y); }'; [P]::SetCursorPos(${x_cursor_position}, ${y_cursor_position})"`;
+    exec(command, (error) => {
+        if (error) {
+            console.error(`Error moving the mouse the mouse to x 470, y 550 and left-clicking:${error}`);
+        } else {
+            // console.log('Mouse cursor moved to x 470 y 550 and the left mouse button was pressed');
+        }
+    });
+}
+
+function pressMouseLeftClickButton() {
+    const command = `powershell.exe -command "Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class P { [DllImport(\\"user32.dll\\")] public static extern void mouse_event(int dwFlags, int dx, int dy, int dwData, int dwExtraInfo); }'; $leftDown = 0x0002; $leftUp = 0x0004; [P]::mouse_event($leftDown, 0, 0, 0, 0); [P]::mouse_event($leftUp, 0, 0, 0, 0);"`;
+    exec(command, (error) => {
+        if (error) {
+            console.error(`Error when simulating a left click on the mouse`);
+        } else {
+            // console.log('Left click button on mouse was clicked');
+        }
+    });
+}
+
 /**
  * Uses the Windows powershell command '[System.Windows.Forms.SendKeys]::SendWait('{Enter}') to simulate an 'enter' character key press on the active window. 
  * In this case, the active window is SCUM.exe. The enter key sends a message in chat when pressed. 
@@ -793,6 +817,18 @@ async function runCommand(command) {
     await sleep(150);
     pressEnterKey();
     await sleep(150);
+}
+
+async function moveCursorToContinueButtonAndPressContinue() {
+    const scumProcess = exec('powershell.exe -c "Add-Type -TypeDefinition \'using System; using System.Runtime.InteropServices; public class User32 { [DllImport(\"user32.dll\")] public static extern bool SetForegroundWindow(IntPtr hWnd); }\'"');
+    if (!scumProcess) {
+        return;
+    }
+    await sleep(50);
+    moveMouseToContinueButtonXYLocation();
+    await sleep(250);
+    pressMouseLeftClickButton();
+    await sleep(250);
 }
 
 const command_queue = [];
