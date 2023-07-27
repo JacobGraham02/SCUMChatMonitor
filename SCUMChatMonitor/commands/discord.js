@@ -9,11 +9,11 @@ module.exports = function (player_steam_id) {
                 options.setName('test_option')
                     .setDescription('The description of test option')),
         command_data: ['Discord: https://discord.gg/4BYPXWSFkv'],
-        authorization_role_name: ['Admin'],
+        authorization_role_name: [],
         command_cost: 0,
 
         async execute(interaction) {
-            await interaction.reply(`This is the test discord.js message: `)
+            await interaction.reply(`Discord: https://discord.gg/4BYPXWSFkv`)
         }
     }
     return object;

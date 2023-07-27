@@ -78,6 +78,9 @@ const login_log_steam_name_regex = /([a-zA-Z0-9 ._-]{0,32}\([0-9]{1,10}\))/g;
  */
 const chat_log_messages_regex = /(?<=Global: |Local: |Admin: )![^\n]*[^'\n]/g;
 
+
+const login_log_wilson_logged_out_regex = /[0-9]{17}:Wilson\([0-9]{1,3}\)' logged out at:/g;
+
 /**
  * The following 3 strings must be hardcoded according to how the gportal ftp server is structured. The use of 2 \\ characters is necessary to equal one \ character
  */
@@ -306,6 +309,10 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
          */
         const file_contents_steam_ids = browser_file_contents.match(login_log_steam_id_regex);
         const file_contents_steam_messages = browser_file_contents.match(login_log_steam_name_regex);
+
+        if (browser_file_contents.match(login_log_wilson_logged_out_regex)) {
+            moveCursorToContinueButtonAndPressContinue();
+        }
 
         const file_contents_steam_ids_array = Object.values(file_contents_steam_ids);
         const file_contents_steam_name_array = Object.values(file_contents_steam_messages);
@@ -824,11 +831,11 @@ async function moveCursorToContinueButtonAndPressContinue() {
     if (!scumProcess) {
         return;
     }
-    await sleep(50);
+    await sleep(1000);
     moveMouseToContinueButtonXYLocation();
-    await sleep(250);
+    await sleep(1000);
     pressMouseLeftClickButton();
-    await sleep(250);
+    await sleep(1000);
 }
 
 const command_queue = [];
@@ -867,44 +874,46 @@ async function processQueue() {
         const command_to_execute = user_chat_message_object.value[0].substring(1);
         const command_to_execute_steam_id = user_chat_message_object.key[0];
 
-        if (client_instance.commands.get(command_to_execute)) {
-            const user_account = await userRepository.findUserById(command_to_execute_steam_id);
-            const user_account_balance = user_account.user_money;
-            const function_property_data = client_instance.commands.get(command_to_execute)(user_account);
-            const client_command_data = function_property_data.command_data;
-            const client_command_data_cost = function_property_data.command_cost;
-            const client_ingame_chat_name = user_account.user_steam_name.replace(/\([0-9]{1,4}\)/g, '');
-
-            if (command_to_execute === 'welcomepack') {
-                const welcome_pack_cost = user_account.user_welcome_pack_cost;
-                if (user_account_balance - welcome_pack_cost <= 0) {
-                    runCommand(`${client_ingame_chat_name} you do not have enough money to use your welcome pack again. Use the command !balance to check your balance`);
-                    continue;
-                } else {
-                    await userRepository.updateUserWelcomePackUsesByOne(user_account.user_steam_id);
-                } 
-            }
-
-            if (user_account_balance - client_command_data_cost <= 0) {
-                console.log(`${client_ingame_chat_name}, you do not have enough money to use this package. Use the command !balance to check your balance.`);
-                continue;
-            }
-
-            if (!(client_command_data_cost === undefined)) {
-                await userRepository.updateUserAccountBalance(command_to_execute_steam_id, -client_command_data_cost);
-            }
-
-            pressCharacterKeyT();
-            pressBackspaceKey();
-
-            for (let i = 0; i < client_command_data.length; i++) {
-                await runCommand(client_command_data[i]);
-            }
+        if (!client_instance.commands.get(command_to_execute)) {
+            continue;
         }
+
+        const user_account = await userRepository.findUserById(command_to_execute_steam_id);
+        const user_account_balance = user_account.user_money;
+        const function_property_data = client_instance.commands.get(command_to_execute)(user_account);
+        const client_command_data = function_property_data.command_data;
+        const client_command_data_cost = function_property_data.command_cost;
+        const client_ingame_chat_name = user_account.user_steam_name.replace(/\([0-9]{1,4}\)/g, '');           
+
+        if (command_to_execute === 'welcomepack') {
+            const welcome_pack_cost = user_account.user_welcome_pack_cost;
+             if (user_account_balance < welcome_pack_cost) {
+                 runCommand(`${client_ingame_chat_name} you do not have enough money to use your welcome pack again. Use the command !balance to check your balance`);
+                 continue;
+             } else {
+                 await userRepository.updateUserWelcomePackUsesByOne(user_account.user_steam_id);
+             }
+        }
+
+        if (user_account_balance < function_property_data.command_cost) {
+            console.log(`${client_ingame_chat_name}, you do not have enough money to use this package. Use the command !balance to check your balance.`);
+            continue;
+        }
+
+        if (!(client_command_data_cost === undefined)) {
+            await userRepository.updateUserAccountBalance(command_to_execute_steam_id, -client_command_data_cost);
+        }
+
+        pressCharacterKeyT();
+        pressBackspaceKey();
+
+        for (let i = 0; i < client_command_data.length; i++) {
+            await runCommand(client_command_data[i]);
+        } 
     }
     isProcessing = false; // Set the processing flag to false when all commands have been processed
 }
-
+//moveCursorToContinueButtonAndPressContinue
 /**
  * Bot interacts with the discord API to 'log in' and become ready to start executing commands
  */
