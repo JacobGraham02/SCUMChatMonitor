@@ -16,6 +16,20 @@ module.exports = class UserRepository {
         }
     }
 
+    async findUserByIdIfFirstServerJoin(user_steam_id) {
+        const database_connection = await database_connection_manager.getConnection();
+        try {
+            const user_collection = database_connection.collection('Users');
+            const user = await user_collection.findOne({
+                user_steam_id: user_steam_id,
+                user_joining_server_first_time: 0
+            });
+            return user;
+        } finally {
+            await this.releaseConnectionSafely(database_connection);
+        }
+    }
+
     async findAllUsers() {
         const database_connection = await database_connection_manager.getConnection();
         try {
@@ -83,6 +97,7 @@ module.exports = class UserRepository {
                 user_steam_id: user_steam_id,
                 user_welcome_pack_uses: 0,
                 user_welcome_pack_cost: 0,
+                user_joining_server_first_time: 0,
                 user_money: 0
             };
 

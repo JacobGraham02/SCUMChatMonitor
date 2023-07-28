@@ -144,7 +144,10 @@ let ftp_login_file_lines_already_processed = 0;
 let last_line_processed = 0;
 
 const login_times = new Map();
+
 const user_balance_updates = new Map();
+
+const new_users_on_server = new Map();
 
 /**
  * This function loops through each of the strings located in the string array 'logs', and parses out various substrings to manipulate them.
@@ -213,7 +216,7 @@ async function determinePlayerLoginSessionMoney(logs) {
         try {
             await userRepository.updateUserAccountBalance(user_steam_id, update);
         } catch (database_updated_error) {
-            //sendEmail(process.env.scumbot_chat_monitor_email_source, "SCUMBotChatMonitor update account balance fail", `There was an error when the SCUM bot attempted to give the user ${user_steam_id} money for being online the server`);
+            sendEmail(process.env.scumbot_chat_monitor_email_source, "SCUMBotChatMonitor update account balance fail", `There was an error when the SCUM bot attempted to give the user ${user_steam_id} money for being online the server`);
             console.error(`Failed to update user account balance for user with steam id ${user_steam_id}`);
         }
     }
@@ -321,8 +324,8 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
         for (let i = 0; i < file_contents_steam_ids_array.length; i++) {
             user_steam_ids[file_contents_steam_ids_array[i]] = file_contents_steam_name_array[i];
         }
-
-        determinePlayerLoginSessionMoney(browser_file_content_individual_lines);
+        await teleportNewPlayersToLocation(user_steam_ids);
+        //determinePlayerLoginSessionMoney(browser_file_content_individual_lines);
         await insertSteamUsersIntoDatabase(Object.keys(user_steam_ids), Object.values(user_steam_ids));
 
         ftpClient.end();
@@ -333,7 +336,34 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
         process.exit();
     }
 }
-
+/**
+ * This function determines if players joining the server are new. If so, they are teleported to a specific area on the map. 
+ * The players are teleported to a specific area so they can read relevant server information. 
+ * If the mongodb database results return a user who has the property 'user_joining_server_first_time' as a value of '0', a command is added to the command queue which will teleport them
+ * 
+ * @param {any} online_users a Map containing the key-value pairs of user steam id and user steam name
+ */
+async function teleportNewPlayersToLocation(online_users) { 
+    let user_name = '';
+    /**
+     * Iterate over each key in the Map online_users. Each key in the Map is the steam id of the user
+     */
+    for (const key in online_users) {
+        /**
+         * Replacing the ' characters enclosing the string so we get a valid number
+         */
+        key.replace(/'/g, "");
+        userRepository.findUserByIdIfFirstServerJoin(key).then((user_first_join_results) => {
+            if (user_first_join_results) {
+                /**
+                 * Replacing the ' character and the ([0-9]{1,3}) character instance in the string to make a valid steam player name
+                 */
+                user_name = user_first_join_results.user_steam_name.replace('', "").replace(/\(([0-9]{1,3})\)/, "");
+                runCommand(`#Teleport -54294.7805 -619329.5643 0 ${user_name}`);
+            }
+        });
+    }
+}
 async function readAndFormatGportalFtpServerChatLog(request, response) {
     try {
         const ftpClient = new FTPClient();
