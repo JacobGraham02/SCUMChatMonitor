@@ -2,7 +2,6 @@ var express = require('express');
 var router = express.Router();
 const { OAuth2Client } = require('google-auth-library');
 const fs = require('fs');
-const sendEmail = require('../mailer');
 
 const oauth2_client = new OAuth2Client(
     process.env.google_cloud_console_client_id,
@@ -51,11 +50,11 @@ router.get('/botcallback', async function(request, response, next) {
     response.send('Authentication successful! You can close this tab');
 });
 
-router.get('/sendemail', function (request, response, next) {
+/*router.get('/sendemail', function (request, response, next) {
     sendEmail(process.env.scumbot_chat_monitor_email_source, 'Test', 'Test');
 
     response.render('index', { user: request.user });
-});
+});*/
 router.get('/login', function (request, response, next) {
     response.render('login', { title: "Login page", user: request.user });
 }); 

@@ -19,4 +19,6 @@ const rest = new REST({ version: '9' }).setToken(discord_bot_token);
 
 rest.put(Routes.applicationGuildCommands(discord_client_id, discord_guild_id), { body: commands })
     .then(() => { console.log('Successfully registered application commands') })
-    /*.catch(console.error);*/
+    .catch((error) => {
+        console.error(error);
+    });

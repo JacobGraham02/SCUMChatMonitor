@@ -16,7 +16,7 @@ module.exports = class UserRepository {
         }
     }
 
-    async findUserByIdIfFirstServerJoin(user_steam_id) {
+    async findUserByIdIfFirstServerJoin(user_steam_id) { 
         const database_connection = await database_connection_manager.getConnection();
         try {
             const user_collection = database_connection.collection('Users');
@@ -24,9 +24,11 @@ module.exports = class UserRepository {
                 user_steam_id: user_steam_id,
                 user_joining_server_first_time: 0
             });
+            console.log('findUserByIdFunctionRan');
             return user;
         } finally {
             await this.releaseConnectionSafely(database_connection);
+            
         }
     }
 

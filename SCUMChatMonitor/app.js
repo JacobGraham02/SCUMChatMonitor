@@ -325,9 +325,10 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
             user_steam_ids[file_contents_steam_ids_array[i]] = file_contents_steam_name_array[i];
         }
         await teleportNewPlayersToLocation(user_steam_ids);
+       
         //determinePlayerLoginSessionMoney(browser_file_content_individual_lines);
         await insertSteamUsersIntoDatabase(Object.keys(user_steam_ids), Object.values(user_steam_ids));
-
+        
         ftpClient.end();
     } catch (error) {
         //sendEmail(process.env.scumbot_chat_monitor_email_source, 'SCUMChatMonitor error', `There was an error reading the login log file from gportal, and the bot may have crashed. The error message is below: ${error}`);
@@ -355,12 +356,13 @@ async function teleportNewPlayersToLocation(online_users) {
         key.replace(/'/g, "");
         userRepository.findUserByIdIfFirstServerJoin(key).then((user_first_join_results) => {
             if (user_first_join_results) {
-                /**
+                /**#T
                  * Replacing the ' character and the ([0-9]{1,3}) character instance in the string to make a valid steam player name
                  */
                 user_name = user_first_join_results.user_steam_name.replace('', "").replace(/\(([0-9]{1,3})\)/, "");
-                runCommand(`#Teleport -54294.7805 -619329.5643 0 ${user_name}`);
+                runCommand(`#Teleport -129023.125 -91330.055 36830.551 ${user_name}`);
             }
+            userRepository.updateUser(key, { user_joining_server_first_time: 1 });
         });
     }
 }
@@ -466,7 +468,7 @@ function startFtpFileProcessingIntervalChatLog() {
  * Start an interval of reading login log messages from gportal which repeats every 5 seconds
  */
 function startFtpFileProcessingIntervalLoginLog() {
-    read_login_ftp_file_interval = setInterval(readAndFormatGportalFtpServerLoginLog, 5000);
+    read_login_ftp_file_interval = setInterval(readAndFormatGportalFtpServerLoginLog, 10000);
 }
 
 /**
@@ -879,7 +881,7 @@ function enqueueCommand(user_chat_message_object) {
  * for sequential execution.
  */
 startFtpFileProcessingIntervalLoginLog();
-startFtpFileProcessingIntervalChatLog();
+//startFtpFileProcessingIntervalChatLog();
 async function handleIngameSCUMChatMessages() {
     const ftp_server_chat_log = await readAndFormatGportalFtpServerChatLog();
 
