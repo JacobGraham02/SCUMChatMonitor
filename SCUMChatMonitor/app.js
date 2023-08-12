@@ -147,8 +147,6 @@ const login_times = new Map();
 
 const user_balance_updates = new Map();
 
-const new_users_on_server = new Map();
-
 /**
  * This function loops through each of the strings located in the string array 'logs', and parses out various substrings to manipulate them.
  * 
@@ -354,16 +352,16 @@ async function teleportNewPlayersToLocation(online_users) {
          * Replacing the ' characters enclosing the string so we get a valid number
          */
         key.replace(/'/g, "");
-        userRepository.findUserByIdIfFirstServerJoin(key).then((user_first_join_results) => {
-            if (user_first_join_results) {
-                /**#T
-                 * Replacing the ' character and the ([0-9]{1,3}) character instance in the string to make a valid steam player name
-                 */
-                user_name = user_first_join_results.user_steam_name.replace('', "").replace(/\(([0-9]{1,3})\)/, "");
-                runCommand(`#Teleport -129023.125 -91330.055 36830.551 ${user_name}`);
-            }
-            userRepository.updateUser(key, { user_joining_server_first_time: 1 });
-        });
+        user_first_join_results = await userRepository.findUserByIdIfFirstServerJoin(key);
+        if (user_first_join_results) {
+            /**
+            * Replacing the ' character and the ([0-9]{1,3}) character instance in the string to make a valid steam player name
+            */
+            user_name = user_first_join_results.user_steam_name.replace('', "").replace(/\(([0-9]{1,3})\)/, "");
+            await sleep(20000);
+            enqueueCommand(`#Teleport -129023.125 -91330.055 36830.551 ${user_name}`);
+        }
+        userRepository.updateUser(key, { user_joining_server_first_time: 1 });
     }
 }
 async function readAndFormatGportalFtpServerChatLog(request, response) {
@@ -458,14 +456,14 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
 }
 
 /**
- * Start an interval of reading chat log messages from gportal which repeats every 5 seconds
+ * Start an interval of reading chat log messages from gportal which repeats every 10 seconds
  */
 function startFtpFileProcessingIntervalChatLog() {
     read_login_ftp_file_interval = setInterval(handleIngameSCUMChatMessages, 5000);
 }
 
 /**
- * Start an interval of reading login log messages from gportal which repeats every 5 seconds
+ * Start an interval of reading login log messages from gportal which repeats every 10 seconds
  */
 function startFtpFileProcessingIntervalLoginLog() {
     read_login_ftp_file_interval = setInterval(readAndFormatGportalFtpServerLoginLog, 10000);
@@ -681,25 +679,34 @@ client_instance.on('interactionCreate',
     
     const command = client_instance.discord_commands.get(interaction.commandName);
 
+    /**
+     * If the command executed on Discord does not exist, immediately exit and do nothing
+     */
     if (!command) {
         return;
     }
 
+    /**
+     * If the user executes a valid command on Discord, but the command was executed in the wrong channel, inform them of that
+     * The correct channel is 'bot-commands'
+     */
     if (!(determineIfUserMessageInCorrectChannel(interaction.channel.id, discord_chat_channel_bot_commands))) {
-        await interaction.reply({ content: `You are using this command in the wrong channel` });
+        await interaction.reply({ content: `You are using this command in the wrong channel. Use bot commands in the channel #bot-commands` });
         return;
     }
-    
+
+    /**
+     * If the user has permission to execute a command on discord, attempt to execute that command. If they do not, inform them they do not have permission to use that command
+     * In each command file in the 'commands' directory, there is an object property called 'authorization_role_name' that dictates the role a user must have to execute the command
+     */
     if (determineIfUserCanUseCommand(interaction.member, command.authorization_role_name)) { 
         try {
             await command.execute(interaction);
         } catch (error) {
-            console.error(error);
-            await interaction.reply({ content: 'There was an error while executing this command!', ephermal: true });
+            await interaction.reply({ content: 'There was an error while executing this command! Please try again or contact a server administrator', ephermal: true });
         }
-
     } else {
-        await interaction.reply({ content: `You do not have permission to execute the command ${command.data.name}` });
+        await interaction.reply({ content: `You do not have permission to execute the command ${command.data.name}. Contact a server administrator if you believe this is an error` });
     }
 });
 /**
@@ -883,47 +890,82 @@ function enqueueCommand(user_chat_message_object) {
 startFtpFileProcessingIntervalLoginLog();
 //startFtpFileProcessingIntervalChatLog();
 async function handleIngameSCUMChatMessages() {
+    /**
+     * Fetch the data from the resolved promise returned by readAndFormatGportalFtpServerChatLog. This contains all of the chat messages said on the server. 
+     */
     const ftp_server_chat_log = await readAndFormatGportalFtpServerChatLog();
 
+    /**
+     * If the chat log returns a falsy value, immediately return
+     */
     if (!ftp_server_chat_log) {
         return;
     } 
 
+    /**
+     * For each command that has been extracted from the chat log, place the command in a queue for execution
+     */
     for (let i = 0; i < ftp_server_chat_log.length; i++) {
         let user_chat_message_object = ftp_server_chat_log[i];
         enqueueCommand(user_chat_message_object);
     }
+    /**
+     * If the queue is not currently processing commands, and commands exist inside of the queue, begin executing the commands inside of the queue
+     */
     if (!isProcessing) {
         processQueue();
     }
 }
 async function processQueue() {
-    isProcessing = true;
+    isQueueProcessing = true;
 
-    while (command_queue.length > 0) { // While there are commands in the queue
-        const user_chat_message_object = command_queue.shift(); // Remove the next command from the queue
+    while (command_queue.length > 0) { 
+        /**
+         * After a command has finished execution in the queue, shift the values one spot to remove the command which has been executed. Extract the command and the steam id of the user
+         * who executed the command
+         */
+        const user_chat_message_object = command_queue.shift(); 
 
         const command_to_execute = user_chat_message_object.value[0].substring(1);
         const command_to_execute_steam_id = user_chat_message_object.key[0];
 
+        /**
+         * If a command that matches a command inside of the queue cannot be found, skip over the command and continue onto the next command
+         */
         if (!client_instance.commands.get(command_to_execute)) {
             continue;
         }
 
+
+        /**
+         * Fetch the user from the database with an id that corresponds with the one associated with the executed command. After, fetch all of properties and data from the user and command
+         * that is relevant
+         */
         const user_account = await userRepository.findUserById(command_to_execute_steam_id);
         const user_account_balance = user_account.user_money;
         const function_property_data = client_instance.commands.get(command_to_execute)(user_account);
         const client_command_data = function_property_data.command_data;
         const client_command_data_cost = function_property_data.command_cost;
+
+        /**
+         * Remove the weird (0-9{1,4}) value which is appended onto each username in the GPortal chat log. 
+         * The GPortal chat log generates usernames like: jacobdgraham02(102). Therefore, we will use regex to replace that with: jacobdgraham02
+         */
         const client_ingame_chat_name = user_account.user_steam_name.replace(/\([0-9]{1,4}\)/g, '');           
 
+        /**
+         * All of the other commands just deduct money from the user account when executed. The command '!welcomepack' is special because it can be executed multiple times, increasing
+         * in cost by 5000 after each execution. In the database class, there is a trigger defined for the user_welcome_pack_cost field that increments by 5000 each time it detects
+         * an increment by 1 for the field 'user_welcome_pack_uses'. Each time this command is executed, we update the user welcome pack uses by one. 
+         */
         if (command_to_execute === 'welcomepack') {
             const welcome_pack_cost = user_account.user_welcome_pack_cost;
              if (user_account_balance < welcome_pack_cost) {
-                 runCommand(`${client_ingame_chat_name} you do not have enough money to use your welcome pack again. Use the command !balance to check your balance`);
+                 enqueueCommand(`${client_ingame_chat_name} you do not have enough money to use your welcome pack again. Use the command !balance to check your balance`);
                  continue;
              } else {
                  await userRepository.updateUserWelcomePackUsesByOne(user_account.user_steam_id);
+                 continue;
              }
         }
 
@@ -932,10 +974,16 @@ async function processQueue() {
             continue;
         }
 
+        /**
+         * If the cost to execute the command does not equal undefined, subtract the balance of the package from the user's balance 
+         */
         if (!(client_command_data_cost === undefined)) {
             await userRepository.updateUserAccountBalance(command_to_execute_steam_id, -client_command_data_cost);
         }
 
+        /**
+         * Open the chat menu by pressing the 'T' key. If the chat is already open, press the 'Backspace' key to get rid of the hanging 'T' character
+         */
         pressCharacterKeyT();
         pressBackspaceKey();
 
@@ -943,7 +991,7 @@ async function processQueue() {
             await runCommand(client_command_data[i]);
         } 
     }
-    isProcessing = false; // Set the processing flag to false when all commands have been processed
+    isQueueProcessing = false; // Set the processing flag to false when all commands have been processed to indicate the queue is no longer executing
 }
 //moveCursorToContinueButtonAndPressContinue
 /**

@@ -24,7 +24,6 @@ module.exports = class UserRepository {
                 user_steam_id: user_steam_id,
                 user_joining_server_first_time: 0
             });
-            console.log('findUserByIdFunctionRan');
             return user;
         } finally {
             await this.releaseConnectionSafely(database_connection);
@@ -126,7 +125,6 @@ module.exports = class UserRepository {
     }
 
     async updateUserWelcomePackUsesByOne(user_steam_id) {
-        console.log(`User update welcome pack uses database function runs`);
         const database_connection = await database_connection_manager.getConnection();
         try {
             const user_collection_result = database_connection.collection('Users');
