@@ -8,7 +8,7 @@ module.exports = function (user_account) {
             .addStringOption(options =>
                 options.setName('test_option')
                     .setDescription('The description of test option')),
-        command_data: [`${user_account.user_steam_name} your account balance is ${user_account.user_money}`],
+        command_data: [`${user_account.user_steam_name} your account balance is $${user_account.user_money}`],
         authorization_role_name: [],
         command_cost: 0,
 

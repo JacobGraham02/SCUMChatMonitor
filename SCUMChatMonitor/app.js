@@ -76,7 +76,7 @@ const login_log_steam_name_regex = /([a-zA-Z0-9 ._-]{0,32}\([0-9]{1,10}\))/g;
 /**
  * The following regex string is for chat messages when they appear in the chat log file. 
  */
-const chat_log_messages_regex = /(?<=Global: |Local: |Admin: )![^\n]*[^'\n]/g;
+const chat_log_messages_regex = /(?<=Global: |Local: |Admin: )\/[^\n]*[^'\n]/g;
 
 
 const login_log_wilson_logged_out_regex = /[0-9]{17}:Wilson\([0-9]{1,3}\)' logged out at:/g;
@@ -322,11 +322,12 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
         for (let i = 0; i < file_contents_steam_ids_array.length; i++) {
             user_steam_ids[file_contents_steam_ids_array[i]] = file_contents_steam_name_array[i];
         }
-        await teleportNewPlayersToLocation(user_steam_ids);
        
         //determinePlayerLoginSessionMoney(browser_file_content_individual_lines);
         await insertSteamUsersIntoDatabase(Object.keys(user_steam_ids), Object.values(user_steam_ids));
-        
+
+        //await teleportNewPlayersToLocation(user_steam_ids);
+
         ftpClient.end();
     } catch (error) {
         //sendEmail(process.env.scumbot_chat_monitor_email_source, 'SCUMChatMonitor error', `There was an error reading the login log file from gportal, and the bot may have crashed. The error message is below: ${error}`);
@@ -888,13 +889,12 @@ function enqueueCommand(user_chat_message_object) {
  * for sequential execution.
  */
 startFtpFileProcessingIntervalLoginLog();
-//startFtpFileProcessingIntervalChatLog();
+startFtpFileProcessingIntervalChatLog();
 async function handleIngameSCUMChatMessages() {
     /**
      * Fetch the data from the resolved promise returned by readAndFormatGportalFtpServerChatLog. This contains all of the chat messages said on the server. 
      */
     const ftp_server_chat_log = await readAndFormatGportalFtpServerChatLog();
-
     /**
      * If the chat log returns a falsy value, immediately return
      */
@@ -925,10 +925,13 @@ async function processQueue() {
          * who executed the command
          */
         const user_chat_message_object = command_queue.shift(); 
-
+        console.log(user_chat_message_object);
+        if (user_chat_message_object.value === undefined) { 
+            console.log('Value is undefined');
+            return;
+        }
         const command_to_execute = user_chat_message_object.value[0].substring(1);
-        const command_to_execute_steam_id = user_chat_message_object.key[0];
-
+        const command_to_execute_player_steam_id = user_chat_message_object.key[0];
         /**
          * If a command that matches a command inside of the queue cannot be found, skip over the command and continue onto the next command
          */
@@ -941,7 +944,7 @@ async function processQueue() {
          * Fetch the user from the database with an id that corresponds with the one associated with the executed command. After, fetch all of properties and data from the user and command
          * that is relevant
          */
-        const user_account = await userRepository.findUserById(command_to_execute_steam_id);
+        const user_account = await userRepository.findUserById(command_to_execute_player_steam_id);
         const user_account_balance = user_account.user_money;
         const function_property_data = client_instance.commands.get(command_to_execute)(user_account);
         const client_command_data = function_property_data.command_data;
@@ -961,7 +964,7 @@ async function processQueue() {
         if (command_to_execute === 'welcomepack') {
             const welcome_pack_cost = user_account.user_welcome_pack_cost;
              if (user_account_balance < welcome_pack_cost) {
-                 enqueueCommand(`${client_ingame_chat_name} you do not have enough money to use your welcome pack again. Use the command !balance to check your balance`);
+                 enqueueCommand(`${client_ingame_chat_name} you do not have enough money to use your welcome pack again. Use the command /balance to check your balance`);
                  continue;
              } else {
                  await userRepository.updateUserWelcomePackUsesByOne(user_account.user_steam_id);
@@ -970,7 +973,7 @@ async function processQueue() {
         }
 
         if (user_account_balance < function_property_data.command_cost) {
-            console.log(`${client_ingame_chat_name}, you do not have enough money to use this package. Use the command !balance to check your balance.`);
+            console.log(`${client_ingame_chat_name}, you do not have enough money to use this package. Use the command /balance to check your balance.`);
             continue;
         }
 
@@ -978,7 +981,7 @@ async function processQueue() {
          * If the cost to execute the command does not equal undefined, subtract the balance of the package from the user's balance 
          */
         if (!(client_command_data_cost === undefined)) {
-            await userRepository.updateUserAccountBalance(command_to_execute_steam_id, -client_command_data_cost);
+            await userRepository.updateUserAccountBalance(command_to_execute_player_steam_id, -client_command_data_cost);
         }
 
         /**
