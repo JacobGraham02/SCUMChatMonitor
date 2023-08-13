@@ -219,6 +219,7 @@ async function determinePlayerLoginSessionMoney(logs) {
         }
     }
 }
+//userRepository.updateAllUsersWithJoinedServerValueOne();
 async function readAndFormatGportalFtpServerLoginLog(request, response) {
     try {
         const ftpClient = new FTPClient();
@@ -326,7 +327,7 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
         //determinePlayerLoginSessionMoney(browser_file_content_individual_lines);
         await insertSteamUsersIntoDatabase(Object.keys(user_steam_ids), Object.values(user_steam_ids));
 
-        //await teleportNewPlayersToLocation(user_steam_ids);
+        await teleportNewPlayersToLocation(user_steam_ids);
 
         ftpClient.end();
     } catch (error) {
@@ -344,6 +345,7 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
  * @param {any} online_users a Map containing the key-value pairs of user steam id and user steam name
  */
 async function teleportNewPlayersToLocation(online_users) { 
+    console.log('teleport function');
     let user_name = '';
     /**
      * Iterate over each key in the Map online_users. Each key in the Map is the steam id of the user
@@ -358,13 +360,16 @@ async function teleportNewPlayersToLocation(online_users) {
             /**
             * Replacing the ' character and the ([0-9]{1,3}) character instance in the string to make a valid steam player name
             */
+            console.log('test');
             user_name = user_first_join_results.user_steam_name.replace('', "").replace(/\(([0-9]{1,3})\)/, "");
             await sleep(20000);
+            console.log('teleport command');
             enqueueCommand(`#Teleport -129023.125 -91330.055 36830.551 ${user_name}`);
         }
         userRepository.updateUser(key, { user_joining_server_first_time: 1 });
     }
 }
+
 async function readAndFormatGportalFtpServerChatLog(request, response) {
     try {
         const ftpClient = new FTPClient();
@@ -881,7 +886,9 @@ async function moveCursorToContinueButtonAndPressContinue() {
 const command_queue = [];
 let isProcessing = false;
 function enqueueCommand(user_chat_message_object) {
+    console.log('enqueue command executed');
     command_queue.push(user_chat_message_object);
+    processQueue();
 }
 
 /**
@@ -889,7 +896,7 @@ function enqueueCommand(user_chat_message_object) {
  * for sequential execution.
  */
 startFtpFileProcessingIntervalLoginLog();
-startFtpFileProcessingIntervalChatLog();
+//startFtpFileProcessingIntervalChatLog();
 async function handleIngameSCUMChatMessages() {
     /**
      * Fetch the data from the resolved promise returned by readAndFormatGportalFtpServerChatLog. This contains all of the chat messages said on the server. 
@@ -917,6 +924,7 @@ async function handleIngameSCUMChatMessages() {
     }
 }
 async function processQueue() {
+    console.log('process queue');
     isQueueProcessing = true;
 
     while (command_queue.length > 0) { 

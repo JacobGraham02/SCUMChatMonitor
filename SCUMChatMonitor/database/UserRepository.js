@@ -124,6 +124,17 @@ module.exports = class UserRepository {
         }
     }
 
+    async updateAllUsersWithJoinedServerValueOne() {
+        const database_connection = await database_connection_manager.getConnection();
+        try {
+            const user_collection_result = database_connection.collection('Users');
+            const user_update_result = await user_collection_result.updateMany({}, { $set: { user_joining_server_first_time: 1 } });
+            return user_update_result.modifiedCount > 0;
+        } finally {
+            await this.releaseConnectionSafely(database_connection);
+        }
+    }
+
     async updateUserWelcomePackUsesByOne(user_steam_id) {
         const database_connection = await database_connection_manager.getConnection();
         try {
