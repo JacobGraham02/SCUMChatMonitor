@@ -324,7 +324,7 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
             user_steam_ids[file_contents_steam_ids_array[i]] = file_contents_steam_name_array[i];
         }
        
-        //determinePlayerLoginSessionMoney(browser_file_content_individual_lines);
+        determinePlayerLoginSessionMoney(browser_file_content_individual_lines);
         await insertSteamUsersIntoDatabase(Object.keys(user_steam_ids), Object.values(user_steam_ids));
 
         await teleportNewPlayersToLocation(user_steam_ids);
@@ -345,7 +345,6 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
  * @param {any} online_users a Map containing the key-value pairs of user steam id and user steam name
  */
 async function teleportNewPlayersToLocation(online_users) { 
-    console.log('teleport function');
     let user_name = '';
     /**
      * Iterate over each key in the Map online_users. Each key in the Map is the steam id of the user
@@ -357,14 +356,10 @@ async function teleportNewPlayersToLocation(online_users) {
         key.replace(/'/g, "");
         user_first_join_results = await userRepository.findUserByIdIfFirstServerJoin(key);
         if (user_first_join_results) {
-            /**
-            * Replacing the ' character and the ([0-9]{1,3}) character instance in the string to make a valid steam player name
-            */
-            console.log('test');
-            user_name = user_first_join_results.user_steam_name.replace('', "").replace(/\(([0-9]{1,3})\)/, "");
+            user_steam_id = user_first_join_results.user_steam_id;
             await sleep(20000);
-            console.log('teleport command');
-            enqueueCommand(`#Teleport -129023.125 -91330.055 36830.551 ${user_name}`);
+            console.log(`#Teleport -129023.125 -91330.055 36830.551 ${user_steam_id}`);
+            runCommand(`#Teleport -129023.125 -91330.055 36830.551 ${user_steam_id}`);
         }
         userRepository.updateUser(key, { user_joining_server_first_time: 1 });
     }
@@ -886,7 +881,6 @@ async function moveCursorToContinueButtonAndPressContinue() {
 const command_queue = [];
 let isProcessing = false;
 function enqueueCommand(user_chat_message_object) {
-    console.log('enqueue command executed');
     command_queue.push(user_chat_message_object);
     processQueue();
 }
@@ -895,8 +889,38 @@ function enqueueCommand(user_chat_message_object) {
  * This function iterates through all of the SCUM in-game chat messages starting with '!' recorded into the gportal chat log into a queue in preparation 
  * for sequential execution.
  */
+
+function startCheckLocalServerTimeInterval() {
+    checkLocalServerTime = setInterval(checkLocalServerTime, 60000);
+}
+
+function stopCheckLocalServerTimeInterval() {
+    clearInterval(checkLocalServerTime);
+}
+function checkLocalServerTime() {
+    const currentDateTime = new Date();
+    const easternStandardTimeDateTime = new Date(currentDateTime.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+    const current_hour = easternStandardTimeDateTime.getHours();
+    const current_minute = easternStandardTimeDateTime.getMinutes();
+
+    if (current_hour === 23) {
+        const server_restart_messages = {
+            40: 'Server restart in 20 minutes',
+            50: 'Server restart in 10 minutes',
+            55: 'Server restart in 5 minutes',
+            56: 'Server restart in 4 minutes',
+            57: 'Server restart in 3 minutes',
+            58: 'Server restart in 2 minutes',
+            59: 'Server restart in 1 minute'
+        }
+        if (server_restart_messages[current_minute]) {
+            runCommand(`#Announce ${server_restart_messages[current_minute]}`);
+        }
+    }
+}
 startFtpFileProcessingIntervalLoginLog();
-//startFtpFileProcessingIntervalChatLog();
+startFtpFileProcessingIntervalChatLog();
+startCheckLocalServerTimeInterval();
 async function handleIngameSCUMChatMessages() {
     /**
      * Fetch the data from the resolved promise returned by readAndFormatGportalFtpServerChatLog. This contains all of the chat messages said on the server. 
@@ -924,7 +948,6 @@ async function handleIngameSCUMChatMessages() {
     }
 }
 async function processQueue() {
-    console.log('process queue');
     isQueueProcessing = true;
 
     while (command_queue.length > 0) { 
@@ -933,13 +956,12 @@ async function processQueue() {
          * who executed the command
          */
         const user_chat_message_object = command_queue.shift(); 
-        console.log(user_chat_message_object);
         if (user_chat_message_object.value === undefined) { 
-            console.log('Value is undefined');
             return;
         }
         const command_to_execute = user_chat_message_object.value[0].substring(1);
         const command_to_execute_player_steam_id = user_chat_message_object.key[0];
+
         /**
          * If a command that matches a command inside of the queue cannot be found, skip over the command and continue onto the next command
          */
