@@ -359,7 +359,7 @@ async function teleportNewPlayersToLocation(online_users) {
             user_steam_id = user_first_join_results.user_steam_id;
             await sleep(20000);
             console.log(`#Teleport -129023.125 -91330.055 36830.551 ${user_steam_id}`);
-            runCommand(`#Teleport -129023.125 -91330.055 36830.551 ${user_steam_id}`);
+            enqueueCommand(`#Teleport -129023.125 -91330.055 36830.551 ${user_steam_id}`);
         }
         userRepository.updateUser(key, { user_joining_server_first_time: 1 });
     }
@@ -857,13 +857,13 @@ async function runCommand(command) {
     if (!scumProcess) {
         return;
     }
-    await sleep(150);
+    await sleep(500);
     copyToClipboard(command);
-    await sleep(150);
+    await sleep(500);
     pasteFromClipboard();
-    await sleep(150);
+    await sleep(500);
     pressEnterKey();
-    await sleep(150);
+    await sleep(500);
 }
 
 async function moveCursorToContinueButtonAndPressContinue() {
@@ -880,9 +880,11 @@ async function moveCursorToContinueButtonAndPressContinue() {
 
 const command_queue = [];
 let isProcessing = false;
-function enqueueCommand(user_chat_message_object) {
+async function enqueueCommand(user_chat_message_object) {
     command_queue.push(user_chat_message_object);
-    processQueue();
+    if (!isProcessing) {
+        await processQueue();
+    }
 }
 
 /**
@@ -937,28 +939,22 @@ async function handleIngameSCUMChatMessages() {
      * For each command that has been extracted from the chat log, place the command in a queue for execution
      */
     for (let i = 0; i < ftp_server_chat_log.length; i++) {
-        let user_chat_message_object = ftp_server_chat_log[i];
-        enqueueCommand(user_chat_message_object);
-    }
-    /**
-     * If the queue is not currently processing commands, and commands exist inside of the queue, begin executing the commands inside of the queue
-     */
-    if (!isProcessing) {
-        processQueue();
+        await enqueueCommand(ftp_server_chat_log[i]);
     }
 }
 async function processQueue() {
     isQueueProcessing = true;
-
     while (command_queue.length > 0) { 
         /**
          * After a command has finished execution in the queue, shift the values one spot to remove the command which has been executed. Extract the command and the steam id of the user
          * who executed the command
          */
         const user_chat_message_object = command_queue.shift(); 
+        
         if (user_chat_message_object.value === undefined) { 
-            return;
+            continue;
         }
+
         const command_to_execute = user_chat_message_object.value[0].substring(1);
         const command_to_execute_player_steam_id = user_chat_message_object.key[0];
 
@@ -968,7 +964,6 @@ async function processQueue() {
         if (!client_instance.commands.get(command_to_execute)) {
             continue;
         }
-
 
         /**
          * Fetch the user from the database with an id that corresponds with the one associated with the executed command. After, fetch all of properties and data from the user and command
@@ -994,11 +989,12 @@ async function processQueue() {
         if (command_to_execute === 'welcomepack') {
             const welcome_pack_cost = user_account.user_welcome_pack_cost;
              if (user_account_balance < welcome_pack_cost) {
-                 enqueueCommand(`${client_ingame_chat_name} you do not have enough money to use your welcome pack again. Use the command /balance to check your balance`);
+                 runCommand(`${client_ingame_chat_name} you do not have enough money to use your welcome pack again. Use the command /balance to check your balance`);
                  continue;
              } else {
+                 const user_account_for_welcome_pack = await userRepository.findUserById(command_to_execute_player_steam_id);
                  await userRepository.updateUserWelcomePackUsesByOne(user_account.user_steam_id);
-                 continue;
+                 await userRepository.updateUserAccountBalance(command_to_execute_player_steam_id, -user_account_for_welcome_pack.user_welcome_pack_cost);
              }
         }
 
@@ -1006,7 +1002,6 @@ async function processQueue() {
             console.log(`${client_ingame_chat_name}, you do not have enough money to use this package. Use the command /balance to check your balance.`);
             continue;
         }
-
         /**
          * If the cost to execute the command does not equal undefined, subtract the balance of the package from the user's balance 
          */
@@ -1015,11 +1010,11 @@ async function processQueue() {
         }
 
         /**
-         * Open the chat menu by pressing the 'T' key. If the chat is already open, press the 'Backspace' key to get rid of the hanging 'T' character
+         * Open the chat menu by pressing the 'T' key. If the chat is already open, press the 'BackspaDiscord: https://discord.gg/4BYPXWSFkvce' key to get rid of the hanging 'T' character
          */
         pressCharacterKeyT();
         pressBackspaceKey();
-
+        
         for (let i = 0; i < client_command_data.length; i++) {
             await runCommand(client_command_data[i]);
         } 
