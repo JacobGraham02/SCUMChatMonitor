@@ -796,8 +796,8 @@ function pressBackspaceKey() {
 }
 
 function moveMouseToContinueButtonXYLocation() {
-    const x_cursor_position = 470;
-    const y_cursor_position = 550;
+    const x_cursor_position = 467;
+    const y_cursor_position = 590;
     const command = `powershell.exe -command "Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class P { [DllImport(\\"user32.dll\\")] public static extern bool SetCursorPos(int x, int y); }'; [P]::SetCursorPos(${x_cursor_position}, ${y_cursor_position})"`;
     exec(command, (error) => {
         if (error) {
@@ -856,7 +856,7 @@ async function runCommand(command) {
     const scumProcess = exec('powershell.exe -c "Add-Type -TypeDefinition \'using System; using System.Runtime.InteropServices; public class User32 { [DllImport(\"user32.dll\")] public static extern bool SetForegroundWindow(IntPtr hWnd); }\'"');
     if (!scumProcess) {
         return;
-    }
+    }  
     await sleep(500);
     copyToClipboard(command);
     await sleep(500);
@@ -871,7 +871,7 @@ async function moveCursorToContinueButtonAndPressContinue() {
     if (!scumProcess) {
         return;
     }
-    await sleep(1000);
+    await sleep(30000);
     moveMouseToContinueButtonXYLocation();
     await sleep(1000);
     pressMouseLeftClickButton();
@@ -1010,11 +1010,8 @@ async function processQueue() {
         }
 
         /**
-         * Open the chat menu by pressing the 'T' key. If the chat is already open, press the 'BackspaDiscord: https://discord.gg/4BYPXWSFkvce' key to get rid of the hanging 'T' character
+         * Open the chat menu by pressing the 'T' key. If the chat is already open, press the 'Backspace key to get rid of the hanging 'T' character
          */
-        pressCharacterKeyT();
-        pressBackspaceKey();
-        
         for (let i = 0; i < client_command_data.length; i++) {
             await runCommand(client_command_data[i]);
         } 

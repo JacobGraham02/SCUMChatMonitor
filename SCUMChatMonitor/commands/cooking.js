@@ -3,14 +3,14 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 module.exports = function (player_steam_id) {
     const object = {
         data: new SlashCommandBuilder()
-            .setName('discord')
-            .setDescription('Generates a link for discord'),
-        command_data: ['Discord: https://discord.gg/4BYPXWSFkv'],
+            .setName('cooking')
+            .setDescription('Spawns a bunch of ingredients for avid cooks'),
+        command_data: [''],
         authorization_role_name: [],
-        command_cost: 0,
+        command_cost: 4000,
 
         async execute(interaction) {
-            await interaction.reply(`Discord: https://discord.gg/4BYPXWSFkv`)
+
         }
     }
     return object;

@@ -40,10 +40,14 @@
     <Content Include="app.js" />
     <Content Include="bin\Microsoft.NodejsTools.WebRole.dll" />
     <Content Include="bin\www" />
+    <Content Include="commands\cooking.js" />
+    <Content Include="commands\medicine.js" />
     <Content Include="commands\balance.js" />
     <Content Include="commands\discord.js">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="commands\fishing.js" />
+    <Content Include="commands\builder.js" />
     <Content Include="commands\pvpzones.js" />
     <Content Include="commands\restarttime.js" />
     <Content Include="commands\welcomepack.js" />
@@ -82,7 +86,7 @@
     <Content Include="routes\admin.js">
       <SubType>Code</SubType>
     </Content>
-    <Content Include="scumchatmonitor.exe" />
+    <Content Include="run.bat" />
     <Content Include="views\admin\command.pug" />
     <Content Include="views\admin\index.pug">
       <SubType>Code</SubType>
