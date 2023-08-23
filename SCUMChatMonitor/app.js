@@ -44,11 +44,7 @@ const client_instance = new Client({
  */
 const discord_chat_channel_bot_commands = '1125874103757328494';
 
-/** Initialize utility classes before using them to increase speed and efficiently allocate memory
- * 
- */
 databaseConnectionManager = new DatabaseConnectionManager();
-userRepository = new UserRepository();
 
 /**
  * The following regex string is for steam ids associated with a steam name specifically for the login log file. 
@@ -142,7 +138,7 @@ let ftp_login_file_lines_already_processed = 0;
  * last_line_processed stores the last line processed as another safeguard so that only lines in the file after the specified one are executed
  */
 let last_line_processed = 0;
-
+    
 const login_times = new Map();
 
 const user_balance_updates = new Map();
@@ -213,13 +209,13 @@ async function determinePlayerLoginSessionMoney(logs) {
     for (const [user_steam_id, update] of user_balance_updates) {
         try {
             await userRepository.updateUserAccountBalance(user_steam_id, update);
+            user_balance_updates.delete(user_steam_id);
         } catch (database_updated_error) {
             sendEmail(process.env.scumbot_chat_monitor_email_source, "SCUMBotChatMonitor update account balance fail", `There was an error when the SCUM bot attempted to give the user ${user_steam_id} money for being online the server`);
             console.error(`Failed to update user account balance for user with steam id ${user_steam_id}`);
         }
     }
 }
-//userRepository.updateAllUsersWithJoinedServerValueOne();
 async function readAndFormatGportalFtpServerLoginLog(request, response) {
     try {
         const ftpClient = new FTPClient();
@@ -324,7 +320,8 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
             user_steam_ids[file_contents_steam_ids_array[i]] = file_contents_steam_name_array[i];
         }
        
-        determinePlayerLoginSessionMoney(browser_file_content_individual_lines);
+        await determinePlayerLoginSessionMoney(browser_file_content_individual_lines);
+
         await insertSteamUsersIntoDatabase(Object.keys(user_steam_ids), Object.values(user_steam_ids));
 
         await teleportNewPlayersToLocation(user_steam_ids);
@@ -345,7 +342,6 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
  * @param {any} online_users a Map containing the key-value pairs of user steam id and user steam name
  */
 async function teleportNewPlayersToLocation(online_users) { 
-    let user_name = '';
     /**
      * Iterate over each key in the Map online_users. Each key in the Map is the steam id of the user
      */
@@ -357,83 +353,71 @@ async function teleportNewPlayersToLocation(online_users) {
         user_first_join_results = await userRepository.findUserByIdIfFirstServerJoin(key);
         if (user_first_join_results) {
             user_steam_id = user_first_join_results.user_steam_id;
-            await sleep(20000);
-            console.log(`#Teleport -129023.125 -91330.055 36830.551 ${user_steam_id}`);
-            enqueueCommand(`#Teleport -129023.125 -91330.055 36830.551 ${user_steam_id}`);
+            await sleep(40000);
+            runCommand(`#Teleport -129023.125 -91330.055 36830.551 ${user_steam_id}`);
         }
         userRepository.updateUser(key, { user_joining_server_first_time: 1 });
     }
 }
 
 async function readAndFormatGportalFtpServerChatLog(request, response) {
+    let ftpClient;
     try {
-        const ftpClient = new FTPClient();
+        // Initialize FTP client
+        ftpClient = new FTPClient();
+
+        // Connect to FTP server and wait for connection or an error
         await new Promise((resolve, reject) => {
             ftpClient.on('ready', resolve);
             ftpClient.on('error', reject);
             ftpClient.connect(gportal_ftp_config);
         });
 
+        // Retrieve a list of files from a target directory on the FTP server
         const files = await new Promise((resolve, reject) => {
             ftpClient.list(gportal_ftp_server_target_directory, (error, files) => {
-                if (error) {
-                    console.log('Error retrieving file listing:', error);
-                    reject('Failed to retrieve file listing');
-                } else {
-                    resolve(files);
-                }
+                if (error) reject('Failed to retrieve file listing');
+                else resolve(files);
             });
         });
+
+        // Filter for chat log files based on a filename prefix and sort by date
         const matching_files = files
             .filter(file => file.name.startsWith(gportal_ftp_server_filename_prefix_chat))
             .sort((file_one, file_two) => file_two.date - file_one.date);
 
+        // Check if no matching files were found
         if (matching_files.length === 0) {
             response.status(500).json({ message: `No files were found that started with the prefix ${gportal_ftp_server_filename_prefix_chat}` });
-            ftpClient.end();
             return;
         }
 
+        // Fetch the most recent matching file as a stream from the FTP server
         const filePath = `${gportal_ftp_server_target_directory}${matching_files[0].name}`;
-
         const stream = await new Promise((resolve, reject) => {
             ftpClient.get(filePath, (error, stream) => {
-                if (error) {
-                    reject(`The file was present in gportal, but could not be fetched. ${error}`);
-                } else {
-                    resolve(stream);
-                }
+                if (error) reject(`The file was present in gportal, but could not be fetched. ${error}`);
+                else resolve(stream);
             });
         });
 
-        let file_contents = '';
+        // Process the data from the stream
+        let browser_file_contents = '';
+        let file_contents_steam_id_and_messages = [];
+
         await new Promise((resolve, reject) => {
             stream.on('data', (chunk) => {
-                //console.log(`Stream data is incoming from the specific FTP server log`);
-                file_contents += chunk;
+                // Process each chunk on-the-fly
+                const processed_chunk = chunk.toString().replace(/\u0000/g, '');
+                browser_file_contents += processed_chunk;
             });
 
-            stream.on('end', () => {
-                //console.log(`Data stream from the specific FTP server log has completed successfully`);
-                //console.log('File contents retrieved from the data stream: ', file_contents);
-                resolve();
-            });
-
+            stream.on('end', resolve);
             stream.on('error', reject);
         });
-        const current_file_content_hash = crypto.createHash('md5').update(file_contents).digest('hex');
-        if (current_file_content_hash === existing_cached_file_content_hash_chat_log) {
-            return;
-        } else {
-            existing_cached_file_content_hash_chat_log = current_file_content_hash;
-        }
 
-        const browser_file_contents = file_contents.replace(/\u0000/g, '');
-
+        // Split the file content by lines and process each line
         const browser_file_contents_lines = browser_file_contents.split('\n');
-
-        const file_contents_steam_id_and_messages = [];
-
         for (let i = last_line_processed; i < browser_file_contents_lines.length; i++) {
             if (browser_file_contents_lines[i].match(chat_log_messages_regex)) {
                 file_contents_steam_id_and_messages.push({
@@ -444,17 +428,22 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
         }
 
         last_line_processed = browser_file_contents_lines.length;
-
         return file_contents_steam_id_and_messages;
-        
-        ftpClient.end();
+
     } catch (error) {
-        //sendEmail(process.env.scumbot_chat_monitor_email_source, 'SCUMChatMonitor error', `There was an error reading the chat log file from gportal, and the bot may have crashed. Below is the error message: ${error}`);
+        // On error, send an email notification, log the error, and respond with a 500 status
+        sendEmail(process.env.scumbot_chat_monitor_email_source, 'SCUMChatMonitor error', `There was an error reading the chat log file from gportal, and the bot may have crashed. Below is the error message: ${error}`);
         console.log('Error processing files:', error);
         response.status(500).json({ error: 'Failed to process files' });
-        process.exit();
+    } finally {
+        // Ensure FTP connection is always closed, regardless of success or error
+        if (ftpClient) {
+            ftpClient.end();
+        }
     }
 }
+
+
 
 /**
  * Start an interval of reading chat log messages from gportal which repeats every 10 seconds
