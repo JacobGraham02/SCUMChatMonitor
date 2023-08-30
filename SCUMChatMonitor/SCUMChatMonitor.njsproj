@@ -55,6 +55,7 @@
       <SubType>Code</SubType>
     </Content>
     <Content Include="deploy-commands.js" />
+    <Content Include="EmailService.js" />
     <Content Include="gmail-credentials.json" />
     <Content Include="modules\extractDataFromCommands.js" />
     <Content Include="modules\hashAndValidatePassword.js">

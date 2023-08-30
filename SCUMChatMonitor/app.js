@@ -16,6 +16,9 @@ const { exec } = require('child_process');
 const fs = require('node:fs');
 const FTPClient = require('ftp');
 const MongoStore = require('connect-mongo');
+const util = require('util');
+const writeFile = util.promisify(fs.writeFile);
+const appendFile = util.promisify(fs.appendFile);
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
 
 
@@ -26,7 +29,6 @@ const hashAndValidatePassword = require('./modules/hashAndValidatePassword');
 const DatabaseConnectionManager = require('./database/DatabaseConnectionManager');
 const UserRepository = require('./database/UserRepository');
 const { discord_bot_token } = require('./config.json');
-//const sendEmail = require('./mailer');
 var indexRouter = require('./routes/index');
 var adminRouter = require('./routes/admin');
 
@@ -40,12 +42,12 @@ const client_instance = new Client({
 });
 
 /** Each channel in a discord server is identified by a unique integer value
- * 
  */
 const discord_chat_channel_bot_commands = '1125874103757328494';
 
-databaseConnectionManager = new DatabaseConnectionManager();
+const discord_channel_id_for_heartbeat = '1146531098290028614';
 
+const user_repository = new UserRepository();
 /**
  * The following regex string is for steam ids associated with a steam name specifically for the login log file. 
  * They are saved as a 17-digit number (e.g. 12345678912345678)
@@ -149,8 +151,13 @@ const user_balance_updates = new Map();
  * @param {string[]} logs An array of strings that represents the contents of the FTP login file on gportal.  
  * */
 async function determinePlayerLoginSessionMoney(logs) {
+
+    if (!Array.isArray(logs)) {
+        throw new Error('Invalid logs array');
+    }
+
     for (const log of logs) {
-        if (log.includes("Game version: ") || log === '') {
+        if (!log || log.includes("Game version: ")) {
             continue;
         } 
         /**
@@ -208,17 +215,16 @@ async function determinePlayerLoginSessionMoney(logs) {
      */
     for (const [user_steam_id, update] of user_balance_updates) {
         try {
-            await userRepository.updateUserAccountBalance(user_steam_id, update);
+            await user_repository.updateUserAccountBalance(user_steam_id, update);
             user_balance_updates.delete(user_steam_id);
         } catch (database_updated_error) {
-            sendEmail(process.env.scumbot_chat_monitor_email_source, "SCUMBotChatMonitor update account balance fail", `There was an error when the SCUM bot attempted to give the user ${user_steam_id} money for being online the server`);
             console.error(`Failed to update user account balance for user with steam id ${user_steam_id}`);
         }
     }
 }
 async function readAndFormatGportalFtpServerLoginLog(request, response) {
+    const ftpClient = new FTPClient();
     try {
-        const ftpClient = new FTPClient();
         await new Promise((resolve, reject) => {
             ftpClient.on('ready', resolve);
             ftpClient.on('error', reject);
@@ -286,29 +292,29 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
             existing_cached_file_content_hash_login_log = current_file_content_hash;
         }
 
-        const browser_file_contents = file_contents.replace(/\u0000/g, '');
+        const login_log_file_contents = file_contents.replace(/\u0000/g, '');
 
 
-        const browser_file_content_individual_lines = browser_file_contents.split('\n');
+        const login_log_file_content_individual_lines = login_log_file_contents.split('\n');
 
         // If we have already processed the lines that exist in the ftp file, remove them
-        if (ftp_login_file_lines_already_processed < browser_file_content_individual_lines.length) {
-            browser_file_content_individual_lines.splice(0, ftp_login_file_lines_already_processed);
+        if (ftp_login_file_lines_already_processed < login_log_file_content_individual_lines.length) {
+            login_log_file_content_individual_lines.splice(0, login_log_file_content_individual_lines);
         }
         /**
          * Update the number of lines already processed in the log file from gportal. This will prevent the entire log file from being read again when the file changes
          */
-        ftp_login_file_lines_already_processed = browser_file_content_individual_lines.length;
+        ftp_login_file_lines_already_processed = login_log_file_content_individual_lines.length;
 
         //const new_file_content = browser_file_content_individual_lines.join('\n');
 
         /**
          * The return values from the .match() function return an object containing the substrings which match the pattern specified in the regex string
          */
-        const file_contents_steam_ids = browser_file_contents.match(login_log_steam_id_regex);
-        const file_contents_steam_messages = browser_file_contents.match(login_log_steam_name_regex);
+        const file_contents_steam_ids = login_log_file_contents.match(login_log_steam_id_regex);
+        const file_contents_steam_messages = login_log_file_contents.match(login_log_steam_name_regex);
 
-        if (browser_file_contents.match(login_log_wilson_logged_out_regex)) {
+        if (file_contents.match(login_log_wilson_logged_out_regex)) {
             moveCursorToContinueButtonAndPressContinue();
         }
 
@@ -319,19 +325,19 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
         for (let i = 0; i < file_contents_steam_ids_array.length; i++) {
             user_steam_ids[file_contents_steam_ids_array[i]] = file_contents_steam_name_array[i];
         }
-       
-        await determinePlayerLoginSessionMoney(browser_file_content_individual_lines);
+
+        await determinePlayerLoginSessionMoney(login_log_file_content_individual_lines);
 
         await insertSteamUsersIntoDatabase(Object.keys(user_steam_ids), Object.values(user_steam_ids));
 
         await teleportNewPlayersToLocation(user_steam_ids);
-
-        ftpClient.end();
     } catch (error) {
-        //sendEmail(process.env.scumbot_chat_monitor_email_source, 'SCUMChatMonitor error', `There was an error reading the login log file from gportal, and the bot may have crashed. The error message is below: ${error}`);
-        console.log('Error processing files:', error);
+        console.log('Error processing login log file:', error);
         response.status(500).json({ error: 'Failed to process files' });
-        process.exit();
+    } finally {
+        if (ftpClient) {
+            ftpClient.end();
+        }   
     }
 }
 /**
@@ -350,13 +356,13 @@ async function teleportNewPlayersToLocation(online_users) {
          * Replacing the ' characters enclosing the string so we get a valid number
          */
         key.replace(/'/g, "");
-        user_first_join_results = await userRepository.findUserByIdIfFirstServerJoin(key);
+        user_first_join_results = await user_repository.findUserByIdIfFirstServerJoin(key);
         if (user_first_join_results) {
             user_steam_id = user_first_join_results.user_steam_id;
             await sleep(40000);
-            runCommand(`#Teleport -129023.125 -91330.055 36830.551 ${user_steam_id}`);
+            await runCommand(`#Teleport -129023.125 -91330.055 36830.551 ${user_steam_id}`);
         }
-        userRepository.updateUser(key, { user_joining_server_first_time: 1 });
+        await user_repository.updateUser(key, { user_joining_server_first_time: 1 });
     }
 }
 
@@ -428,22 +434,80 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
         }
 
         last_line_processed = browser_file_contents_lines.length;
+        browser_file_contents = '';
         return file_contents_steam_id_and_messages;
 
     } catch (error) {
-        // On error, send an email notification, log the error, and respond with a 500 status
-        sendEmail(process.env.scumbot_chat_monitor_email_source, 'SCUMChatMonitor error', `There was an error reading the chat log file from gportal, and the bot may have crashed. Below is the error message: ${error}`);
         console.log('Error processing files:', error);
         response.status(500).json({ error: 'Failed to process files' });
     } finally {
-        // Ensure FTP connection is always closed, regardless of success or error
         if (ftpClient) {
             ftpClient.end();
         }
     }
 }
 
+function startCheckLocalServerTimeInterval() {
+    checkLocalServerTime = setInterval(checkLocalServerTime, 60000);
+}
 
+function stopCheckLocalServerTimeInterval() {
+    clearInterval(checkLocalServerTime);
+}
+async function moveCursorToContinueButtonAndPressContinue() {
+    moveMouseToContinueButtonXYLocation();
+    await sleep(80000);
+    pressMouseLeftClickButton();
+}
+
+function moveMouseToContinueButtonXYLocation() {
+    const x_cursor_position = 467;
+    const y_cursor_position = 590;
+    const command = `powershell.exe -command "Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class P { [DllImport(\\"user32.dll\\")] public static extern bool SetCursorPos(int x, int y); }'; [P]::SetCursorPos(${x_cursor_position}, ${y_cursor_position})"`;
+    exec(command, (error) => {
+        if (error) {
+            console.error(`Error moving the mouse the mouse to x 470, y 550 and left-clicking:${error}`);
+        } else {
+            // console.log('Mouse cursor moved to x 470 y 550 and the left mouse button was pressed');
+        }
+    });
+}
+
+function pressMouseLeftClickButton() {
+    const command = `powershell.exe -command "Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class P { [DllImport(\\"user32.dll\\")] public static extern void mouse_event(int dwFlags, int dx, int dy, int dwData, int dwExtraInfo); }'; $leftDown = 0x0002; $leftUp = 0x0004; [P]::mouse_event($leftDown, 0, 0, 0, 0); [P]::mouse_event($leftUp, 0, 0, 0, 0);"`;
+    exec(command, (error) => {
+        if (error) {
+            console.error(`Error when simulating a left click on the mouse`);
+        } else {
+            // console.log('Left click button on mouse was clicked');
+        }
+    });
+}
+async function checkLocalServerTime() {
+    const currentDateTime = new Date();
+    const easternStandardTimeDateTime = new Date(currentDateTime.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+    const current_hour = easternStandardTimeDateTime.getHours();
+    const current_minute = easternStandardTimeDateTime.getMinutes();
+
+    if (current_hour === 23) {
+        const server_restart_messages = {
+            40: 'Server restart in 20 minutes',
+            50: 'Server restart in 10 minutes',
+            55: 'Server restart in 5 minutes',
+            56: 'Server restart in 4 minutes',
+            57: 'Server restart in 3 minutes',
+            58: 'Server restart in 2 minutes',
+            59: 'Server restart in 1 minute'
+        }
+        if (server_restart_messages[current_minute]) {
+            await runCommand(`#Announce ${server_restart_messages[current_minute]}`);
+        }
+    }
+}
+
+startFtpFileProcessingIntervalLoginLog();
+startFtpFileProcessingIntervalChatLog();
+startCheckLocalServerTimeInterval();
 
 /**
  * Start an interval of reading chat log messages from gportal which repeats every 10 seconds
@@ -481,9 +545,6 @@ function stopFileProcessingIntervalChatFile() {
  * @param {any} admin_user_password A string representation of the data submitted on the login form
  */
 function insertAdminUserIntoDatabase(admin_user_username, admin_user_password) {
-    database_manager = new DatabaseConnectionManager();
-    user_repository = new UserRepository();
-
     const hashed_admin_user_password = hashAndValidatePassword.hashPassword(admin_user_password);
 
     user_repository.createAdminUser(admin_user_username, hashed_admin_user_password);
@@ -492,8 +553,6 @@ function insertAdminUserIntoDatabase(admin_user_username, admin_user_password) {
  * Reads all of the documents from a specified collection in mongodb. 
  */
 async function readSteamUsersFromDatabase() {
-    database_manager = new DatabaseConnectionManager();
-    user_repository = new UserRepository();
     user_repository.findAllUsers().then((results) => { console.log(results) });
 }
 
@@ -503,9 +562,6 @@ async function readSteamUsersFromDatabase() {
  * @param {any} steam_user_names_array An array containing only string representations of a steam username
  */
 async function insertSteamUsersIntoDatabase(steam_user_ids_array, steam_user_names_array) {
-    database_manager = new DatabaseConnectionManager();
-    user_repository = new UserRepository();
-
     for (let i = 0; i < steam_user_ids_array.length; i++) {
         user_repository.createUser(steam_user_names_array[i], steam_user_ids_array[i]);
     }
@@ -526,8 +582,6 @@ async function insertSteamUsersIntoDatabase(steam_user_ids_array, steam_user_nam
  * @param {any} done
  */
 const verifyCallback = (username, password, done) => {
-    database_manager = new DatabaseConnectionManager();
-    user_repository = new UserRepository();
     user_repository.findAdminByUsername(username).then((admin_data_results) => {
         if (admin_data_results === null) {
             return done(null, false);
@@ -587,8 +641,6 @@ passport.serializeUser(function (admin, done) {
  * This is used in conjunction with serializeUser to give passport the ability to attach 
  */
 passport.deserializeUser(function (uuid, done) {
-    database_manager = new DatabaseConnectionManager();
-    user_repository = new UserRepository();
     user_repository.findAdminByUuid(uuid).then(function (admin_data_results) {
         done(null, admin_data_results);
     }).catch(error => {
@@ -645,8 +697,23 @@ for (const command_file of command_files_list) {
  * The discord API triggers an event called 'ready' when the discord bot is ready to respond to commands and other input. 
  */
 client_instance.on('ready', () => {
+
+    const target_heartbeat_channel = client_instance.channels.cache.get(discord_channel_id_for_heartbeat);
+    
+    setInterval(() => {
+        if (target_heartbeat_channel) {
+            target_heartbeat_channel.send('The bot is currently running');
+        } else {
+            console.log('An error has occurred - Please inform the bot developer that the specified discord channel could not be fetched');
+        }
+    }, 60000);
+
     console.log(`The bot is logged in as ${client_instance.user.tag}`);
 });
+
+function startCheckLocalServerTimeInterval() {
+    checkLocalServerTime = setInterval(checkLocalServerTime, 60000);
+}
 
 /**
  * When an interaction (command) to executed on discord - for example: !discord - the discord API triggers an event called 'interactionCreate'. 
@@ -784,30 +851,6 @@ function pressBackspaceKey() {
     });
 }
 
-function moveMouseToContinueButtonXYLocation() {
-    const x_cursor_position = 467;
-    const y_cursor_position = 590;
-    const command = `powershell.exe -command "Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class P { [DllImport(\\"user32.dll\\")] public static extern bool SetCursorPos(int x, int y); }'; [P]::SetCursorPos(${x_cursor_position}, ${y_cursor_position})"`;
-    exec(command, (error) => {
-        if (error) {
-            console.error(`Error moving the mouse the mouse to x 470, y 550 and left-clicking:${error}`);
-        } else {
-            // console.log('Mouse cursor moved to x 470 y 550 and the left mouse button was pressed');
-        }
-    });
-}
-
-function pressMouseLeftClickButton() {
-    const command = `powershell.exe -command "Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class P { [DllImport(\\"user32.dll\\")] public static extern void mouse_event(int dwFlags, int dx, int dy, int dwData, int dwExtraInfo); }'; $leftDown = 0x0002; $leftUp = 0x0004; [P]::mouse_event($leftDown, 0, 0, 0, 0); [P]::mouse_event($leftUp, 0, 0, 0, 0);"`;
-    exec(command, (error) => {
-        if (error) {
-            console.error(`Error when simulating a left click on the mouse`);
-        } else {
-            // console.log('Left click button on mouse was clicked');
-        }
-    });
-}
-
 /**
  * Uses the Windows powershell command '[System.Windows.Forms.SendKeys]::SendWait('{Enter}') to simulate an 'enter' character key press on the active window. 
  * In this case, the active window is SCUM.exe. The enter key sends a message in chat when pressed. 
@@ -855,18 +898,6 @@ async function runCommand(command) {
     await sleep(500);
 }
 
-async function moveCursorToContinueButtonAndPressContinue() {
-    const scumProcess = exec('powershell.exe -c "Add-Type -TypeDefinition \'using System; using System.Runtime.InteropServices; public class User32 { [DllImport(\"user32.dll\")] public static extern bool SetForegroundWindow(IntPtr hWnd); }\'"');
-    if (!scumProcess) {
-        return;
-    }
-    await sleep(30000);
-    moveMouseToContinueButtonXYLocation();
-    await sleep(1000);
-    pressMouseLeftClickButton();
-    await sleep(1000);
-}
-
 const command_queue = [];
 let isProcessing = false;
 async function enqueueCommand(user_chat_message_object) {
@@ -881,37 +912,6 @@ async function enqueueCommand(user_chat_message_object) {
  * for sequential execution.
  */
 
-function startCheckLocalServerTimeInterval() {
-    checkLocalServerTime = setInterval(checkLocalServerTime, 60000);
-}
-
-function stopCheckLocalServerTimeInterval() {
-    clearInterval(checkLocalServerTime);
-}
-function checkLocalServerTime() {
-    const currentDateTime = new Date();
-    const easternStandardTimeDateTime = new Date(currentDateTime.toLocaleString('en-US', { timeZone: 'America/New_York' }));
-    const current_hour = easternStandardTimeDateTime.getHours();
-    const current_minute = easternStandardTimeDateTime.getMinutes();
-
-    if (current_hour === 23) {
-        const server_restart_messages = {
-            40: 'Server restart in 20 minutes',
-            50: 'Server restart in 10 minutes',
-            55: 'Server restart in 5 minutes',
-            56: 'Server restart in 4 minutes',
-            57: 'Server restart in 3 minutes',
-            58: 'Server restart in 2 minutes',
-            59: 'Server restart in 1 minute'
-        }
-        if (server_restart_messages[current_minute]) {
-            runCommand(`#Announce ${server_restart_messages[current_minute]}`);
-        }
-    }
-}
-startFtpFileProcessingIntervalLoginLog();
-startFtpFileProcessingIntervalChatLog();
-startCheckLocalServerTimeInterval();
 async function handleIngameSCUMChatMessages() {
     /**
      * Fetch the data from the resolved promise returned by readAndFormatGportalFtpServerChatLog. This contains all of the chat messages said on the server. 
@@ -958,7 +958,7 @@ async function processQueue() {
          * Fetch the user from the database with an id that corresponds with the one associated with the executed command. After, fetch all of properties and data from the user and command
          * that is relevant
          */
-        const user_account = await userRepository.findUserById(command_to_execute_player_steam_id);
+        const user_account = await user_repository.findUserById(command_to_execute_player_steam_id);
         const user_account_balance = user_account.user_money;
         const function_property_data = client_instance.commands.get(command_to_execute)(user_account);
         const client_command_data = function_property_data.command_data;
@@ -978,12 +978,12 @@ async function processQueue() {
         if (command_to_execute === 'welcomepack') {
             const welcome_pack_cost = user_account.user_welcome_pack_cost;
              if (user_account_balance < welcome_pack_cost) {
-                 runCommand(`${client_ingame_chat_name} you do not have enough money to use your welcome pack again. Use the command /balance to check your balance`);
+                 await runCommand(`${client_ingame_chat_name} you do not have enough money to use your welcome pack again. Use the command /balance to check your balance`);
                  continue;
              } else {
-                 const user_account_for_welcome_pack = await userRepository.findUserById(command_to_execute_player_steam_id);
-                 await userRepository.updateUserWelcomePackUsesByOne(user_account.user_steam_id);
-                 await userRepository.updateUserAccountBalance(command_to_execute_player_steam_id, -user_account_for_welcome_pack.user_welcome_pack_cost);
+                 const user_account_for_welcome_pack = await user_repository.findUserById(command_to_execute_player_steam_id);
+                 await user_repository.updateUserWelcomePackUsesByOne(user_account.user_steam_id);
+                 await user_repository.updateUserAccountBalance(command_to_execute_player_steam_id, -user_account_for_welcome_pack.user_welcome_pack_cost);
              }
         }
 
@@ -995,7 +995,7 @@ async function processQueue() {
          * If the cost to execute the command does not equal undefined, subtract the balance of the package from the user's balance 
          */
         if (!(client_command_data_cost === undefined)) {
-            await userRepository.updateUserAccountBalance(command_to_execute_player_steam_id, -client_command_data_cost);
+            await user_repository.updateUserAccountBalance(command_to_execute_player_steam_id, -client_command_data_cost);
         }
 
         /**
@@ -1007,7 +1007,7 @@ async function processQueue() {
     }
     isQueueProcessing = false; // Set the processing flag to false when all commands have been processed to indicate the queue is no longer executing
 }
-//moveCursorToContinueButtonAndPressContinue
+
 /**
  * Bot interacts with the discord API to 'log in' and become ready to start executing commands
  */
