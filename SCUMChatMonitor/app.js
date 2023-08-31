@@ -16,9 +16,6 @@ const { exec } = require('child_process');
 const fs = require('node:fs');
 const FTPClient = require('ftp');
 const MongoStore = require('connect-mongo');
-const util = require('util');
-const writeFile = util.promisify(fs.writeFile);
-const appendFile = util.promisify(fs.appendFile);
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
 
 
@@ -127,8 +124,8 @@ app.use(passport.session());
 /**
  * existing_cached_file_content_hash is a variable which stores a hashed version of the raw file contents retrieved from the ftp log files in gportal
  */
-let existing_cached_file_content_hash_chat_log = '';
 let existing_cached_file_content_hash_login_log = '';
+let existing_cached_file_content_hash_chat_log = '';
 
 /**
  * ftp_login_file_lines_already_processed stores a value which holds the number of lines in a file already processed. When a new line appears in the chat log, instead of
@@ -142,7 +139,6 @@ let ftp_login_file_lines_already_processed = 0;
 let last_line_processed = 0;
     
 const login_times = new Map();
-
 const user_balance_updates = new Map();
 
 /**
@@ -222,17 +218,26 @@ async function determinePlayerLoginSessionMoney(logs) {
         }
     }
 }
+
+/**
+ * This asynchronous function reads login log files from the FTP server hosted on GPortal for my SCUM server
+ * The npm package 'FTP' provides functionality to process the data fetched from the GPortal FTP server and extract the relevant 
+ * steam id of the invoker, and their associated in-game chat message
+ * @param {Object} request An HTTP request object which attempts to query data from the FTP server
+ * @param {any} response An HTTP response object which holds the query results obtained from the FTP server
+ * @returns {Array} An array containing object(s) in the following format: {steam_id: string, player_message: string}
+ */
 async function readAndFormatGportalFtpServerLoginLog(request, response) {
-    const ftpClient = new FTPClient();
+    const ftp_client = new FTPClient();
     try {
         await new Promise((resolve, reject) => {
-            ftpClient.on('ready', resolve);
-            ftpClient.on('error', reject);
-            ftpClient.connect(gportal_ftp_config);
+            ftp_client.on('ready', resolve);
+            ftp_client.on('error', reject);
+            ftp_client.connect(gportal_ftp_config);
         });
 
         const files = await new Promise((resolve, reject) => {
-            ftpClient.list(gportal_ftp_server_target_directory, (error, files) => {
+            ftp_client.list(gportal_ftp_server_target_directory, (error, files) => {
                 if (error) {
                     console.log('Error retrieving file listing:', error);
                     reject('Failed to retrieve file listing');
@@ -252,10 +257,10 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
             return;
         }
 
-        const filePath = `${gportal_ftp_server_target_directory}${matching_files[0].name}`;
+        const file_path = `${gportal_ftp_server_target_directory}${matching_files[0].name}`;
 
         const stream = await new Promise((resolve, reject) => {
-            ftpClient.get(filePath, (error, stream) => {
+            ftp_client.get(file_path, (error, stream) => {
                 if (error) {
                     reject(`The file was present in gportal, but could not be fetched. ${error}`);
                 } else {
@@ -306,11 +311,13 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
          */
         ftp_login_file_lines_already_processed = login_log_file_content_individual_lines.length;
 
-        //const new_file_content = browser_file_content_individual_lines.join('\n');
 
         /**
          * The return values from the .match() function return an object containing the substrings which match the pattern specified in the regex string
          */
+        if (!login_log_file_contents.match(login_log_steam_id_regex) || !login_log_file_contents.match(login_log_steam_name_regex)) {
+            return;
+        }
         const file_contents_steam_ids = login_log_file_contents.match(login_log_steam_id_regex);
         const file_contents_steam_messages = login_log_file_contents.match(login_log_steam_name_regex);
 
@@ -335,15 +342,16 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
         console.log('Error processing login log file:', error);
         response.status(500).json({ error: 'Failed to process files' });
     } finally {
-        if (ftpClient) {
-            ftpClient.end();
+        if (ftp_client) {
+            ftp_client.end();
         }   
     }
 }
 /**
  * This function determines if players joining the server are new. If so, they are teleported to a specific area on the map. 
  * The players are teleported to a specific area so they can read relevant server information. 
- * If the mongodb database results return a user who has the property 'user_joining_server_first_time' as a value of '0', a command is added to the command queue which will teleport them
+ * If the mongodb database results return a user who has the property 'user_joining_server_first_time' as a value of '0', a command will be executed
+ * in-game that sends them to a specific location on the game map which tells them starter information they need to know
  * 
  * @param {any} online_users a Map containing the key-value pairs of user steam id and user steam name
  */
@@ -366,83 +374,145 @@ async function teleportNewPlayersToLocation(online_users) {
     }
 }
 
+/**
+ * This asynchronous function reads chat log files from the FTP server hosted on GPortal for my SCUM server
+ * The npm package 'FTP' provides functionality to process the data fetched from the GPortal FTP server and extract the relevant 
+ * steam id of the invoker, and their associated in-game chat message
+ * @param {Object} request An HTTP request object which attempts to query data from the FTP server
+ * @param {any} response An HTTP response object which holds the query results obtained from the FTP server
+ * @returns {Array} An array containing object(s) in the following format: {steam_id: string, player_message: string}
+ */
 async function readAndFormatGportalFtpServerChatLog(request, response) {
-    let ftpClient;
+    let ftp_client;
     try {
-        // Initialize FTP client
-        ftpClient = new FTPClient();
+        ftp_client = new FTPClient();
 
-        // Connect to FTP server and wait for connection or an error
+        /**
+         * Attempt to establish a connection with the FTP server, and provide handlers to handle the result of the operation
+         */
         await new Promise((resolve, reject) => {
-            ftpClient.on('ready', resolve);
-            ftpClient.on('error', reject);
-            ftpClient.connect(gportal_ftp_config);
+            ftp_client.on('ready', resolve);
+            ftp_client.on('error', reject);
+            ftp_client.connect(gportal_ftp_config);
         });
 
-        // Retrieve a list of files from a target directory on the FTP server
+        /**
+         * Fetch a list of all the files in the specified directory on GPortal. In this instance, we fetch all of the files from
+         * the path 'SCUM\\Saved\\SaveFiles\\Logs\\', which will give us access to the chat log file that we need
+         */
         const files = await new Promise((resolve, reject) => {
-            ftpClient.list(gportal_ftp_server_target_directory, (error, files) => {
-                if (error) reject('Failed to retrieve file listing');
-                else resolve(files);
+            ftp_client.list(gportal_ftp_server_target_directory, (error, files) => {
+                if (error) {
+                    reject('Failed to retrieve file listing');
+                } else {
+                    resolve(files);
+                }
             });
         });
-
-        // Filter for chat log files based on a filename prefix and sort by date
+        /**
+         * Based on the log files that we obtained from querying the FTP server, we must filter the chat log files based on a filename prefix and 
+         * sort by date. To obtain the chat logs, we must filter by the file name 'chat_'+most_recent_date', as the file name is 'chat_'+Date+'.log'
+         * E.g. 'chat_202030831164431.log'
+         */
         const matching_files = files
             .filter(file => file.name.startsWith(gportal_ftp_server_filename_prefix_chat))
             .sort((file_one, file_two) => file_two.date - file_one.date);
 
-        // Check if no matching files were found
+        /**
+         * If no matching file names were found in the GPortal FTP server query result, we return a JSON response of an internal server error 
+         * indicating that no target files were found
+         */
         if (matching_files.length === 0) {
             response.status(500).json({ message: `No files were found that started with the prefix ${gportal_ftp_server_filename_prefix_chat}` });
             return;
         }
 
-        // Fetch the most recent matching file as a stream from the FTP server
-        const filePath = `${gportal_ftp_server_target_directory}${matching_files[0].name}`;
+        /**
+         * From the list of chat files retrieved with the date appended to the file name, fetch the file name with the most recent appended date
+         */
+        const file_path = `${gportal_ftp_server_target_directory}${matching_files[0].name}`;
         const stream = await new Promise((resolve, reject) => {
-            ftpClient.get(filePath, (error, stream) => {
-                if (error) reject(`The file was present in gportal, but could not be fetched. ${error}`);
-                else resolve(stream);
+            ftp_client.get(file_path, (error, stream) => {
+                if (error) {
+                    reject(`The file was present in gportal, but could not be fetched. ${error}`);
+                }
+                else {
+                    resolve(stream);
+                }
             });
         });
-
-        // Process the data from the stream
-        let browser_file_contents = '';
+        
         let file_contents_steam_id_and_messages = [];
 
+        /**
+         * Process the incoming data stream from the FTP server query result and append individual data chunks prevent excessive memory usage
+         * or potential memory leaks
+         */
         await new Promise((resolve, reject) => {
+            let browser_file_contents = '';
             stream.on('data', (chunk) => {
-                // Process each chunk on-the-fly
+
+                /**
+                 * Remove null characters from the incoming data streams and replace them with empty strings to avoid any null errors
+                 */
                 const processed_chunk = chunk.toString().replace(/\u0000/g, '');
                 browser_file_contents += processed_chunk;
+
+                /**
+                 * Split the incoming data stream into individual lines so as to allow iteration over each of the lines individually
+                 * This makes extracting any data much easier, or in some cases possible
+                 */
+                const browser_file_contents_lines = browser_file_contents.split('\n');
+                if (browser_file_contents_lines.length > 1) {
+                    for (let i = last_line_processed; i < browser_file_contents_lines.length; i++) {
+                        /**
+                         * When iterating through the stored strings, if any substring matches the regex patterns for user steam ids or user messages,
+                         * append both the user steam id and user in-game message into an array which we will return
+                         */
+                        if (browser_file_contents_lines[i].match(chat_log_messages_regex)) {
+                            file_contents_steam_id_and_messages.push({
+                                key: browser_file_contents_lines[i].match(chat_log_steam_id_regex),
+                                value: browser_file_contents_lines[i].match(chat_log_messages_regex)
+                            });
+                        }
+                    }
+                    /**
+                     * Because a data stream can contain an incomplete line of text, we have to store the last line processed because the line could
+                     * potentially be incomplete. 
+                     * E.g.     Chunk 1: This is line 1\nThis is li
+                     *          Chunk 2: ne 2\nThis is line 3\n
+                     */
+                    browser_file_contents = browser_file_contents_lines[browser_file_contents_lines.length - 1];
+                    last_line_processed = browser_file_contents_lines.length - 1;
+                }
             });
 
-            stream.on('end', resolve);
+            stream.on('end', () => {
+                /**
+                 * If a data stream from the FTP server was properly terminated and returned some results, we will create a hash of those results
+                 * and will not execute the function again if subsequent hashes are identical. 
+                 */
+                if (browser_file_contents) {
+                    const current_chat_log_file_hash = crypto.createHash('sha256').update(browser_file_contents).digest('hex');
+                    if (current_chat_log_file_hash === existing_cached_file_content_hash_chat_log) {
+                        return;
+                    }
+                    existing_cached_file_content_hash_chat_log = current_chat_log_file_hash;
+                    browser_file_contents = '';
+                }
+                resolve();
+            });
+
             stream.on('error', reject);
         });
-
-        // Split the file content by lines and process each line
-        const browser_file_contents_lines = browser_file_contents.split('\n');
-        for (let i = last_line_processed; i < browser_file_contents_lines.length; i++) {
-            if (browser_file_contents_lines[i].match(chat_log_messages_regex)) {
-                file_contents_steam_id_and_messages.push({
-                    key: browser_file_contents_lines[i].match(chat_log_steam_id_regex),
-                    value: browser_file_contents_lines[i].match(chat_log_messages_regex)
-                });
-            }
-        }
-
-        last_line_processed = browser_file_contents_lines.length;
-        browser_file_contents = '';
         return file_contents_steam_id_and_messages;
 
     } catch (error) {
         console.log('Error processing files:', error);
         response.status(500).json({ error: 'Failed to process files' });
     } finally {
-        if (ftpClient) {
-            ftpClient.end();
+        if (ftp_client) {
+            ftp_client.end();
         }
     }
 }
