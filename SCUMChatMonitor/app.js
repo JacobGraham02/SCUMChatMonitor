@@ -23,7 +23,6 @@ const { Client, Collection, GatewayIntentBits } = require('discord.js');
  * Modules and other files which are custom made for the application
  */
 const hashAndValidatePassword = require('./modules/hashAndValidatePassword');
-const DatabaseConnectionManager = require('./database/DatabaseConnectionManager');
 const UserRepository = require('./database/UserRepository');
 const { discord_bot_token } = require('./config.json');
 var indexRouter = require('./routes/index');
@@ -337,7 +336,7 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
 
         await insertSteamUsersIntoDatabase(Object.keys(user_steam_ids), Object.values(user_steam_ids));
 
-        await teleportNewPlayersToLocation(user_steam_ids);
+        //await teleportNewPlayersToLocation(user_steam_ids);
     } catch (error) {
         console.log('Error processing login log file:', error);
         response.status(500).json({ error: 'Failed to process files' });
@@ -492,14 +491,14 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
                  * If a data stream from the FTP server was properly terminated and returned some results, we will create a hash of those results
                  * and will not execute the function again if subsequent hashes are identical. 
                  */
-                if (browser_file_contents) {
+                 if (browser_file_contents) {
                     const current_chat_log_file_hash = crypto.createHash('sha256').update(browser_file_contents).digest('hex');
                     if (current_chat_log_file_hash === existing_cached_file_content_hash_chat_log) {
                         return;
                     }
                     existing_cached_file_content_hash_chat_log = current_chat_log_file_hash;
                     browser_file_contents = '';
-                }
+                 }
                 resolve();
             });
 
@@ -993,7 +992,7 @@ async function handleIngameSCUMChatMessages() {
     if (!ftp_server_chat_log) {
         return;
     } 
-
+    
     /**
      * For each command that has been extracted from the chat log, place the command in a queue for execution
      */
@@ -1005,8 +1004,8 @@ async function processQueue() {
     isQueueProcessing = true;
     while (command_queue.length > 0) { 
         /**
-         * After a command has finished execution in the queue, shift the values one spot to remove the command which has been executed. Extract the command and the steam id of the user
-         * who executed the command
+         * After a command has finished execution in the queue, shift the values one spot to remove the command which has been executed. Extract the command 
+         * and the steam id of the user who executed the command
          */
         const user_chat_message_object = command_queue.shift(); 
         
