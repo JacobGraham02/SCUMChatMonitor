@@ -10,6 +10,7 @@
   },
   "scripts": {
     "start": "start node app.js",
+    "test":  "nodemon app.js",
     "debug": "nodemon --inspect app.js"
   },
   "devDependencies": {

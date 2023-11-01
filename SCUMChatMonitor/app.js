@@ -17,7 +17,7 @@ const fs = require('node:fs');
 const FTPClient = require('ftp');
 const MongoStore = require('connect-mongo');
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
-
+const queue = require('./utils/Queue');
 
 /**
  * Modules and other files which are custom made for the application
@@ -136,6 +136,8 @@ let ftp_login_file_lines_already_processed = 0;
  * last_line_processed stores the last line processed as another safeguard so that only lines in the file after the specified one are executed
  */
 let last_line_processed = 0;
+
+const user_command_queue = new Queue();
     
 const login_times = new Map();
 const user_balance_updates = new Map();
@@ -336,7 +338,7 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
 
         await insertSteamUsersIntoDatabase(Object.keys(user_steam_ids), Object.values(user_steam_ids));
 
-        //await teleportNewPlayersToLocation(user_steam_ids);
+        await teleportNewPlayersToLocation(user_steam_ids);
     } catch (error) {
         console.log('Error processing login log file:', error);
         response.status(500).json({ error: 'Failed to process files' });
@@ -558,7 +560,7 @@ async function checkLocalServerTime() {
     const current_hour = easternStandardTimeDateTime.getHours();
     const current_minute = easternStandardTimeDateTime.getMinutes();
 
-    if (current_hour === 23) {
+    if (current_hour === 05) {
         const server_restart_messages = {
             40: 'Server restart in 20 minutes',
             50: 'Server restart in 10 minutes',
@@ -961,16 +963,19 @@ async function runCommand(command) {
     await sleep(500);
     copyToClipboard(command);
     await sleep(500);
+    pressCharacterKeyT();
+    await sleep(500);
+    pressBackspaceKey();
+    await sleep(500);
     pasteFromClipboard();
     await sleep(500);
     pressEnterKey();
     await sleep(500);
 }
 
-const command_queue = [];
 let isProcessing = false;
 async function enqueueCommand(user_chat_message_object) {
-    command_queue.push(user_chat_message_object);
+    user_command_queue.enqueue(user_chat_message_object);
     if (!isProcessing) {
         await processQueue();
     }
@@ -1002,12 +1007,12 @@ async function handleIngameSCUMChatMessages() {
 }
 async function processQueue() {
     isQueueProcessing = true;
-    while (command_queue.length > 0) { 
+    while (user_command_queue.length() > 0) { 
         /**
          * After a command has finished execution in the queue, shift the values one spot to remove the command which has been executed. Extract the command 
          * and the steam id of the user who executed the command
          */
-        const user_chat_message_object = command_queue.shift(); 
+        const user_chat_message_object = user_command_queue.dequeue();
         
         if (user_chat_message_object.value === undefined) { 
             continue;
