@@ -17,7 +17,7 @@ const fs = require('node:fs');
 const FTPClient = require('ftp');
 const MongoStore = require('connect-mongo');
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
-const queue = require('./utils/Queue');
+const Queue = require('./utils/Queue');
 
 /**
  * Modules and other files which are custom made for the application
@@ -556,11 +556,10 @@ function pressMouseLeftClickButton() {
 }
 async function checkLocalServerTime() {
     const currentDateTime = new Date();
-    const easternStandardTimeDateTime = new Date(currentDateTime.toLocaleString('en-US', { timeZone: 'America/New_York' }));
-    const current_hour = easternStandardTimeDateTime.getHours();
-    const current_minute = easternStandardTimeDateTime.getMinutes();
+    const current_hour = currentDateTime.getHours(); // Get current local hour
 
-    if (current_hour === 05) {
+    if (current_hour === 6) {
+        const current_minute = currentDateTime.getMinutes();
         const server_restart_messages = {
             40: 'Server restart in 20 minutes',
             50: 'Server restart in 10 minutes',
@@ -569,7 +568,8 @@ async function checkLocalServerTime() {
             57: 'Server restart in 3 minutes',
             58: 'Server restart in 2 minutes',
             59: 'Server restart in 1 minute'
-        }
+        };
+
         if (server_restart_messages[current_minute]) {
             await runCommand(`#Announce ${server_restart_messages[current_minute]}`);
         }
