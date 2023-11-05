@@ -3,16 +3,11 @@ extends layout
 block variables
  - var page_title = 'SCUM chat bot interface' 
 
+include menu
+
 block header
  header#header.header
-  input#menu-btn.menu-btn(type='checkbox')
-  label.menu-icon(for='menu-btn')
-   span.navicon
-  ul.menu
-   a#index_page_home_button(href='/' title='A link to go to the website home page')
-    img#menu_links_image(src='images/WilsonBot.png', alt='The WilsonBot logo')
-   aside#main_menu_items
-    a#index_page_login_button.menu_item(href='login' title='A link to go to the site login page') Log in to your account
+  +menu
 
 block content
  main#main

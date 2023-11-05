@@ -1,0 +1,12 @@
+mixin menu
+ section#menu_container
+  input#menu-btn.menu-btn(type='checkbox')
+  label.menu-icon(for='menu-btn')
+   span.navicon
+  a#index_page_home_button(href='/' title='A link to go to the website home page')
+   img#menu_links_image(src='images/WilsonBot.png', alt='The WilsonBot logo')
+  ul.menu
+   li
+    a#index_page_home_button(href='/' title='A link to go to the website home page')
+    aside#main_menu_items
+     a#index_page_login_button.menu_item(href='login' title='A link to go to the site login page') Log in to your account

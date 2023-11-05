@@ -17,13 +17,20 @@ body {
 }
 
 #header {
+    background: #efeff5;
+    justify-content: flex-start;
+    align-items: flex-start;
+    grid-area: header;
+}
+
+#menu_container {
+    width: 100%;
+    height: auto;
     display: flex;
     display: -ms-flexbox;
     display: -webkit-flex;
-    display: flex;
     background: #efeff5;
     flex-flow: column wrap;
-    justify-content: center;
     align-items: center;
     grid-area: header;
 }
@@ -43,30 +50,31 @@ body {
 .menu {
     margin: 0;
     padding: 0;
-    width: 80%;
+    width: auto;
     list-style: none;
     overflow: hidden;
     display: flex;
-    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
 }
 
 #main_menu_items {
-    margin-top: 5%;
     display: flex;
-    flex-direction: column;
+    text-align: center;
+    justify-content: flex-start;
     align-items: center;
+    flex-direction: column;
+    width: 100%;
 }
 
 #main_menu_items * {
-   margin: 5%;
-}
-
-.menu li a {
-    padding: 50%;
+    width: 100%;
+    font-size: 120%;
+    margin: 10%;
 }
 
 /* menu when being closed on mobile version */
-.header li a {
+    .header li a {
     background-image: linear-gradient(to bottom, #003366, black);
     background-image: -moz-linear-gradient(to bottom, #003366, black);
     background-image: -webkit-linear-gradient(to bottom, #003366, black);
@@ -178,6 +186,18 @@ body {
     -webkit-transition: text-shadow 0.15s;
 }
 
+fieldset {
+    border: 0;
+}
+
+.login_label {
+    font-size: 150%;
+}
+
+.login_input {
+    font-size: 150%;
+}
+
 #index_page_header_buttons {
     display: flex;
     align-items: center;
@@ -267,6 +287,18 @@ a {
     display: block;
 }
 
+#index_page_home_button {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+}
+
+#menu_links_image {
+    margin: 20%;
+    display: none;
+}
+
 @media screen and (max-width: 600px) {
     #login_fields_form {
         width: 90%;
@@ -308,18 +340,12 @@ a {
         /* Transform the list to top of side section */
         /* background: #efeff5; */
     }
-    #index_page_home_button {
-        display: flex;
-        width: 100%;
-        align-items: center;
-        justify-content: center;
+
+    .header .menu-icon {
+        display: none;
     }
 
     #menu_links_image {
         display: block;
-    }
-
-    .header .menu-icon {
-        display: none;
     }
 }

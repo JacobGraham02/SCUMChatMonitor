@@ -70,6 +70,7 @@
       <SubType>Code</SubType>
     </Content>
     <Content Include="public\images\wilson.ico" />
+    <Content Include="public\images\WilsonBot.png" />
     <Content Include="public\javascripts\commands_form.js" />
     <Content Include="public\javascripts\admin_index_page.js" />
     <Content Include="public\javascripts\page_timeout.js">
@@ -103,9 +104,7 @@
     <Content Include="views\login.pug">
       <SubType>Code</SubType>
     </Content>
-    <Content Include="views\timeout.pug">
-      <SubType>Code</SubType>
-    </Content>
+    <Content Include="views\menu.pug" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="bin\" />
