@@ -17,7 +17,7 @@ const fs = require('node:fs');
 const FTPClient = require('ftp');
 const MongoStore = require('connect-mongo');
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
-const queue = require('./utils/Queue');
+const Queue = require('./utils/Queue');
 
 /**
  * Modules and other files which are custom made for the application
@@ -138,8 +138,9 @@ let ftp_login_file_lines_already_processed = 0;
 let last_line_processed = 0;
 
 const user_command_queue = new Queue();
-    
+
 const login_times = new Map();
+
 const user_balance_updates = new Map();
 
 /**

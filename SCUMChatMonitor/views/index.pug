@@ -1,19 +1,20 @@
 extends layout
 
 block variables
-	- var page_title = 'ScumMonitorBot' 
+ - var page_title = 'SCUM chat bot interface' 
 
 block header
-	header#header
-		h1#welcome_to_true_castaways_message Welcome to TheRealCastaways&trade; online bot portal
+ header#header.header
+  input#menu-btn.menu-btn(type='checkbox')
+  label.menu-icon(for='menu-btn')
+   span.navicon
+  ul.menu
+   a#index_page_home_button(href='/' title='A link to go to the website home page')
+    img#menu_links_image(src='images/WilsonBot.png', alt='The WilsonBot logo')
+   aside#main_menu_items
+    a#index_page_login_button.menu_item(href='login' title='A link to go to the site login page') Log in to your account
 
 block content
-	main#main
-		div#index_page_header_buttons
-			a#index_page_login_button(href='login') Log in to your account
-		h1#footer_links_header Links you may find interesting
-		ul#list_of_landing_page_links.landing_page_footer_links_ul 
-			li#how_to_use.landing_page_footer_links How to use: Coming soon
-			li#documentation.landing_page_Footer_links Documentation: Coming soon
-			li#how_bot_is_made.landing_page_footer_links The process of building your own SCUM bot: Coming soon
+ main#main
+  
 	

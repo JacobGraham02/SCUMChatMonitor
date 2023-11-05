@@ -17,7 +17,6 @@ function isLoggedIn(request, response, next) {
     }
 }
 
-/* GET home page. */
 router.get('/', function (request, response, next) {
     response.render('index', { user: request.user });
 });
@@ -50,11 +49,6 @@ router.get('/botcallback', async function(request, response, next) {
     response.send('Authentication successful! You can close this tab');
 });
 
-/*router.get('/sendemail', function (request, response, next) {
-    sendEmail(process.env.scumbot_chat_monitor_email_source, 'Test', 'Test');
-
-    response.render('index', { user: request.user });
-});*/
 router.get('/login', function (request, response, next) {
     response.render('login', { title: "Login page", user: request.user });
 }); 
