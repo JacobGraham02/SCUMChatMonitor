@@ -558,7 +558,7 @@ async function checkLocalServerTime() {
     const currentDateTime = new Date();
     const current_hour = currentDateTime.getHours(); // Get current local hour
 
-    if (current_hour === 6) {
+    if (current_hour === 5) {
         const current_minute = currentDateTime.getMinutes();
         const server_restart_messages = {
             40: 'Server restart in 20 minutes',
