@@ -138,8 +138,9 @@ let ftp_login_file_lines_already_processed = 0;
 let last_line_processed = 0;
 
 const user_command_queue = new Queue();
-    
+
 const login_times = new Map();
+
 const user_balance_updates = new Map();
 
 /**

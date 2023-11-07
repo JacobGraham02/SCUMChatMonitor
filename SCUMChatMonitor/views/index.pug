@@ -1,19 +1,15 @@
 extends layout
 
 block variables
-	- var page_title = 'ScumMonitorBot' 
+ - var page_title = 'SCUM chat bot interface' 
+
+include menu
 
 block header
-	header#header
-		h1#welcome_to_true_castaways_message Welcome to TheRealCastaways&trade; online bot portal
+ header#header.header
+  +menu
 
 block content
-	main#main
-		div#index_page_header_buttons
-			a#index_page_login_button(href='login') Log in to your account
-		h1#footer_links_header Links you may find interesting
-		ul#list_of_landing_page_links.landing_page_footer_links_ul 
-			li#how_to_use.landing_page_footer_links How to use: Coming soon
-			li#documentation.landing_page_Footer_links Documentation: Coming soon
-			li#how_bot_is_made.landing_page_footer_links The process of building your own SCUM bot: Coming soon
+ main#main
+  
 	
