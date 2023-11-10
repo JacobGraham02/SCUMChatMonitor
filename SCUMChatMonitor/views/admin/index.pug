@@ -3,16 +3,19 @@ extends layout
 block variables
 	- var page_title= title 
 
-
 block content
-	article#bot_command_list_container_article
-		a#create_new_command_link(href='/admin/commands/new') Create new command
-		h2#command_list_heading List of comamnds registered in the bot:
-		ul#bot_command_list
-			- for (let i = 0; i < command_files.length; i++) {
-				li.bot_command_list_item_edit
-					a.bot_command_list_item_edit(href=`/admin/commands/${command_files[i]}`)= command_files[i]
-					a.bot_command_list_item_delete(href=`/admin/commands/delete/${command_files[i]}`) Delete this command
-			-}
+	main#commands_page_main
+		h1#list_of_commands List of Commands
+		aside#create_new_command_link_container
+			a#create_new_command_link_anchor(href='/admin/commands/new') Create new command
+		article#bot_command_list_container_article
+			ul#bot_command_list
+				- for (let i = 0; i < command_files.length; i++) {
+					li.bot_command_list_item_edit_li
+						div.bot_item_edit
+							a.bot_command_list_item_edit(href=`/admin/commands/${command_files[i]}`)= command_files[i]
+						div.bot_item_delete
+							a.bot_command_list_item_delete(href=`/admin/commands/delete/${command_files[i]}`) Delete this command
+				-}
 
 	script(src='/javascripts/admin_index_page.js')

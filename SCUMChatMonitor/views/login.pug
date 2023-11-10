@@ -12,6 +12,7 @@ block header
 block content
 	main#main
 		section#login_section
+			h1#log_in_to_account_heading Log in to your account
 			aside#invalid_login_message
 				-if (invalid_login_message !== undefined) {
 					p#failed_login_message= invalid_login_message
@@ -23,7 +24,7 @@ block content
 
 				fieldset#login_password_field.login_fieldset
 					label#form_login_password_label.login_label(for='password') Password:
-					input#form_login_password_input.login_input(type='text' name='password')
+					input#form_login_password_input.login_input(type='password' name='password')
 
 				article#login_form_submit_button_article
 					button#button_submit_login(action='submit') Log in

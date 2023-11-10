@@ -30,21 +30,21 @@ router.get(['/login-success','/commands'], isLoggedIn, function (request, respon
 });
 
 router.get('/commands/new', isLoggedIn, (request, response) => {
-    response.render('admin/new_command', { title: 'Create new command' });
+    response.render('admin/new_command', { title: 'Create new command', data:request.user });
 });
 
 router.get('/commands/:file', (request, response) => {
     const file_path = request.params.file;
     const javascript_file_name = path.basename(file_path);
     const parent_directory_from_routes = path.resolve(__dirname, '..');   
-    fs.readFile(path.join(parent_directory_from_routes, '/commands', javascript_file_name), 'utf-8', function (error, data) {
+    fs.readFile(path.join(parent_directory_from_routes, '/commands', javascript_file_name), 'utf-8', function (error, command_code) {
         if (error) {
             console.error(error);
             return;
         }
-        const command_data_text = extractFromUserCommands.fetchCommandDataFromCommand(data);
-        const authorization_roles_data_text = extractFromUserCommands.fetchAuthorizationRolesFromCommand(data);
-        response.render('admin/command', { code: data, command_data: command_data_text, authorization_roles: authorization_roles_data_text, file_name: javascript_file_name });
+        const command_data_text = extractFromUserCommands.fetchCommandDataFromCommand(command_code);
+        const authorization_roles_data_text = extractFromUserCommands.fetchAuthorizationRolesFromCommand(command_code);
+        response.render('admin/command', { data: request.user, code: command_code, command_data: command_data_text, authorization_roles: authorization_roles_data_text, file_name: javascript_file_name });
     });
 });
 
@@ -117,8 +117,7 @@ router.get('/', isLoggedIn, function (request, response, next) {
             console.error(error);
             return; 
         }
-        console.log(`Request user is: ${(request.user.admin_username)}`);
-        response.render('admin/index', { title: 'Test title', command_files: files, user: request.user });
+        response.render('admin/index', { title: 'Admin dashboard', command_files: files, user: request.user });
     });
 });
 

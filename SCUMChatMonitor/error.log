@@ -1,0 +1,3 @@
+2023-11-10T17:11:52.075Z: ReferenceError: data is not defined
+    at C:\Users\Jacob\source\repos\SCUMChatMonitor\SCUMChatMonitor\routes\admin.js:45:87
+    at FSReqCallback.readFileAfterClose [as oncomplete] (node:internal/fs/read_file_context:68:3)
