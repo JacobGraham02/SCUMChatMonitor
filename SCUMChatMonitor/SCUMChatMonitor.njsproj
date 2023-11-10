@@ -42,7 +42,6 @@
     <Content Include="bin\www" />
     <Content Include="commands\cooking.js" />
     <Content Include="commands\medicine.js" />
-    <Content Include="commands\balance.js" />
     <Content Include="commands\discord.js">
       <SubType>Code</SubType>
     </Content>
@@ -70,6 +69,7 @@
       <SubType>Code</SubType>
     </Content>
     <Content Include="public\images\wilson.ico" />
+    <Content Include="public\images\WilsonBotMenu.png" />
     <Content Include="public\images\WilsonBot.png" />
     <Content Include="public\javascripts\commands_form.js" />
     <Content Include="public\javascripts\admin_index_page.js" />

@@ -25,6 +25,7 @@ body {
 }
 
 #menu_container {
+    border: 2px solid blue;
     width: 100%;
     height: auto;
     display: flex;
@@ -56,10 +57,10 @@ body {
 }
 
 #navbar_welcome_message {
-    width: 100%;
     display: flex;
     flex-direction: row;
-    align-items: flex-start;
+    justify-content: center;
+    align-items: center;
 }
 
 #command_edit_page {
@@ -112,9 +113,8 @@ body {
 
 #logout_button_container {
     width: 100%;
-    display: flex;
-    align-items: flex-start;
-    justify-content: flex-end;
+    display: block;
+    flex-direction: column;
 }
 
 #bot_interface_welcome_container {
@@ -148,6 +148,7 @@ body {
     display: flex;
     align-items: flex-start;
     justify-content: center;
+    flex-direction: column;
 }
 
 #main_menu_items {
@@ -180,16 +181,16 @@ body {
     text-decoration: none;
 }
 
-    .header li a:hover,
-    .header .menu-btn:hover {
-        background-color: #f4f4f4;
-    }
+.header li a:hover,
+.header .menu-btn:hover {
+    background-color: #f4f4f4;
+}
 /* menu */
 .header .menu {
     clear: both;
     max-height: 0;
-    transition: max-height .2s ease-out;
-    -webkit-transition: max-height .2s ease-out;
+    transition: max-height .2s ease-in-out;
+    -webkit-transition: max-height .2s ease-in-out;
 }
 /* menu icon */
 .header .menu-icon {
@@ -200,68 +201,68 @@ body {
     user-select: none;
 }
 
-    .header .menu-icon .navicon {
-        background: #333;
-        display: block;
-        height: 2px;
-        position: relative;
-        transition: background .2s ease-out;
-        -webkit-transition: background .2s ease-out;
-        width: 18px;
-    }
+.header .menu-icon .navicon {
+    background: #333;
+    display: block;
+    height: 2px;
+    position: relative;
+    transition: background .2s ease-out;
+    -webkit-transition: background .2s ease-out;
+    width: 18px;
+}
 
-        .header .menu-icon .navicon:before,
-        .header .menu-icon .navicon:after {
-            background: #333;
-            content: '';
-            display: block;
-            height: 100%;
-            position: absolute;
-            transition: all .2s ease-out;
-            -webkit-transition: all .2s ease-out;
-            width: 100%;
-        }
+.header .menu-icon .navicon:before,
+.header .menu-icon .navicon:after {
+    background: #333;
+    content: '';
+    display: block;
+    height: 100%;
+    position: absolute;
+    transition: all .2s ease-out;
+    -webkit-transition: all .2s ease-out;
+    width: 100%;
+}
 
-        .header .menu-icon .navicon:before {
-            top: 5px;
-        }
+.header .menu-icon .navicon:before {
+    top: 5px;
+}
 
-        .header .menu-icon .navicon:after {
-            top: -5px;
-        }
+.header .menu-icon .navicon:after {
+    top: -5px;
+}
 
 .header .menu-btn {
     display: none;
 }
 
-    .header .menu-btn:checked ~ .menu {
-        max-height: 100%;
-    }
+.header .menu-btn:checked ~ .menu {
+    max-height: 100%;
+}
 
-    .header .menu-btn:checked ~ .menu-icon .navicon {
-        background: transparent;
-    }
+.header .menu-btn:checked ~ .menu-icon .navicon {
+    background: transparent;
+}
 
-        .header .menu-btn:checked ~ .menu-icon .navicon:before {
-            transform: rotate(-45deg);
-            -moz-transform: rotate(-45deg);
-            -webkit-transform: rotate(-45deg);
-            -ms-transform: rotate(-45deg);
-            -o-transform: rotate(-45deg);
-        }
+.header .menu-btn:checked ~ .menu-icon .navicon:before {
+    transform: rotate(-45deg);
+    -moz-transform: rotate(-45deg);
+    -webkit-transform: rotate(-45deg);
+    -ms-transform: rotate(-45deg);
+    -o-transform: rotate(-45deg);
+}
 
-        .header .menu-btn:checked ~ .menu-icon .navicon:after {
-            transform: rotate(45deg);
-            -moz-transform: rotate(-45deg);
-            -webkit-transform: rotate(45deg);
-            -ms-transform: rotate(45deg);
-            -o-transform: rotate(45deg);
-        }
+.header .menu-btn:checked ~ .menu-icon .navicon:after {
+    transform: rotate(45deg);
+    -moz-transform: rotate(-45deg);
+    -webkit-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    -o-transform: rotate(45deg);
+}
 
-    .header .menu-btn:checked ~ .menu-icon:not(.steps) .navicon:before,
-    .header .menu-btn:checked ~ .menu-icon:not(.steps) .navicon:after {
-        top: 0;
-    }
+.header .menu-btn:checked ~ .menu-icon:not(.steps) .navicon:before,
+.header .menu-btn:checked ~ .menu-icon:not(.steps) .navicon:after {
+    top: 0;
+}
 
 .header li a:hover {
     background-image: linear-gradient(to bottom, orangered, red);
@@ -472,14 +473,6 @@ button:active {
     width: 80%;
 }
 
-/*#global_site_navigation_logout_form {
-    border: 2px solid red;
-    display: flex;
-    width: 100%;
-    align-items: center;
-    justify-content: center;
-}*/
-
 #index_page_home_button {
     display: flex;
     width: 100%;
@@ -488,8 +481,7 @@ button:active {
 }
 
 #menu_links_image {
-    margin: 20%;
-    display: none;
+    margin: 0;
 }
 
 @media screen and (max-width: 600px) {
@@ -554,10 +546,6 @@ button:active {
 
     .header .menu-icon {
         display: none;
-    }
-
-    #menu_links_image {
-        display: block;
     }
 
     #bot_interface_index_title {

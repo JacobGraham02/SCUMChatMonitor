@@ -2,19 +2,18 @@ mixin menu(data)
  section#menu_container
   div#website_menu_username_container
    input#menu-btn.menu-btn(type='checkbox')
-   label.menu-icon(for='mtenu-btn')
+   label.menu-icon(for='menu-btn')
     span.navicon
    div#navbar_welcome_message
     -if (data.admin_username !== undefined) {
-       h1#user_administrator_name_heading Welcome, #{data.admin_username}
-        a#index_page_home_button(href='/' title='A link to go to the website home page')
-       div#logout_button_container
-        button#gui_bot_web_interface_logout_button(type="submit") Log out
+       h1#user_administrator_name_heading Welcome, #{data.admin_username} 
+       a#index_page_home_button(href='/' title='A link to go to the website home page')
+        img#menu_links_image(src='../../images/WilsonBotMenu.png', alt='The WilsonBot logo')
     -} else {
        h1#user_administrator_name_heading Welcome, user
     -}
-  a#index_page_home_button(href='/' title='A link to go to the website home page')
-   img#menu_links_image(src='../../images/WilsonBot.png', alt='The WilsonBot logo')
-  ul.menu
-   li
-    form#global_site_navigation_logout_form(action='/logout' method='POST')
+   ul.menu
+    li
+     div#logout_button_container
+      form#global_site_navigation_logout_form(action='/logout' method='POST')
+       button#gui_bot_web_interface_logout_button(type="submit") Log out
