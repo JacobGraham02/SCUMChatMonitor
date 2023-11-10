@@ -983,10 +983,40 @@ async function enqueueCommand(user_chat_message_object) {
 }
 
 /**
+ * This function is meant to catch any error that could occur in the program at run time and write those errors to a file, to allow
+ * better debugging of the program when it crashes. 
+ * @param {any} error any Error thrown by the application
+ */
+const logError = (error) => {
+    const logFilePath = path.join(__dirname, 'error.log'); // Set the path for the error log file
+
+    // Create or append to the error log file
+    fs.appendFile(logFilePath, `${new Date().toISOString()}: ${error.stack}\n`, (err) => {
+        if (err) {
+            console.error('Error writing to error log:', err);
+        }
+    });
+
+    // Log the error to the console
+    console.error('Uncaught Exception or Unhandled Rejection:', error);
+};
+
+// Attach the error handler
+process.on('uncaughtException', logError);
+process.on('unhandledRejection', (reason, promise) => {
+    logError(new Error(`Unhandled Rejection at: ${promise}, reason: ${reason}`));
+});
+
+// Optionally, listen for the process to exit gracefully
+process.on('exit', (code) => {
+    console.log(`Process exited with code ${code}`);
+});
+
+
+/**
  * This function iterates through all of the SCUM in-game chat messages starting with '!' recorded into the gportal chat log into a queue in preparation 
  * for sequential execution.
  */
-
 async function handleIngameSCUMChatMessages() {
     /**
      * Fetch the data from the resolved promise returned by readAndFormatGportalFtpServerChatLog. This contains all of the chat messages said on the server. 
