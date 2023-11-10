@@ -47,6 +47,21 @@ body {
     grid-area: main;
 }
 
+#bot_interface_welcome_container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+#bot_interface_index_title {
+    font-weight: bold;
+}
+
+#landing_page_wilson_picture {
+    display: block;
+}
+
 .menu {
     margin: 0;
     padding: 0;
@@ -191,11 +206,11 @@ fieldset {
 }
 
 .login_label {
-    font-size: 150%;
+    font-size: 120%;
 }
 
 .login_input {
-    font-size: 150%;
+    font-size: 120%;
 }
 
 #index_page_header_buttons {
@@ -274,6 +289,8 @@ fieldset {
     height: 50%;
 }
 
+#login_fields_form
+
 #commands_file_javascript_textarea {
     width: 100%;
     height: 100%;
@@ -347,5 +364,13 @@ a {
 
     #menu_links_image {
         display: block;
+    }
+
+    #bot_interface_index_title {
+        font-size: 200%;
+    }
+
+    #landing_page_wilson_picture {
+        display: none;
     }
 }

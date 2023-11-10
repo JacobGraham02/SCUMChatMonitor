@@ -23,7 +23,7 @@ module.exports = class Queue {
         return this.items[this.headIndex];
     }
 
-    validate() { // validation logic
+    validate() { 
         if (this.headIndex === this.tailIndex) {
             throw new Error('Cannot perform operation on an empty queue');
         }

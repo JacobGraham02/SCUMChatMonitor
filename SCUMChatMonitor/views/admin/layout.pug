@@ -1,4 +1,5 @@
 include footer
+include menu
 
 block variables
 doctype html
@@ -10,15 +11,8 @@ html
     script(src='/javascripts/page_timeout.js' defer)
   body
     block header
-        header#header
-            section#global_site_navigation_section
-            -if (user.admin_username !== undefined) {
-                h1#user_administrator_name_heading Welcome, #{user.admin_username}
-            -}
-            nav#global_site_navigation_nav
-                ul#global_site_navigation_nav_ul
-                    form#global_site_navigation_logout_form(action='/logout' method='POST')
-                        button#global_site_navigation_logout_form_input(type="submit") Log out
+        header#header.header
+            +menu(user)
 
     block content
         main#main

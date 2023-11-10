@@ -1,0 +1,16 @@
+mixin menu(data)
+ section#menu_container
+  input#menu-btn.menu-btn(type='checkbox')
+  label.menu-icon(for='menu-btn')
+   span.navicon
+  a#index_page_home_button(href='/' title='A link to go to the website home page')
+   img#menu_links_image(src='../images/WilsonBot.png', alt='The WilsonBot logo')
+  ul.menu
+   li
+    a#index_page_home_button(href='/' title='A link to go to the website home page')
+    -if (data.admin_username !== undefined) {
+      h1#user_administrator_name_heading Welcome, #{data.admin_username}
+
+      form#global_site_navigation_logout_form(action='/logout' method='POST')
+       button#global_site_navigation_logout_form_input(type="submit") Log out
+    -}

@@ -91,12 +91,14 @@
     <Content Include="run.bat" />
     <Content Include="utils\Queue.js" />
     <Content Include="views\admin\command.pug" />
+    <Content Include="views\admin\footer.pug" />
     <Content Include="views\admin\index.pug">
       <SubType>Code</SubType>
     </Content>
     <Content Include="views\admin\layout.pug">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="views\admin\menu.pug" />
     <Content Include="views\admin\new_command.pug" />
     <Content Include="views\error.pug" />
     <Content Include="views\index.pug" />
