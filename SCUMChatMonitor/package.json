@@ -10,6 +10,7 @@
   },
   "scripts": {
     "start": "start node app.js",
+    "build": "pkg .",
     "test":  "nodemon app.js",
     "debug": "nodemon --inspect app.js"
   },
