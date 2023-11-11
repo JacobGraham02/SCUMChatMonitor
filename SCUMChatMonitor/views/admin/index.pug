@@ -4,6 +4,7 @@ block variables
 	- var page_title= title 
 
 block content
+	div#deleteModalContainer
 	main#commands_page_main
 		h1#list_of_commands List of Commands
 		aside#create_new_command_link_container
@@ -15,7 +16,8 @@ block content
 						div.bot_item_edit
 							a.bot_command_list_item_edit(href=`/admin/commands/${command_files[i]}`)= command_files[i]
 						div.bot_item_delete
-							a.bot_command_list_item_delete(href=`/admin/commands/delete/${command_files[i]}`) Delete this command
+							a.bot_command_list_item_delete(href=``) Delete this command
+							//- /admin/commands/delete/${command_files[i]}
 				-}
 
 	script(src='/javascripts/admin_index_page.js')

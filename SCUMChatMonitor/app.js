@@ -565,9 +565,6 @@ async function checkLocalServerTime() {
             40: 'Server restart in 20 minutes',
             50: 'Server restart in 10 minutes',
             55: 'Server restart in 5 minutes',
-            56: 'Server restart in 4 minutes',
-            57: 'Server restart in 3 minutes',
-            58: 'Server restart in 2 minutes',
             59: 'Server restart in 1 minute'
         };
 
