@@ -10,7 +10,7 @@ module.exports = function (user_account) {
         command_cost: 0,
 
         async execute(interaction) {
-            await interaction.reply('This is the test pvp zones');
+            
         }
     }
     return object;

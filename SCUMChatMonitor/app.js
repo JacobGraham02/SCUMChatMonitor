@@ -43,6 +43,8 @@ const discord_chat_channel_bot_commands = '1125874103757328494';
 
 const discord_channel_id_for_heartbeat = '1146531098290028614';
 
+const discord_channel_id_for_scum_game = '1173048671420559521';
+
 const user_repository = new UserRepository();
 /**
  * The following regex string is for steam ids associated with a steam name specifically for the login log file. 
@@ -528,7 +530,7 @@ function stopCheckLocalServerTimeInterval() {
 }
 async function moveCursorToContinueButtonAndPressContinue() {
     moveMouseToContinueButtonXYLocation();
-    await sleep(80000);
+    await sleep(1200000);
     pressMouseLeftClickButton();
 }
 
@@ -762,16 +764,52 @@ for (const command_file of command_files_list) {
     client_instance.commands.set(command_object.data.name, command);
     client_instance.discord_commands.set(command_object.data.name, command_object);
 }
+
+/**
+ * The following function can be used for development or debugging purposes to find out if your system can identify when the SCUM game is running 
+ */
+function checkIfScumGameRunning(callback) {
+    const processName = 'SCUM';
+
+    const command = `tasklist /FI "IMAGENAME eq ${processName}.exe"`;
+
+    exec(command, (error, stdout, stderr) => {
+        if (error || stderr) {
+            console.error(`Error executing command: ${error || stderr}`);
+            callback(false);
+            return;
+        }
+
+        const output = stdout.toLowerCase();
+
+        // Check if the process name exists in the output
+        const isRunning = output.includes(processName.toLowerCase());
+
+        callback(isRunning);
+    });
+}
+
 /**
  * The discord API triggers an event called 'ready' when the discord bot is ready to respond to commands and other input. 
  */
 client_instance.on('ready', () => {
 
-    const target_heartbeat_channel = client_instance.channels.cache.get(discord_channel_id_for_heartbeat);
+    const discord_heartbeat_channel = client_instance.channels.cache.get(discord_channel_id_for_heartbeat);
+    const discord_scum_game_status = client_instance.channels.cache.get(discord_channel_id_for_scum_game);
+
+    setInterval(() => {
+        checkIfScumGameRunning((isRunning) => {
+            if (isRunning) {
+                discord_scum_game_status.send('The SCUM game is running, and the process can be detected');
+            } else {
+                discord_scum_game_status.send('The SCUM game is not runnning, and the process cannot be detected');
+            }
+        });
+    }, 65000); 
     
     setInterval(() => {
-        if (target_heartbeat_channel) {
-            target_heartbeat_channel.send('The bot is currently running');
+        if (discord_heartbeat_channel) {
+            discord_heartbeat_channel.send('The bot is currently running');
         } else {
             console.log('An error has occurred - Please inform the bot developer that the specified discord channel could not be fetched');
         }
@@ -1139,40 +1177,4 @@ function determineIfUserMessageInCorrectChannel(channel_message_was_sent, discor
     return channel_message_was_sent === discord_bot_channel_id;
 }
 
-/**
- * The commented out function 'checkIfScumGameRunning' can be used for development or debugging purposes to find out if your system can identify when the SCUM
- * game is running 
- */
-
-/*function checkIfScumGameRunning(callback) {
-    const processName = 'SCUM';
-
-    const command = `tasklist /FI "IMAGENAME eq ${processName}.exe"`;
-
-    exec(command, (error, stdout, stderr) => {
-        if (error || stderr) {
-            console.error(`Error executing command: ${error || stderr}`);
-            callback(false);
-            return;
-        }
-
-        const output = stdout.toLowerCase();
-
-        // Check if the process name exists in the output
-        const isRunning = output.includes(processName.toLowerCase());
-
-        callback(isRunning);
-    });
-}
-
-setInterval(() => {
-    checkIfScumGameRunning((isRunning) => {
-        if (isRunning) {
-            console.log("The SCUM game is running, and the process can be detected");
-        } else {
-            console.log("The SCUM game is either not running, or the process can be detected");
-        }
-    });
-}, 20000); // Execute every 20 seconds
-*/
 module.exports = app;
