@@ -40,7 +40,18 @@
     <Content Include="app.js" />
     <Content Include="bin\Microsoft.NodejsTools.WebRole.dll" />
     <Content Include="bin\www" />
+    <Content Include="commands\ammo556x45.js" />
+    <Content Include="commands\ammo762x39.js" />
+    <Content Include="commands\carbattery.js" />
+    <Content Include="commands\carjack.js" />
     <Content Include="commands\cooking.js" />
+    <Content Include="commands\dirtbike.js" />
+    <Content Include="commands\drill.js" />
+    <Content Include="commands\improvisedhandgun.js" />
+    <Content Include="commands\improvisedshotgun.js" />
+    <Content Include="commands\laikaalternator.js" />
+    <Content Include="commands\laikadriverseat.js" />
+    <Content Include="commands\laikawheel.js" />
     <Content Include="commands\medicine.js" />
     <Content Include="commands\discord.js">
       <SubType>Code</SubType>
@@ -48,8 +59,14 @@
     <Content Include="commands\fishing.js" />
     <Content Include="commands\builder.js" />
     <Content Include="commands\pvpzones.js" />
+    <Content Include="commands\rebarcutter.js" />
     <Content Include="commands\restarttime.js" />
+    <Content Include="commands\sewingkit.js" />
+    <Content Include="commands\weaponcleaningkit.js" />
     <Content Include="commands\welcomepack.js" />
+    <Content Include="commands\wolkswagenalternator.js" />
+    <Content Include="commands\wolkswagendriverseat.js" />
+    <Content Include="commands\wolkswagentire.js" />
     <Content Include="config.json">
       <SubType>Code</SubType>
     </Content>

@@ -18,7 +18,7 @@ const FTPClient = require('ftp');
 const MongoStore = require('connect-mongo');
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const Queue = require('./utils/Queue');
-
+const { EmbedBuilder } = require('discord.js');
 /**
  * Modules and other files which are custom made for the application
  */
@@ -40,10 +40,6 @@ const client_instance = new Client({
 /** Each channel in a discord server is identified by a unique integer value
  */
 const discord_chat_channel_bot_commands = '1125874103757328494';
-
-const discord_channel_id_for_heartbeat = '1146531098290028614';
-
-const discord_channel_id_for_scum_game = '1173048671420559521';
 
 const user_repository = new UserRepository();
 /**
@@ -139,6 +135,13 @@ let ftp_login_file_lines_already_processed = 0;
  */
 let last_line_processed = 0;
 
+/**
+ * player_command_messages_sent_inside_scum is a string array where each element in the array are lines of text that are commands sent by players in-game
+ */
+let player_command_messages_sent_inside_scum = [];
+
+let player_chat_messages_sent_inside_scum = [];
+
 const user_command_queue = new Queue();
 
 const login_times = new Map();
@@ -232,11 +235,28 @@ async function determinePlayerLoginSessionMoney(logs) {
  * @returns {Array} An array containing object(s) in the following format: {steam_id: string, player_message: string}
  */
 async function readAndFormatGportalFtpServerLoginLog(request, response) {
-    const ftp_client = new FTPClient();
+    /**
+    * If GPortal's FTP server does not respond within 30 seconds, throw an error indicating that the server cannot be reached
+    */
+    const ftp_timeout_milliseconds = 30000; 
+    let ftp_client;
     try {
+        ftp_client = new FTPClient();
         await new Promise((resolve, reject) => {
-            ftp_client.on('ready', resolve);
-            ftp_client.on('error', reject);
+            const timeout = setTimeout(() => {
+                ftp_client.end();
+                reject(new Error('Connection to FTP server timed out'));
+            }, ftp_timeout_milliseconds);
+
+            ftp_client.on('ready', () => {
+                clearTimeout(timeout);
+                resolve();
+            });
+            ftp_client.on('error', (err) => {
+                clearTimeout(timeout);
+                reject(err);
+            });
+
             ftp_client.connect(gportal_ftp_config);
         });
 
@@ -445,7 +465,7 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
                 }
             });
         });
-        
+
         let file_contents_steam_id_and_messages = [];
 
         /**
@@ -467,6 +487,7 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
                  * This makes extracting any data much easier, or in some cases possible
                  */
                 const browser_file_contents_lines = browser_file_contents.split('\n');
+                player_chat_messages_sent_inside_scum = browser_file_contents_lines;
                 if (browser_file_contents_lines.length > 1) {
                     for (let i = last_line_processed; i < browser_file_contents_lines.length; i++) {
                         /**
@@ -496,14 +517,14 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
                  * If a data stream from the FTP server was properly terminated and returned some results, we will create a hash of those results
                  * and will not execute the function again if subsequent hashes are identical. 
                  */
-                 if (browser_file_contents) {
+                if (browser_file_contents.length > 1) { 
                     const current_chat_log_file_hash = crypto.createHash('sha256').update(browser_file_contents).digest('hex');
                     if (current_chat_log_file_hash === existing_cached_file_content_hash_chat_log) {
                         return;
                     }
+                    player_command_messages_sent_inside_scum = file_contents_steam_id_and_messages;
                     existing_cached_file_content_hash_chat_log = current_chat_log_file_hash;
-                    browser_file_contents = '';
-                 }
+                }
                 resolve();
             });
 
@@ -576,15 +597,11 @@ async function checkLocalServerTime() {
     }
 }
 
-startFtpFileProcessingIntervalLoginLog();
-startFtpFileProcessingIntervalChatLog();
-startCheckLocalServerTimeInterval();
-
 /**
  * Start an interval of reading chat log messages from gportal which repeats every 10 seconds
  */
 function startFtpFileProcessingIntervalChatLog() {
-    read_login_ftp_file_interval = setInterval(handleIngameSCUMChatMessages, 5000);
+    read_login_ftp_file_interval = setInterval(handleIngameSCUMChatMessages, 10000);
 }
 
 /**
@@ -593,6 +610,10 @@ function startFtpFileProcessingIntervalChatLog() {
 function startFtpFileProcessingIntervalLoginLog() {
     read_login_ftp_file_interval = setInterval(readAndFormatGportalFtpServerLoginLog, 10000);
 }
+
+startFtpFileProcessingIntervalLoginLog();
+startFtpFileProcessingIntervalChatLog();
+startCheckLocalServerTimeInterval();
 
 /**
  * Terminate any existing intervals for the gportal login file
@@ -793,20 +814,38 @@ function checkIfScumGameRunning(callback) {
  * The discord API triggers an event called 'ready' when the discord bot is ready to respond to commands and other input. 
  */
 client_instance.on('ready', () => {
-
+    let previous_chat_message = [];
+    const discord_channel_id_for_heartbeat = '1146531098290028614';
+    const discord_channel_id_for_scum_game = '1173048671420559521';
+    const discord_channel_id_for_scum_chat = '1173100035135766539';
     const discord_heartbeat_channel = client_instance.channels.cache.get(discord_channel_id_for_heartbeat);
     const discord_scum_game_status = client_instance.channels.cache.get(discord_channel_id_for_scum_game);
+    const discord_scum_game_ingame_messages_chat = client_instance.channels.cache.get(discord_channel_id_for_scum_chat);
 
     setInterval(() => {
         checkIfScumGameRunning((isRunning) => {
+            if (!arraysEqual(previous_chat_message, player_chat_messages_sent_inside_scum)) {
+                // Messages have changed, send new messages
+                previous_chat_message = player_chat_messages_sent_inside_scum.slice(); // Copy the array
+                for (let i = 0; i < player_chat_messages_sent_inside_scum.length; i++) {
+                    const embedded_message = new EmbedBuilder()
+                        .setColor(0x299bcc)
+                        .setTitle('SCUM In-game chat')
+                        .setThumbnail('https://imgur.com/dYtjF3w')
+                        .setDescription(`${player_chat_messages_sent_inside_scum[i]}`)
+                        .setTimestamp()
+                    discord_scum_game_ingame_messages_chat.send({ embeds: [embedded_message]});
+                }
+            }
+
             if (isRunning) {
                 discord_scum_game_status.send('The SCUM game is running, and the process can be detected');
             } else {
                 discord_scum_game_status.send('The SCUM game is not runnning, and the process cannot be detected');
             }
         });
-    }, 65000); 
-    
+    }, 30000);
+
     setInterval(() => {
         if (discord_heartbeat_channel) {
             discord_heartbeat_channel.send('The bot is currently running');
@@ -817,6 +856,14 @@ client_instance.on('ready', () => {
 
     console.log(`The bot is logged in as ${client_instance.user.tag}`);
 });
+
+function arraysEqual(arr1, arr2) {
+    if (arr1.length !== arr2.length) return false;
+    for (let i = 0; i < arr1.length; i++) {
+        if (arr1[i] !== arr2[i]) return false;
+    }
+    return true;
+}
 
 function startCheckLocalServerTimeInterval() {
     checkLocalServerTime = setInterval(checkLocalServerTime, 60000);
@@ -855,7 +902,7 @@ client_instance.on('interactionCreate',
      * The correct channel is 'bot-commands'
      */
     if (!(determineIfUserMessageInCorrectChannel(interaction.channel.id, discord_chat_channel_bot_commands))) {
-        await interaction.reply({ content: `You are using this command in the wrong channel. Use bot commands in the channel #bot-commands` });
+        await interaction.reply({ content: `You must use bot commands in the SCUM game server to execute them` });
         return;
     }
 
