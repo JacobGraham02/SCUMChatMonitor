@@ -3,7 +3,7 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 module.exports = function (player_steam_id) {
     const object = {
         data: new SlashCommandBuilder()
-            .setName('fishinggear')
+            .setName('fishing')
             .setDescription('Spawns a bunch of fishing gear')
             .addStringOption(options =>
                 options.setName('test_option')

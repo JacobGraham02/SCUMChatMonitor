@@ -154,12 +154,11 @@ const user_balance_updates = new Map();
 /**
  * The below functions start the login and chat log intervals for the bot, and the check local server time intervals
  */
-/*startFtpFileProcessingIntervalLoginLog();
+
+startFtpFileProcessingIntervalLoginLog();
 startFtpFileProcessingIntervalChatLog();
 startCheckLocalServerTimeInterval();
- */
-moveCursorToContinueButtonAndPressContinue();
-
+ 
 /**
  * This function loops through each of the strings located in the string array 'logs', and parses out various substrings to manipulate them.
  * 
@@ -358,6 +357,7 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
         const file_contents_steam_messages = login_log_file_contents.match(login_log_steam_name_regex);
 
         if (file_contents.match(login_log_wilson_logged_out_regex)) {
+            console.log('true');
             moveCursorToContinueButtonAndPressContinue();
         }
 
