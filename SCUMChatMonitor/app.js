@@ -154,10 +154,11 @@ const user_balance_updates = new Map();
 /**
  * The below functions start the login and chat log intervals for the bot, and the check local server time intervals
  */
-startFtpFileProcessingIntervalLoginLog();
+/*startFtpFileProcessingIntervalLoginLog();
 startFtpFileProcessingIntervalChatLog();
 startCheckLocalServerTimeInterval();
- 
+ */
+moveCursorToContinueButtonAndPressContinue();
 
 /**
  * This function loops through each of the strings located in the string array 'logs', and parses out various substrings to manipulate them.
@@ -562,8 +563,9 @@ function stopCheckLocalServerTimeInterval() {
 }
 
 async function moveCursorToContinueButtonAndPressContinue() {
+    await sleep(5000);
     moveMouseToContinueButtonXYLocation();
-    await sleep(1200000);
+    await sleep(5000);
     pressMouseLeftClickButton();
 }
 
@@ -575,8 +577,6 @@ async function moveMouseToContinueButtonXYLocation() {
     exec(command, (error) => {
         if (error) {
             console.error(`Error moving the mouse the mouse to x 470, y 550 and left-clicking:${error}`);
-        } else {
-            console.log('Mouse cursor moved to x 470 y 550 and the left mouse button was pressed');
         }
     });
 }
@@ -992,9 +992,7 @@ function copyToClipboard(text) {
     exec(command, (error) => {
         if (error) {
             console.error('Error copying to clipboard:', error);
-        } else {
-            //console.log('Text copied to clipboard.');
-        }
+        } 
     });
 }
 
@@ -1009,9 +1007,7 @@ function pasteFromClipboard() {
     exec(command, (error) => {
         if (error) {
             console.error('Error pasting from clipboard:', error);
-        } else {
-            //console.log('Text pasted from clipboard.');
-        }
+        } 
     });
 }
 
@@ -1026,9 +1022,7 @@ function pressTabKey() {
     exec(command, (error) => {
         if (error) {
             console.error('Error simulating the a tab key press');
-        } else {
-            //console.log('Tab key press simulated');
-        }
+        } 
     });
 }
 
@@ -1043,9 +1037,7 @@ function pressCharacterKeyT() {
     exec(command, (error) => {
         if (error) {
             console.error('T character simulating enter key press:', error);
-        } else {
-            //console.log('T character key press simulated');
-        }
+        } 
     });
 }
 
@@ -1061,9 +1053,7 @@ function pressBackspaceKey() {
     exec(command, (error) => {
         if (error) {
             console.error('Error simulating backspace key press:', error);
-        } else {
-            //console.log('Backspace key press simulated');
-        }
+        } 
     });
 }
 
@@ -1078,9 +1068,7 @@ function pressEnterKey() {
     exec(command, (error) => {
         if (error) {
             console.error('Error simulating enter key press:', error);
-        } else {
-            //console.log('Enter key press simulated');
-        }
+        } 
     });
 }
 
