@@ -467,6 +467,7 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
         });
 
         let file_contents_steam_id_and_messages = [];
+        let received_chat_messages = [];
 
         /**
          * Process the incoming data stream from the FTP server query result and append individual data chunks prevent excessive memory usage
@@ -487,7 +488,7 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
                  * This makes extracting any data much easier, or in some cases possible
                  */
                 const browser_file_contents_lines = browser_file_contents.split('\n');
-                player_chat_messages_sent_inside_scum = browser_file_contents_lines;
+                received_chat_messages.push(...browser_file_contents_lines);
                 if (browser_file_contents_lines.length > 1) {
                     for (let i = last_line_processed; i < browser_file_contents_lines.length; i++) {
                         /**
@@ -507,11 +508,10 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
                      * E.g.     Chunk 1: This is line 1\nThis is li
                      *          Chunk 2: ne 2\nThis is line 3\n
                      */
-                    browser_file_contents = browser_file_contents_lines[browser_file_contents_lines.length - 1];
+                    //browser_file_contents = browser_file_contents_lines[browser_file_contents_lines.length - 1];
                     last_line_processed = browser_file_contents_lines.length - 1;
                 }
             });
-
             stream.on('end', () => {
                 /**
                  * If a data stream from the FTP server was properly terminated and returned some results, we will create a hash of those results
@@ -522,7 +522,7 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
                     if (current_chat_log_file_hash === existing_cached_file_content_hash_chat_log) {
                         return;
                     }
-                    player_command_messages_sent_inside_scum = file_contents_steam_id_and_messages;
+                    player_chat_messages_sent_inside_scum = received_chat_messages;
                     existing_cached_file_content_hash_chat_log = current_chat_log_file_hash;
                 }
                 resolve();
@@ -530,6 +530,7 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
 
             stream.on('error', reject);
         });
+
         return file_contents_steam_id_and_messages;
 
     } catch (error) {
@@ -828,13 +829,16 @@ client_instance.on('ready', () => {
                 // Messages have changed, send new messages
                 previous_chat_message = player_chat_messages_sent_inside_scum.slice(); // Copy the array
                 for (let i = 0; i < player_chat_messages_sent_inside_scum.length; i++) {
-                    const embedded_message = new EmbedBuilder()
-                        .setColor(0x299bcc)
-                        .setTitle('SCUM In-game chat')
-                        .setThumbnail('https://imgur.com/dYtjF3w')
-                        .setDescription(`${player_chat_messages_sent_inside_scum[i]}`)
-                        .setTimestamp()
-                    discord_scum_game_ingame_messages_chat.send({ embeds: [embedded_message]});
+                    if (player_chat_messages_sent_inside_scum[i]) {
+                        const embedded_message = new EmbedBuilder()
+                            .setColor(0x299bcc)
+                            .setTitle('SCUM In-game chat')
+                            .setThumbnail('https://i.imgur.com/AfFp7pu.png')
+                            .setDescription(`${player_chat_messages_sent_inside_scum[i]}`)
+                            .setTimestamp()
+                            .setFooter({ text: 'SCUM Bot Monitor', iconURL: 'https://i.imgur.com/AfFp7pu.png' });
+                        discord_scum_game_ingame_messages_chat.send({ embeds: [embedded_message] });
+                    }
                 }
             }
 
