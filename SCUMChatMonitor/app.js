@@ -17,8 +17,10 @@ const fs = require('node:fs');
 const FTPClient = require('ftp');
 const MongoStore = require('connect-mongo');
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
-const Queue = require('./utils/Queue');
 const { EmbedBuilder } = require('discord.js');
+
+const Queue = require('./utils/Queue');
+const CheckTcpConnection = require('./utils/CheckTcpConnection');
 /**
  * Modules and other files which are custom made for the application
  */
@@ -36,6 +38,8 @@ const client_instance = new Client({
     GatewayIntentBits.GuildPresences,
     ]
 });
+
+const tcpConnectionChecker = new CheckTcpConnection(process.env.scum_game_server_remote_address, process.env.scum_game_server_remote_port);
 
 /** Each channel in a discord server is identified by a unique integer value
  */
@@ -136,17 +140,24 @@ let ftp_login_file_lines_already_processed = 0;
 let last_line_processed = 0;
 
 /**
- * player_command_messages_sent_inside_scum is a string array where each element in the array are lines of text that are commands sent by players in-game
+ * ingame_bot_heartbeat_message is a string which contains the message sent by the game bot once every five minutes to indicate that the bot is on the SCUM server
+ * and is not frozen 
  */
-let player_command_messages_sent_inside_scum = [];
-
-let player_chat_messages_sent_inside_scum = [];
+let ingame_bot_heartbeat_message = '';
 
 const user_command_queue = new Queue();
 
 const login_times = new Map();
 
 const user_balance_updates = new Map();
+
+/**
+ * The below functions start the login and chat log intervals for the bot, and the check local server time intervals
+ */
+startFtpFileProcessingIntervalLoginLog();
+startFtpFileProcessingIntervalChatLog();
+startCheckLocalServerTimeInterval();
+ 
 
 /**
  * This function loops through each of the strings located in the string array 'logs', and parses out various substrings to manipulate them.
@@ -488,9 +499,10 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
                  * This makes extracting any data much easier, or in some cases possible
                  */
                 const browser_file_contents_lines = browser_file_contents.split('\n');
-                received_chat_messages.push(...browser_file_contents_lines);
+                //received_chat_messages.push(...browser_file_contents_lines);
                 if (browser_file_contents_lines.length > 1) {
                     for (let i = last_line_processed; i < browser_file_contents_lines.length; i++) {
+                        received_chat_messages.push(browser_file_contents_lines[i]);
                         /**
                          * When iterating through the stored strings, if any substring matches the regex patterns for user steam ids or user messages,
                          * append both the user steam id and user in-game message into an array which we will return
@@ -503,13 +515,10 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
                         }
                     }
                     /**
-                     * Because a data stream can contain an incomplete line of text, we have to store the last line processed because the line could
-                     * potentially be incomplete. 
-                     * E.g.     Chunk 1: This is line 1\nThis is li
-                     *          Chunk 2: ne 2\nThis is line 3\n
+                     * Set the last line processed in the FTP file so that we do not re-read any file content which we have read already. This will assist administrators 
+                     * in keeping track of messages that have already been processed. 
                      */
-                    //browser_file_contents = browser_file_contents_lines[browser_file_contents_lines.length - 1];
-                    last_line_processed = browser_file_contents_lines.length - 1;
+                    last_line_processed = browser_file_contents_lines.length;
                 }
             });
             stream.on('end', () => {
@@ -540,6 +549,7 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
         if (ftp_client) {
             ftp_client.end();
         }
+        received_chat_messages = [];
     }
 }
 
@@ -550,21 +560,23 @@ function startCheckLocalServerTimeInterval() {
 function stopCheckLocalServerTimeInterval() {
     clearInterval(checkLocalServerTime);
 }
+
 async function moveCursorToContinueButtonAndPressContinue() {
     moveMouseToContinueButtonXYLocation();
     await sleep(1200000);
     pressMouseLeftClickButton();
 }
 
-function moveMouseToContinueButtonXYLocation() {
-    const x_cursor_position = 467;
-    const y_cursor_position = 590;
+async function moveMouseToContinueButtonXYLocation() {
+    await sleep(300);
+    const x_cursor_position = 476;
+    const y_cursor_position = 589;
     const command = `powershell.exe -command "Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class P { [DllImport(\\"user32.dll\\")] public static extern bool SetCursorPos(int x, int y); }'; [P]::SetCursorPos(${x_cursor_position}, ${y_cursor_position})"`;
     exec(command, (error) => {
         if (error) {
             console.error(`Error moving the mouse the mouse to x 470, y 550 and left-clicking:${error}`);
         } else {
-            // console.log('Mouse cursor moved to x 470 y 550 and the left mouse button was pressed');
+            console.log('Mouse cursor moved to x 470 y 550 and the left mouse button was pressed');
         }
     });
 }
@@ -574,9 +586,7 @@ function pressMouseLeftClickButton() {
     exec(command, (error) => {
         if (error) {
             console.error(`Error when simulating a left click on the mouse`);
-        } else {
-            // console.log('Left click button on mouse was clicked');
-        }
+        } 
     });
 }
 async function checkLocalServerTime() {
@@ -611,10 +621,6 @@ function startFtpFileProcessingIntervalChatLog() {
 function startFtpFileProcessingIntervalLoginLog() {
     read_login_ftp_file_interval = setInterval(readAndFormatGportalFtpServerLoginLog, 10000);
 }
-
-startFtpFileProcessingIntervalLoginLog();
-startFtpFileProcessingIntervalChatLog();
-startCheckLocalServerTimeInterval();
 
 /**
  * Terminate any existing intervals for the gportal login file
@@ -815,41 +821,79 @@ function checkIfScumGameRunning(callback) {
  * The discord API triggers an event called 'ready' when the discord bot is ready to respond to commands and other input. 
  */
 client_instance.on('ready', () => {
+    /**
+     * previous_chat_message array holds previous chat messages so that messages are not repeated into the discord channel
+     */
     let previous_chat_message = [];
+
+    /**
+     * Access the discord API channel cache for a specific guild (server) and fetch channels via their id
+     */
     const discord_channel_id_for_heartbeat = '1146531098290028614';
     const discord_channel_id_for_scum_game = '1173048671420559521';
     const discord_channel_id_for_scum_chat = '1173100035135766539';
+    const discord_channel_id_for_bot_in_game = '1173331877004845116';
+    const discord_bot_in_scum_game_channel = client_instance.channels.cache.get(discord_channel_id_for_bot_in_game);
     const discord_heartbeat_channel = client_instance.channels.cache.get(discord_channel_id_for_heartbeat);
     const discord_scum_game_status = client_instance.channels.cache.get(discord_channel_id_for_scum_game);
     const discord_scum_game_ingame_messages_chat = client_instance.channels.cache.get(discord_channel_id_for_scum_chat);
 
+    /**
+     * A 30-second interval that reads all contents from the in-game SCUM server chat and uses the discord API EmbedBuilder to write a nicely-formatted chat message
+     * into discord. This allows administrators to monitor the in-game SCUM chat remotely. Each time we enter this interval with the SCUM in-game chat logs, we will copy those
+     * logs to another array, and compare that array to the next iteration of chat logs. 
+     */
     setInterval(() => {
         checkIfScumGameRunning((isRunning) => {
-            if (!arraysEqual(previous_chat_message, player_chat_messages_sent_inside_scum)) {
-                // Messages have changed, send new messages
-                previous_chat_message = player_chat_messages_sent_inside_scum.slice(); // Copy the array
-                for (let i = 0; i < player_chat_messages_sent_inside_scum.length; i++) {
-                    if (player_chat_messages_sent_inside_scum[i]) {
-                        const embedded_message = new EmbedBuilder()
-                            .setColor(0x299bcc)
-                            .setTitle('SCUM In-game chat')
-                            .setThumbnail('https://i.imgur.com/AfFp7pu.png')
-                            .setDescription(`${player_chat_messages_sent_inside_scum[i]}`)
-                            .setTimestamp()
-                            .setFooter({ text: 'SCUM Bot Monitor', iconURL: 'https://i.imgur.com/AfFp7pu.png' });
-                        discord_scum_game_ingame_messages_chat.send({ embeds: [embedded_message] });
+            if (player_chat_messages_sent_inside_scum !== undefined) {
+                if (!arraysEqual(previous_chat_message, player_chat_messages_sent_inside_scum)) {
+                    // Messages have changed, send new messages
+                    previous_chat_message = player_chat_messages_sent_inside_scum.slice(); // Copy the array
+                    for (let i = 0; i < player_chat_messages_sent_inside_scum.length; i++) {
+                        if (player_chat_messages_sent_inside_scum[i]) {
+                            const embedded_message = new EmbedBuilder()
+                                .setColor(0x299bcc)
+                                .setTitle('SCUM In-game chat')
+                                .setThumbnail('https://i.imgur.com/dYtjF3w.png')
+                                .setDescription(`${player_chat_messages_sent_inside_scum[i]}`)
+                                .setTimestamp()
+                                .setFooter({ text: 'SCUM Bot Monitor', iconURL: 'https://i.imgur.com/dYtjF3w.png' });
+                            discord_scum_game_ingame_messages_chat.send({ embeds: [embedded_message] });
+                        }
                     }
                 }
             }
 
+            /**
+             * A callback function from checkIfScumGameRunning is returned which checks to see if the SCUM game is currently running on the host machine. 
+             * We use a callback function because the Node.js package 'exec' is asynchronous, but this program is synchronous. 
+             */
             if (isRunning) {
-                discord_scum_game_status.send('The SCUM game is running, and the process can be detected');
+                discord_scum_game_status.send('The SCUM game is running');
             } else {
-                discord_scum_game_status.send('The SCUM game is not runnning, and the process cannot be detected');
+                discord_scum_game_status.send('The SCUM game is not runnning');
             }
         });
     }, 30000);
 
+    /**
+     * A 5-minute interval which returns a callback function from a class which checks to see if the bot is connected to the SCUM game server.
+     * This check is based on whether there is a TCP connection to the game server. This method is used because the bot is a regular .exe file on a computer,
+     * and therefore can access all of the computer resources. 
+     * We use a callback function because the Node.js package 'exec' is asynchronous, but this program is synchronous. 
+     */
+    setInterval(() => {
+        tcpConnectionChecker.checkWindowsHasTcpConnectionToGameServer((game_connection_exists) => {
+            if (game_connection_exists) {
+                discord_bot_in_scum_game_channel.send('The bot has established a connection with the game server');
+            }
+        });
+    }, 300000);
+
+    /**
+     * A 1-minute interval which will send a message to the discord guild via the discord API to inform administrators that the bot is currently running on the 
+     * target computer. 
+     */
     setInterval(() => {
         if (discord_heartbeat_channel) {
             discord_heartbeat_channel.send('The bot is currently running');
@@ -858,13 +902,27 @@ client_instance.on('ready', () => {
         }
     }, 60000);
 
+    /**
+     * Inform administrators that the bot has successfully logged into the Discord guild
+     */
     console.log(`The bot is logged in as ${client_instance.user.tag}`);
 });
 
-function arraysEqual(arr1, arr2) {
-    if (arr1.length !== arr2.length) return false;
-    for (let i = 0; i < arr1.length; i++) {
-        if (arr1[i] !== arr2[i]) return false;
+/**
+ * Checks if the contents of arrayOne is equal arrayTwo, and the length of arrayOne is equal to arrayTwo
+ * We only have to iterate over one array to check the contents of both because the arrays being equal naturally assumes that they are both the 
+ * same length with the same contents
+ * @param {Array} arrayOne
+ * @param {Array} arrayTwo
+ * @returns
+ */
+function arraysEqual(arrayOne, arrayTwo) { 
+    if (arrayOne.length !== arrayTwo.length) {
+        return false;
+    }
+
+    for (let i = 0; i < arrayOne.length; i++){
+        if (arrayOne[i] !== arrayTwo[i]) return false;
     }
     return true;
 }
@@ -1025,6 +1083,7 @@ function pressEnterKey() {
         }
     });
 }
+
 /**
  * An asynchronous function which pauses the execution of the application for a specified number of milliseconds. This is required when you are using Windows powershell
  * to prevent bottlenecks, slowdowns, or other abnormal system operations. 
@@ -1047,17 +1106,17 @@ async function runCommand(command) {
     if (!scumProcess) {
         return;
     }  
-    await sleep(500);
+    await sleep(300);
     copyToClipboard(command);
-    await sleep(500);
+    await sleep(300);
     pressCharacterKeyT();
-    await sleep(500);
+    await sleep(300);
     pressBackspaceKey();
-    await sleep(500);
+    await sleep(300);
     pasteFromClipboard();
-    await sleep(500);
+    await sleep(300);
     pressEnterKey();
-    await sleep(500);
+    await sleep(300);
 }
 
 let isProcessing = false;

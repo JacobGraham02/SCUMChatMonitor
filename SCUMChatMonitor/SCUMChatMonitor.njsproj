@@ -106,6 +106,7 @@
       <SubType>Code</SubType>
     </Content>
     <Content Include="run.bat" />
+    <Content Include="utils\CheckTcpConnection.js" />
     <Content Include="utils\Queue.js" />
     <Content Include="views\admin\command.pug" />
     <Content Include="views\admin\footer.pug" />

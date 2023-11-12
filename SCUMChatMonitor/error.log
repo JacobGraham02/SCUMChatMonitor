@@ -1,16 +1,17 @@
-2023-11-12T05:25:34.166Z: Error: Received one or more errors
-    at UnionValidator.handle (C:\Users\Jacob\source\repos\SCUMChatMonitor\SCUMChatMonitor\node_modules\@sapphire\shapeshift\dist\index.js:1104:23)
-    at UnionValidator.parse (C:\Users\Jacob\source\repos\SCUMChatMonitor\SCUMChatMonitor\node_modules\@sapphire\shapeshift\dist\index.js:212:88)
-    at EmbedBuilder.setDescription (C:\Users\Jacob\source\repos\SCUMChatMonitor\SCUMChatMonitor\node_modules\@discordjs\builders\dist\index.js:316:26)
-    at C:\Users\Jacob\source\repos\SCUMChatMonitor\SCUMChatMonitor\app.js:836:26
-    at C:\Users\Jacob\source\repos\SCUMChatMonitor\SCUMChatMonitor\app.js:810:9
+2023-11-12T19:32:24.060Z: ReferenceError: exec is not defined
+    at CheckTcpConnection.checkWindowsHasTcpConnectionToGameServer (C:\Users\Jacob\source\repos\SCUMChatMonitor\SCUMChatMonitor\utils\CheckTcpConnection.js:11:9)
+    at Timeout._onTimeout (C:\Users\Jacob\source\repos\SCUMChatMonitor\SCUMChatMonitor\app.js:864:34)
+    at listOnTimeout (node:internal/timers:569:17)
+    at process.processTimers (node:internal/timers:512:7)
+2023-11-12T19:33:48.437Z: ReferenceError: player_chat_messages_sent_inside_scum is not defined
+    at C:\Users\Jacob\source\repos\SCUMChatMonitor\SCUMChatMonitor\app.js:837:53
+    at C:\Users\Jacob\source\repos\SCUMChatMonitor\SCUMChatMonitor\app.js:817:9
     at ChildProcess.exithandler (node:child_process:411:7)
     at ChildProcess.emit (node:events:513:28)
     at maybeClose (node:internal/child_process:1091:16)
     at ChildProcess._handle.onexit (node:internal/child_process:302:5)
-2023-11-12T05:31:48.875Z: ReferenceError: setFooter is not defined
-    at C:\Users\Jacob\source\repos\SCUMChatMonitor\SCUMChatMonitor\app.js:839:25
-    at C:\Users\Jacob\source\repos\SCUMChatMonitor\SCUMChatMonitor\app.js:810:9
+2023-11-12T19:46:54.055Z: ReferenceError: callback is not defined
+    at C:\Users\Jacob\source\repos\SCUMChatMonitor\SCUMChatMonitor\utils\CheckTcpConnection.js:20:13
     at ChildProcess.exithandler (node:child_process:411:7)
     at ChildProcess.emit (node:events:513:28)
     at maybeClose (node:internal/child_process:1091:16)
