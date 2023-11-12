@@ -5,7 +5,7 @@ module.exports = function (player_steam_id) {
         data: new SlashCommandBuilder()
             .setName('laikaalternator')
             .setDescription('Spawns a laika alternator'),
-        command_data: ['#SpawnItem Laika_Engine_Alternator_Item'],
+        command_data: [`#Location ${user_account.user_steam_id} true`, '#SpawnItem Laika_Engine_Alternator_Item'],
         authorization_role_name: [],
         command_cost: 1500,
 

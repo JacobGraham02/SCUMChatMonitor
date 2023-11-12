@@ -5,7 +5,7 @@ module.exports = function (player_steam_id) {
         data: new SlashCommandBuilder()
             .setName('wolkswagenwheel')
             .setDescription('Spawns a wolks wagen wheel'),
-        command_data: ['#SpawnItem Wheel_155_R65_Item'],
+        command_data: [`#Location ${user_account.user_steam_id} true`, '#SpawnItem Wheel_155_R65_Item'],
         authorization_role_name: [],
         command_cost: 1500,
 

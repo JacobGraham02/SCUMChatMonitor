@@ -4,7 +4,7 @@ module.exports = function (player_steam_id) {
         data: new SlashCommandBuilder()
             .setName('weaponcleaningkit')
             .setDescription('Spawns a weapon cleaning kit'),
-        command_data: ['#SpawnItem Weapon_Cleaning_Kit'],
+        command_data: [`#Location ${user_account.user_steam_id} true`, '#SpawnItem Weapon_Cleaning_Kit'],
         authorization_role_name: [],
         command_cost: 2000,
 

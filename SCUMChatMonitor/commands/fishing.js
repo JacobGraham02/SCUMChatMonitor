@@ -8,7 +8,7 @@ module.exports = function (player_steam_id) {
             .addStringOption(options =>
                 options.setName('test_option')
                     .setDescription('The description of test option')),
-        command_data: ['#SpawnItem FishingRod', '#SpawnItem FishingReelPro', '#SpawnItem FishingLine_4', '#SpawnItem FishingFloaterPack2', '#SpawnItem FishingHookPack4', '#SpawnItem FishingBait_Sardine 10', '#SpawnItem FishingBait_BoiliesPrm1 10'],
+        command_data: [`#Location ${user_account.user_steam_id} true`, '#SpawnItem FishingRod', '#SpawnItem FishingReelPro', '#SpawnItem FishingLine_4', '#SpawnItem FishingFloaterPack2', '#SpawnItem FishingHookPack4', '#SpawnItem FishingBait_Sardine 10', '#SpawnItem FishingBait_BoiliesPrm1 10'],
         authorization_role_name: [],
         command_cost: 2000,
 

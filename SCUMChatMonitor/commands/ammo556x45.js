@@ -4,7 +4,7 @@ module.exports = function (player_steam_id) {
         data: new SlashCommandBuilder()
             .setName('ammo556x45')
             .setDescription('Spawns 3 5.56x45 armour piercing ammo boxes'),
-        command_data: ['#SpawnItem Cal_5_56x45mm_AP_Ammobox 3'],
+        command_data: [`#Location ${user_account.user_steam_id} true`, '#SpawnItem Cal_5_56x45mm_AP_Ammobox 3'],
         authorization_role_name: [],
         command_cost: 2000,
 

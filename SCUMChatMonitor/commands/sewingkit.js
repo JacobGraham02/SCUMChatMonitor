@@ -4,7 +4,7 @@ module.exports = function (player_steam_id) {
         data: new SlashCommandBuilder()
             .setName('sewingkit')
             .setDescription('Spawns a sewing kit'),
-        command_data: ['#SpawnItem Sewing_kit'],
+        command_data: [`#Location ${user_account.user_steam_id} true`, '#SpawnItem Sewing_kit'],
         authorization_role_name: [],
         command_cost: 1000,
 

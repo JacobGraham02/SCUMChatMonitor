@@ -5,7 +5,7 @@ module.exports = function (player_steam_id) {
         data: new SlashCommandBuilder()
             .setName('carbattery')
             .setDescription('Spawns a car battery'),
-        command_data: ['#SpawnItem Car_Battery'],
+        command_data: [`#Location ${user_account.user_steam_id} true`, '#SpawnItem Car_Battery'],
         authorization_role_name: [],
         command_cost: 1500,
 

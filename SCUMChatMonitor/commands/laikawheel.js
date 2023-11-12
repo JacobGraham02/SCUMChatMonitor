@@ -5,7 +5,7 @@ module.exports = function (player_steam_id) {
         data: new SlashCommandBuilder()
             .setName('laikawheel')
             .setDescription('Spawns a laika wheel'),
-        command_data: ['#SpawnItem Wheel_255_55_R16_Item'],
+        command_data: [`#Location ${user_account.user_steam_id} true`, '#SpawnItem Wheel_255_55_R16_Item'],
         authorization_role_name: [],
         command_cost: 1500,
 

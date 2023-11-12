@@ -5,7 +5,7 @@ module.exports = function (player_steam_id) {
         data: new SlashCommandBuilder()
             .setName('medicine')
             .setDescription('Spawns a bunch of medical items'),
-        command_data: ['#SpawnItem Antibiotics_03', '#SpawnItem Emergency_bandage_Big', '#SpawnItem Aspirin', '#SpawnItem PainKillers_03', '#SpawnItem Vitamins_03'],
+        command_data: [`#Location ${user_account.user_steam_id} true`, '#SpawnItem Antibiotics_03', '#SpawnItem Emergency_bandage_Big', '#SpawnItem Aspirin', '#SpawnItem PainKillers_03', '#SpawnItem Vitamins_03'],
         authorization_role_name: [],
         command_cost: 2000,
 

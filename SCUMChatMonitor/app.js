@@ -480,6 +480,7 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
 
         let file_contents_steam_id_and_messages = [];
         let received_chat_messages = [];
+        let browser_file_contents_lines;
 
         /**
          * Process the incoming data stream from the FTP server query result and append individual data chunks prevent excessive memory usage
@@ -499,7 +500,7 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
                  * Split the incoming data stream into individual lines so as to allow iteration over each of the lines individually
                  * This makes extracting any data much easier, or in some cases possible
                  */
-                const browser_file_contents_lines = browser_file_contents.split('\n');
+                browser_file_contents_lines = browser_file_contents.split('\n');
                 //received_chat_messages.push(...browser_file_contents_lines);
                 if (browser_file_contents_lines.length > 1) {
                     for (let i = last_line_processed; i < browser_file_contents_lines.length; i++) {
@@ -515,14 +516,14 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
                             });
                         }
                     }
-                    /**
-                     * Set the last line processed in the FTP file so that we do not re-read any file content which we have read already. This will assist administrators 
-                     * in keeping track of messages that have already been processed. 
-                     */
-                    last_line_processed = browser_file_contents_lines.length;
                 }
             });
             stream.on('end', () => {
+                /**
+                * Set the last line processed in the FTP file so that we do not re-read any file content which we have read already. This will assist administrators 
+                * in keeping track of messages that have already been processed. 
+                */
+                last_line_processed = browser_file_contents_lines.length;
                 /**
                  * If a data stream from the FTP server was properly terminated and returned some results, we will create a hash of those results
                  * and will not execute the function again if subsequent hashes are identical. 
@@ -870,11 +871,9 @@ client_instance.on('ready', () => {
              */
             if (isRunning) {
                 discord_scum_game_status.send('The SCUM game is running');
-            } else {
-                discord_scum_game_status.send('The SCUM game is not runnning');
-            }
+            } 
         });
-    }, 30000);
+    }, 60000);
 
     /**
      * A 5-minute interval which returns a callback function from a class which checks to see if the bot is connected to the SCUM game server.
@@ -1166,6 +1165,7 @@ async function handleIngameSCUMChatMessages() {
      * For each command that has been extracted from the chat log, place the command in a queue for execution
      */
     for (let i = 0; i < ftp_server_chat_log.length; i++) {
+        console.log(ftp_server_chat_log[i]);
         await enqueueCommand(ftp_server_chat_log[i]);
     }
 }

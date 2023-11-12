@@ -5,7 +5,7 @@ module.exports = function (player_steam_id) {
         data: new SlashCommandBuilder()
             .setName('dirtbike')
             .setDescription('Spawns a dirt bike'),
-        command_data: ['#SpawnVehicle BPC_Dirtbike'],
+        command_data: [`#Location ${user_account.user_steam_id} true`, '#SpawnVehicle BPC_Dirtbike'],
         authorization_role_name: [],
         command_cost: 30000,
 

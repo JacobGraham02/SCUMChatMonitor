@@ -40,8 +40,10 @@
     <Content Include="app.js" />
     <Content Include="bin\Microsoft.NodejsTools.WebRole.dll" />
     <Content Include="bin\www" />
+    <Content Include="commands\ammo30x06.js" />
     <Content Include="commands\ammo556x45.js" />
     <Content Include="commands\ammo762x39.js" />
+    <Content Include="commands\ammo762x54r.js" />
     <Content Include="commands\carbattery.js" />
     <Content Include="commands\carjack.js" />
     <Content Include="commands\cooking.js" />
