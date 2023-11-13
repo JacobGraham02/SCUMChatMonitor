@@ -363,7 +363,6 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
         const file_contents_steam_messages = login_log_file_contents.match(login_log_steam_name_regex);
 
         if (file_contents.match(login_log_wilson_logged_out_regex)) {
-            console.log('true');
             moveCursorToContinueButtonAndPressContinue();
         }
 
@@ -576,10 +575,14 @@ function stopCheckLocalServerTimeInterval() {
 }
 
 async function moveCursorToContinueButtonAndPressContinue() {
-    await sleep(60000);
+    await sleep(10000);
     moveMouseToContinueButtonXYLocation();
-    await sleep(60000);
+    await sleep(100000);
     pressMouseLeftClickButton();
+    await sleep(50000);
+    pressCharacterKeyT();
+    await sleep(5000);
+    pressTabKey();
 }
 
 async function moveMouseToContinueButtonXYLocation() {
@@ -897,6 +900,8 @@ client_instance.on('ready', () => {
         tcpConnectionChecker.checkWindowsHasTcpConnectionToGameServer((game_connection_exists) => {
             if (game_connection_exists) {
                 discord_bot_in_scum_game_channel.send('The bot has established a connection with the game server');
+            } else {
+                moveCursorToContinueButtonAndPressContinue();
             }
         });
     }, 300000);
