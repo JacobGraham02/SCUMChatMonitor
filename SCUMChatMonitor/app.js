@@ -564,9 +564,9 @@ function stopCheckLocalServerTimeInterval() {
 }
 
 async function moveCursorToContinueButtonAndPressContinue() {
-    await sleep(5000);
+    await sleep(60000);
     moveMouseToContinueButtonXYLocation();
-    await sleep(5000);
+    await sleep(60000);
     pressMouseLeftClickButton();
 }
 

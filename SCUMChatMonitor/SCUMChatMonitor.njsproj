@@ -44,6 +44,7 @@
     <Content Include="commands\ammo556x45.js" />
     <Content Include="commands\ammo762x39.js" />
     <Content Include="commands\ammo762x54r.js" />
+    <Content Include="commands\balance.js" />
     <Content Include="commands\carbattery.js" />
     <Content Include="commands\carjack.js" />
     <Content Include="commands\cooking.js" />
