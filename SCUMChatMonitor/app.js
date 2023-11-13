@@ -140,10 +140,16 @@ let ftp_login_file_lines_already_processed = 0;
 let last_line_processed = 0;
 
 /**
- * ingame_bot_heartbeat_message is a string which contains the message sent by the game bot once every five minutes to indicate that the bot is on the SCUM server
- * and is not frozen 
+ * When the application first starts up, last_line_processed_initially will store where the last line is in any existing FTP log file on GPortal, and will only
+ * consider any text submitted after that last line. This prevents the application from reading duplicate lines from in the past
  */
-let ingame_bot_heartbeat_message = '';
+let last_line_processed_initially;
+
+/**
+ * This boolean value will effectively allow last_line_processed_initially to be set only once, when the program initially begins
+ */
+let has_initial_line_been_processed = false;
+
 
 const user_command_queue = new Queue();
 
@@ -501,7 +507,12 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
                  * This makes extracting any data much easier, or in some cases possible
                  */
                 browser_file_contents_lines = browser_file_contents.split('\n');
-                //received_chat_messages.push(...browser_file_contents_lines);
+
+                if (!has_initial_line_been_processed) {
+                    last_line_processed_initially = browser_file_contents_lines;
+                    last_line_processed = browser_file_contents_lines;
+                }
+
                 if (browser_file_contents_lines.length > 1) {
                     for (let i = last_line_processed; i < browser_file_contents_lines.length; i++) {
                         received_chat_messages.push(browser_file_contents_lines[i]);
@@ -523,7 +534,7 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
                 * Set the last line processed in the FTP file so that we do not re-read any file content which we have read already. This will assist administrators 
                 * in keeping track of messages that have already been processed. 
                 */
-                last_line_processed = browser_file_contents_lines.length;
+                last_line_processed = browser_file_contents_lines.length - 1;
                 /**
                  * If a data stream from the FTP server was properly terminated and returned some results, we will create a hash of those results
                  * and will not execute the function again if subsequent hashes are identical. 
@@ -535,6 +546,7 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
                     }
                     player_chat_messages_sent_inside_scum = received_chat_messages;
                     existing_cached_file_content_hash_chat_log = current_chat_log_file_hash;
+                    has_initial_line_been_processed = true;
                 }
                 resolve();
             });
@@ -1093,17 +1105,17 @@ async function runCommand(command) {
     if (!scumProcess) {
         return;
     }  
-    await sleep(300);
+    await sleep(750);
     copyToClipboard(command);
-    await sleep(300);
+    await sleep(750);
     pressCharacterKeyT();
-    await sleep(300);
+    await sleep(750);
     pressBackspaceKey();
-    await sleep(300);
+    await sleep(750);
     pasteFromClipboard();
-    await sleep(300);
+    await sleep(750);
     pressEnterKey();
-    await sleep(300);
+    await sleep(750);
 }
 
 let isProcessing = false;

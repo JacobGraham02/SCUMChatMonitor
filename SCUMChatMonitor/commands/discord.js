@@ -5,7 +5,7 @@ module.exports = function (player_steam_id) {
         data: new SlashCommandBuilder()
             .setName('discord')
             .setDescription('Generates a link for discord'),
-        command_data: [`#Location ${player_steam_id.user_steam_id} true`, 'Discord: https://discord.gg/4BYPXWSFkv'],
+        command_data: ['Discord: https://discord.gg/4BYPXWSFkv'],
         authorization_role_name: [],
         command_cost: 0,
 
