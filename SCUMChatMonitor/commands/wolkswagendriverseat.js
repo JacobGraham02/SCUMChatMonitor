@@ -5,9 +5,9 @@ module.exports = function (player_steam_id) {
         data: new SlashCommandBuilder()
             .setName('wolkswagendriverseat')
             .setDescription('Spawns a front driver seat for wolkswagen car'),
-        command_data: [`#Location ${user_account.user_steam_id} true`, '#SpawnItem WW_Seat_FrontLeft_Item'],
+        command_data: [`#Location ${player_steam_id.user_steam_id} true`, '#SpawnItem WW_Seat_FrontLeft_Item'],
         authorization_role_name: [],
-        command_cost: 1500,
+        command_cost: 2000,
 
         async execute(interaction) {
 

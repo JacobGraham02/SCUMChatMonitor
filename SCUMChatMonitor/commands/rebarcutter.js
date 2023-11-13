@@ -4,9 +4,9 @@ module.exports = function (player_steam_id) {
         data: new SlashCommandBuilder()
             .setName('rebarcutter')
             .setDescription('Spawns a rebar cutter'),
-        command_data: [`#Location ${user_account.user_steam_id} true`, '#SpawnItem Rebar_Cutter'],
+        command_data: [`#Location ${player_steam_id.user_steam_id} true`, '#SpawnItem Rebar_Cutter'],
         authorization_role_name: [],
-        command_cost: 4000,
+        command_cost: 500,
 
         async execute(interaction) {
 

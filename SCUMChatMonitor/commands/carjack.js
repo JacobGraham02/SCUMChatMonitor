@@ -5,9 +5,9 @@ module.exports = function (player_steam_id) {
         data: new SlashCommandBuilder()
             .setName('carjack')
             .setDescription('Spawns a car jack'),
-        command_data: [`#Location ${user_account.user_steam_id} true`, '#SpawnItem Car_Jack'],
+        command_data: [`#Location ${player_steam_id.user_steam_id} true`, '#SpawnItem Car_Jack'],
         authorization_role_name: [],
-        command_cost: 1500,
+        command_cost: 2500,
 
         async execute(interaction) {
 

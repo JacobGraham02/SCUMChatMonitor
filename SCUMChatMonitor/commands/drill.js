@@ -6,7 +6,7 @@ module.exports = function (player_steam_id) {
             .setDescription('Spawns a drill'),
         command_data: [`#Location ${user_account.user_steam_id} true`, '#SpawnItem Drill'],
         authorization_role_name: [],
-        command_cost: 4000,
+        command_cost: 500,
 
         async execute(interaction) {
 
