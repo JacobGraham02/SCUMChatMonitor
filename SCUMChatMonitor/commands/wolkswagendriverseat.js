@@ -1,11 +1,11 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
-module.exports = function (player_steam_id) {
+module.exports = function (user_account) {
     const object = {
         data: new SlashCommandBuilder()
             .setName('wolkswagendriverseat')
             .setDescription('Spawns a front driver seat for wolkswagen car'),
-        command_data: [`#TeleportTo ${player_steam_id.user_steam_id}`, '#SpawnItem WW_Seat_FrontLeft_Item', `#Teleport 0 0 0`],
+        command_data: [`${user_account.user_steam_name} your package has been dispatched`, `#SpawnItem WW_Seat_FrontLeft_Item 1 Location ${user_account.user_steam_id}`, `#Teleport 0 0 0`],
         authorization_role_name: [],
         command_cost: 2000,
 

@@ -1,11 +1,11 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
-module.exports = function (player_steam_id) {
+module.exports = function (user_account) {
     const object = {
         data: new SlashCommandBuilder()
             .setName('dirtbike')
             .setDescription('Spawns a dirt bike'),
-        command_data: [`#TeleportTo ${player_steam_id.user_steam_id}`, '#SpawnVehicle BPC_Dirtbike', `#Teleport 0 0 0`],
+        command_data: [`${user_account.user_steam_name} your package has been dispatched`, `#SpawnVehicle BPC_Dirtbike 1 Location ${user_account.user_steam_id}`, `#Teleport 0 0 0`],
         authorization_role_name: [],
         command_cost: 45000,
 

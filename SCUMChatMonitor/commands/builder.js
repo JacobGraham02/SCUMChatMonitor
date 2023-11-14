@@ -1,11 +1,11 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
-module.exports = function (player_steam_id) {
+module.exports = function (user_account) {
     const object = {
         data: new SlashCommandBuilder()
             .setName('builder')
             .setDescription('Spawns a bunch of supplies for avid home builders'),
-        command_data: [`#TeleportTo ${player_steam_id.user_steam_id}`, '#SpawnItem Tool_Box 3', '#SpawnItem Chainsaw', '#SpawnItem Gasoline_Canister_Small', '#SpawnItem Bundle_Wooden_Plank 5', '#SpawnItem Nails_Package_Box 3', '#SpawnItem Bolts_Package_Box 3', '#SpawnItem Bundle_Of_Rags 5', '#SpawnItem Metal_Scrap_05 10', `#Teleport 0 0 0`],
+        command_data: [`${user_account.user_steam_name} your package has been dispatched`, `#SpawnItem Tool_Box 3 Location ${user_account.user_steam_id}`, `#SpawnItem Chainsaw 1 Location ${user_account.user_steam_id}`, `#SpawnItem Gasoline_Canister_Small 1 Location ${user_account.user_steam_id}`, `#SpawnItem Bundle_Wooden_Plank 5 Location ${user_account.user_steam_id}`, `#SpawnItem Nails_Package_Box 3 Location ${user_account.user_steam_id}`, `#SpawnItem Bolts_Package_Box 3 Location ${user_account.user_steam_id}`, `#SpawnItem Bundle_Of_Rags 5 Location ${user_account.user_steam_id}`, `#SpawnItem Metal_Scrap_05 10 Location ${user_account.user_steam_id}`],
         authorization_role_name: [],
         command_cost: 4000,
 

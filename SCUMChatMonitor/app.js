@@ -508,8 +508,8 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
                 browser_file_contents_lines = browser_file_contents.split('\n');
 
                 if (!has_initial_line_been_processed) {
-                    last_line_processed_initially = browser_file_contents_lines;
-                    last_line_processed = browser_file_contents_lines;
+                    last_line_processed_initially = browser_file_contents_lines.length;
+                    last_line_processed = browser_file_contents_lines.length;
                 }
 
                 if (browser_file_contents_lines.length > 1) {
@@ -533,7 +533,7 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
                 * Set the last line processed in the FTP file so that we do not re-read any file content which we have read already. This will assist administrators 
                 * in keeping track of messages that have already been processed. 
                 */
-                last_line_processed = browser_file_contents_lines.length - 1;
+                last_line_processed = browser_file_contents_lines.length;
                 /**
                  * If a data stream from the FTP server was properly terminated and returned some results, we will create a hash of those results
                  * and will not execute the function again if subsequent hashes are identical. 
@@ -577,9 +577,9 @@ function stopCheckLocalServerTimeInterval() {
 async function moveCursorToContinueButtonAndPressContinue() {
     await sleep(10000);
     moveMouseToContinueButtonXYLocation();
-    await sleep(100000);
+    await sleep(60000);
     pressMouseLeftClickButton();
-    await sleep(50000);
+    await sleep(60000);
     pressCharacterKeyT();
     await sleep(5000);
     pressTabKey();
@@ -1110,17 +1110,17 @@ async function runCommand(command) {
     if (!scumProcess) {
         return;
     }  
-    await sleep(750);
+    await sleep(1000);
     copyToClipboard(command);
-    await sleep(750);
+    await sleep(1000);
     pressCharacterKeyT();
-    await sleep(750);
+    await sleep(1000);
     pressBackspaceKey();
-    await sleep(750);
+    await sleep(1000);
     pasteFromClipboard();
-    await sleep(750);
+    await sleep(1000);
     pressEnterKey();
-    await sleep(750);
+    await sleep(1000);
 }
 
 let isProcessing = false;
