@@ -58,7 +58,6 @@ const login_log_steam_id_regex = /([0-9]{17})/g;
  */
 const chat_log_steam_id_regex = /([0-9]{17})/g;
 
-
 /**
  * The following regex string is for steam names which match the same format as the ones in gportal's ftp files: username(number); e.g. boss612man(100)
  */
@@ -73,9 +72,6 @@ const login_log_steam_name_regex = /([a-zA-Z0-9 ._-]{0,32}\([0-9]{1,10}\))/g;
  * The following regex string is for chat messages when they appear in the chat log file. 
  */
 const chat_log_messages_regex = /(?<=Global: |Local: |Admin: )\/[^\n]*[^'\n]/g;
-
-
-const login_log_wilson_logged_out_regex = /[0-9]{17}:Wilson\([0-9]{1,3}\)' logged out at:/g;
 
 /**
  * The following 3 strings must be hardcoded according to how the gportal ftp server is structured. The use of 2 \\ characters is necessary to equal one \ character
@@ -140,16 +136,11 @@ let ftp_login_file_lines_already_processed = 0;
 let last_line_processed = 0;
 
 /**
- * When the application first starts up, last_line_processed_initially will store where the last line is in any existing FTP log file on GPortal, and will only
- * consider any text submitted after that last line. This prevents the application from reading duplicate lines from in the past
- */
-let last_line_processed_initially;
-
-/**
- * This boolean value will effectively allow last_line_processed_initially to be set only once, when the program initially begins
+ * This boolean value will effectively allow last_line_processed to be set initially to the total length of the chat log file from GPortal's FTP server 
+ * only once, when the program initially begins. A boolean value prevents repeatedly setting last_line_processed to the total length of GPortal's FTP log file.
+ * If this boolean value was not here, last_line_processed would cause the bot to execute every command it could find in every log file fetched from GPortal's FTP server 
  */
 let has_initial_line_been_processed = false;
-
 
 const user_command_queue = new Queue();
 
@@ -362,10 +353,6 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
         const file_contents_steam_ids = login_log_file_contents.match(login_log_steam_id_regex);
         const file_contents_steam_messages = login_log_file_contents.match(login_log_steam_name_regex);
 
-        if (file_contents.match(login_log_wilson_logged_out_regex)) {
-            moveCursorToContinueButtonAndPressContinue();
-        }
-
         const file_contents_steam_ids_array = Object.values(file_contents_steam_ids);
         const file_contents_steam_name_array = Object.values(file_contents_steam_messages);
 
@@ -409,7 +396,7 @@ async function teleportNewPlayersToLocation(online_users) {
         if (user_first_join_results) {
             user_steam_id = user_first_join_results.user_steam_id;
             await sleep(40000);
-            await runCommand(`#Teleport -129023.125 -91330.055 36830.551 ${user_steam_id}`);
+            await enqueueCommand(`#Teleport -129023.125 -91330.055 36830.551 ${user_steam_id}`);
         }
         await user_repository.updateUser(key, { user_joining_server_first_time: 1 });
     }
@@ -508,7 +495,6 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
                 browser_file_contents_lines = browser_file_contents.split('\n');
 
                 if (!has_initial_line_been_processed) {
-                    last_line_processed_initially = browser_file_contents_lines.length;
                     last_line_processed = browser_file_contents_lines.length;
                 }
 
@@ -574,19 +560,31 @@ function stopCheckLocalServerTimeInterval() {
     clearInterval(checkLocalServerTime);
 }
 
-async function moveCursorToContinueButtonAndPressContinue() {
+/**
+ * This is the sequence of operations which executes after the server restarts, and the bot must log back into the server.
+ * The program detects if the server has restarted by checking for a specific TCP connection to the game server. Because the game server on SCUM has a static IP address and port,
+ * we can use the Windows command 'netstat -an' to check for existing connections on the computer and see if our target IP address exists in the list. 
+ * await sleep(N) is an asynchronous operation used to block any further processing of this function until after N milliseconds.
+ * You can convert milliseconds to seconds by dividing N / 1000 (80000 milliseconds / 1000 milliseconds = 8 seconds).
+ * The SCUM game interface has a 'continue' button to join the server you were last on, so this operation moves to there. 
+ */
+async function reinitializeBotOnServer() {
     await sleep(10000);
     moveMouseToContinueButtonXYLocation();
-    await sleep(60000);
+    await sleep(80000);
     pressMouseLeftClickButton();
-    await sleep(60000);
+    await sleep(80000);
     pressCharacterKeyT();
     await sleep(5000);
     pressTabKey();
+    await sleep(5000);
+    await enqueueCommand('Wilson bot has been activated and is ready to use');
 }
 
+/**
+ * Executes a Windows powershell command to simulate a user moving the cursor to a specific (X, Y) location on screen. This is an asynchronous operation.
+ */
 async function moveMouseToContinueButtonXYLocation() {
-    await sleep(300);
     const x_cursor_position = 476;
     const y_cursor_position = 589;
     const command = `powershell.exe -command "Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class P { [DllImport(\\"user32.dll\\")] public static extern bool SetCursorPos(int x, int y); }'; [P]::SetCursorPos(${x_cursor_position}, ${y_cursor_position})"`;
@@ -597,6 +595,9 @@ async function moveMouseToContinueButtonXYLocation() {
     });
 }
 
+/**
+ * Executes a Windows powershell command to simulate a left mouse button click. This is as asynchronous operation.
+ */
 function pressMouseLeftClickButton() {
     const command = `powershell.exe -command "Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class P { [DllImport(\\"user32.dll\\")] public static extern void mouse_event(int dwFlags, int dx, int dy, int dwData, int dwExtraInfo); }'; $leftDown = 0x0002; $leftUp = 0x0004; [P]::mouse_event($leftDown, 0, 0, 0, 0); [P]::mouse_event($leftUp, 0, 0, 0, 0);"`;
     exec(command, (error) => {
@@ -605,6 +606,13 @@ function pressMouseLeftClickButton() {
         } 
     });
 }
+
+/**
+ * The function checkLocalServerTime runs once every minute, checking the current time relative to the time on the time clock on the target machine. Once the current time
+ * fetched by the bot is 5:40 am, a warning message will be announced on the server informing users of a pending server restart in (6:00 - N), where N is the current time.
+ * For example, if the current time is 5:40 am, 6:00 am - 5:40 am will result in 0:20. Therefore, the bot will announce on the server a restart in 20 minutes.
+ * This occurs when the time is calculated as 20 minutes, 10 minutes, 5 minutes, and one minute. 
+ */
 async function checkLocalServerTime() {
     const currentDateTime = new Date();
     const current_hour = currentDateTime.getHours(); 
@@ -619,7 +627,7 @@ async function checkLocalServerTime() {
         };
 
         if (server_restart_messages[current_minute]) {
-            await runCommand(`#Announce ${server_restart_messages[current_minute]}`);
+            await enqueueCommand(`#Announce ${server_restart_messages[current_minute]}`);
         }
     }
 }
@@ -901,7 +909,7 @@ client_instance.on('ready', () => {
             if (game_connection_exists) {
                 discord_bot_in_scum_game_channel.send('The bot has established a connection with the game server');
             } else {
-                moveCursorToContinueButtonAndPressContinue();
+                reinitializeBotOnServer();
             }
         });
     }, 300000);
@@ -1233,7 +1241,7 @@ async function processQueue() {
         if (command_to_execute === 'welcomepack') {
             const welcome_pack_cost = user_account.user_welcome_pack_cost;
              if (user_account_balance < welcome_pack_cost) {
-                 await runCommand(`${client_ingame_chat_name} you do not have enough money to use your welcome pack again. Use the command /balance to check your balance`);
+                 await enqueueCommand(`${client_ingame_chat_name} you do not have enough money to use your welcome pack again. Use the command /balance to check your balance`);
                  continue;
              } else {
                  const user_account_for_welcome_pack = await user_repository.findUserById(command_to_execute_player_steam_id);
