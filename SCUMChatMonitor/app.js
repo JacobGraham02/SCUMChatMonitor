@@ -142,6 +142,8 @@ let last_line_processed = 0;
  */
 let has_initial_line_been_processed = false;
 
+let has_initial_line_been_processed_logins = false;
+
 const user_command_queue = new Queue();
 
 const login_times = new Map();
@@ -334,15 +336,17 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
 
         const login_log_file_content_individual_lines = login_log_file_contents.split('\n');
 
+        /**
+         * Update the number of lines already processed in the log file from gportal. This will prevent the entire log file from being read again when the file changes
+         */
+        if (!has_initial_line_been_processed_logins) {
+            ftp_login_file_lines_already_processed = login_log_file_content_individual_lines.length;
+        }
+
         // If we have already processed the lines that exist in the ftp file, remove them
         if (ftp_login_file_lines_already_processed < login_log_file_content_individual_lines.length) {
             login_log_file_content_individual_lines.splice(0, login_log_file_content_individual_lines);
         }
-        /**
-         * Update the number of lines already processed in the log file from gportal. This will prevent the entire log file from being read again when the file changes
-         */
-        ftp_login_file_lines_already_processed = login_log_file_content_individual_lines.length;
-
 
         /**
          * The return values from the .match() function return an object containing the substrings which match the pattern specified in the regex string
@@ -366,6 +370,8 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
         await insertSteamUsersIntoDatabase(Object.keys(user_steam_ids), Object.values(user_steam_ids));
 
         await teleportNewPlayersToLocation(user_steam_ids);
+
+        has_initial_line_been_processed_logins = true;
     } catch (error) {
         console.log('Error processing login log file:', error);
         response.status(500).json({ error: 'Failed to process files' });
