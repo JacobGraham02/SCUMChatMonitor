@@ -1,6 +1,12 @@
-﻿################################################################################
-# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
-################################################################################
-
+npm/
+node_modules/
+bin/
+obj/
+config.json
+scumchat-monitor.exe
+.env
+.idea
+.vs
+pkg-options.json
 /SCUMChatMonitor/scumchatmonitor.exe
 /SCUMChatMonitor/gmail-credentials.json
