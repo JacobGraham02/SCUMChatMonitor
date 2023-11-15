@@ -125,24 +125,20 @@ let existing_cached_file_content_hash_login_log = '';
 let existing_cached_file_content_hash_chat_log = '';
 
 /**
- * ftp_login_file_lines_already_processed stores a value which holds the number of lines in a file already processed. When a new line appears in the chat log, instead of
+ * last_line_processed_ftp_login_log stores a value which holds the number of lines in a file already processed. When a new line appears in the chat log, instead of
  * dealing with all commands in the current file, this variable will ensure only the lines after the specified line are acted upon
  */
-let ftp_login_file_lines_already_processed = 0;
+let last_line_processed_ftp_login_log = 0;
+
+let has_initial_line_been_processed_logins = false;
 
 /**
  * last_line_processed stores the last line processed as another safeguard so that only lines in the file after the specified one are executed
  */
-let last_line_processed = 0;
+let last_line_processed_ftp_chat_log = 0;
 
-/**
- * This boolean value will effectively allow last_line_processed to be set initially to the total length of the chat log file from GPortal's FTP server 
- * only once, when the program initially begins. A boolean value prevents repeatedly setting last_line_processed to the total length of GPortal's FTP log file.
- * If this boolean value was not here, last_line_processed would cause the bot to execute every command it could find in every log file fetched from GPortal's FTP server 
- */
-let has_initial_line_been_processed = false;
+let has_initial_line_been_processed_chat_log = false;
 
-let has_initial_line_been_processed_logins = false;
 
 const user_command_queue = new Queue();
 
@@ -304,66 +300,60 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
         });
 
         let file_contents = '';
+        let ftp_login_file_contents_lines = '';
+        const user_steam_ids = {};
+
         await new Promise((resolve, reject) => {
             stream.on('data', (chunk) => {
+                const process_chunk = chunk.toString().replace(/\u0000/g, '');
+                file_contents += process_chunk;
+                
                 /**
-                 * console.log(`Stream data is incoming from the specific FTP server log`);
-                 */
-                file_contents += chunk;
+                * Whenever the bot restarts, prevent duplicate older log files from being re-read and processed by the program. Set the first line to be processed as the total 
+                * number of lines that currently exist in the FTP file. 
+                */
+                if (!has_initial_line_been_processed_logins) {
+                    last_line_processed_ftp_login_log = ftp_login_file_contents_lines.length;
+                }
             });
-
             stream.on('end', () => {
-                /**
-                 * console.log(`Data stream from the specific FTP server log has completed successfully`);
-                 * console.log('File contents retrieved from the data stream: ', file_contents);
-                 */
+                ftp_login_file_contents_lines = file_contents.split('\n');
+                const current_file_content_hash = crypto.createHash('md5').update(file_contents).digest('hex');
+
+                if (current_file_content_hash === existing_cached_file_content_hash_login_log) {
+                    return;
+                } else {
+                    existing_cached_file_content_hash_login_log = current_file_content_hash;
+                }
+
+                if (ftp_login_file_contents_lines.length > 1) {
+
+                    if (last_line_processed_ftp_login_log < ftp_login_file_contents_lines.length) {
+                        ftp_login_file_contents_lines.slice(0, last_line_processed_ftp_login_log.length);
+                    }
+                    /**
+                    * The return values from the .match() function return an object containing the substrings which match the pattern specified in the regex string
+                    */
+                    if (!login_log_file_contents.match(login_log_steam_id_regex) || !login_log_file_contents.match(login_log_steam_name_regex)) {
+                        return;
+                    }
+
+                    const file_contents_steam_ids = login_log_file_contents.match(login_log_steam_id_regex);
+                    const file_contents_steam_messages = login_log_file_contents.match(login_log_steam_name_regex);
+            
+
+                    const file_contents_steam_ids_array = Object.values(file_contents_steam_ids);
+                    const file_contents_steam_name_array = Object.values(file_contents_steam_messages);
+
+
+                    for (let i = 0; i < file_contents_steam_ids_array.length; i++) {
+                        user_steam_ids[file_contents_steam_ids_array[i]] = file_contents_steam_name_array[i];
+                    }
+                }
                 resolve();
             });
-
             stream.on('error', reject);
         });
-
-        const current_file_content_hash = crypto.createHash('md5').update(file_contents).digest('hex');
-
-        if (current_file_content_hash === existing_cached_file_content_hash_login_log) {
-            return;
-        } else {
-            existing_cached_file_content_hash_login_log = current_file_content_hash;
-        }
-
-        const login_log_file_contents = file_contents.replace(/\u0000/g, '');
-
-
-        const login_log_file_content_individual_lines = login_log_file_contents.split('\n');
-
-        /**
-         * Update the number of lines already processed in the log file from gportal. This will prevent the entire log file from being read again when the file changes
-         */
-        if (!has_initial_line_been_processed_logins) {
-            ftp_login_file_lines_already_processed = login_log_file_content_individual_lines.length;
-        }
-
-        // If we have already processed the lines that exist in the ftp file, remove them
-        if (ftp_login_file_lines_already_processed < login_log_file_content_individual_lines.length) {
-            login_log_file_content_individual_lines.splice(0, login_log_file_content_individual_lines);
-        }
-
-        /**
-         * The return values from the .match() function return an object containing the substrings which match the pattern specified in the regex string
-         */
-        if (!login_log_file_contents.match(login_log_steam_id_regex) || !login_log_file_contents.match(login_log_steam_name_regex)) {
-            return;
-        }
-        const file_contents_steam_ids = login_log_file_contents.match(login_log_steam_id_regex);
-        const file_contents_steam_messages = login_log_file_contents.match(login_log_steam_name_regex);
-
-        const file_contents_steam_ids_array = Object.values(file_contents_steam_ids);
-        const file_contents_steam_name_array = Object.values(file_contents_steam_messages);
-
-        const user_steam_ids = {};
-        for (let i = 0; i < file_contents_steam_ids_array.length; i++) {
-            user_steam_ids[file_contents_steam_ids_array[i]] = file_contents_steam_name_array[i];
-        }
 
         await determinePlayerLoginSessionMoney(login_log_file_content_individual_lines);
 
@@ -500,12 +490,16 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
                  */
                 browser_file_contents_lines = browser_file_contents.split('\n');
 
-                if (!has_initial_line_been_processed) {
-                    last_line_processed = browser_file_contents_lines.length;
+                /**
+                 * Whenever the bot restarts, prevent duplicate older log files from being re-read and processed by the program. Set the first line to be processed as the total 
+                 * number of lines that currently exist in the FTP file. 
+                 */
+                if (!has_initial_line_been_processed_chat_log) {
+                    last_line_processed_ftp_chat_log = browser_file_contents_lines.length;
                 }
 
                 if (browser_file_contents_lines.length > 1) {
-                    for (let i = last_line_processed; i < browser_file_contents_lines.length; i++) {
+                    for (let i = last_line_processed_ftp_chat_log; i < browser_file_contents_lines.length; i++) {
                         received_chat_messages.push(browser_file_contents_lines[i]);
                         /**
                          * When iterating through the stored strings, if any substring matches the regex patterns for user steam ids or user messages,
@@ -525,7 +519,7 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
                 * Set the last line processed in the FTP file so that we do not re-read any file content which we have read already. This will assist administrators 
                 * in keeping track of messages that have already been processed. 
                 */
-                last_line_processed = browser_file_contents_lines.length;
+                last_line_processed_ftp_chat_log = browser_file_contents_lines.length;
                 /**
                  * If a data stream from the FTP server was properly terminated and returned some results, we will create a hash of those results
                  * and will not execute the function again if subsequent hashes are identical. 
@@ -537,11 +531,10 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
                     }
                     player_chat_messages_sent_inside_scum = received_chat_messages;
                     existing_cached_file_content_hash_chat_log = current_chat_log_file_hash;
-                    has_initial_line_been_processed = true;
+                    has_initial_line_been_processed_chat_log = true;
                 }
                 resolve();
             });
-
             stream.on('error', reject);
         });
 
@@ -1137,12 +1130,9 @@ async function runCommand(command) {
     await sleep(1000);
 }
 
-let isProcessing = false;
 async function enqueueCommand(user_chat_message_object) {
     user_command_queue.enqueue(user_chat_message_object);
-    if (!isProcessing) {
-        await processQueue();
-    }
+    await processQueue();
 }
 
 /**
@@ -1201,7 +1191,6 @@ async function handleIngameSCUMChatMessages() {
     }
 }
 async function processQueue() {
-    isQueueProcessing = true;
     while (user_command_queue.length() > 0) { 
         /**
          * After a command has finished execution in the queue, shift the values one spot to remove the command which has been executed. Extract the command 
@@ -1274,7 +1263,6 @@ async function processQueue() {
             await runCommand(client_command_data[i]);
         } 
     }
-    isQueueProcessing = false; // Set the processing flag to false when all commands have been processed to indicate the queue is no longer executing
 }
 
 /**
