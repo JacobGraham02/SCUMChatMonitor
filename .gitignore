@@ -9,3 +9,4 @@ config.json
 pkg-options.json
 scumchatmonitor.exe
 gmail-credentials.json
+error.log
