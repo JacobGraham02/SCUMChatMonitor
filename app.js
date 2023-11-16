@@ -130,7 +130,7 @@ let existing_cached_file_content_hash_chat_log = '';
  */
 let last_line_processed_ftp_login_log = 0;
 
-let has_initial_line_been_processed_logins = false;
+let has_initial_line_been_processed_login_log = false;
 
 /**
  * last_line_processed stores the last line processed as another safeguard so that only lines in the file after the specified one are executed
@@ -208,6 +208,8 @@ async function determinePlayerLoginSessionMoney(logs) {
                     if (login_time) {
                         const calculated_elapsed_time = ((formatted_date_and_time - login_time) / 1000 / 60 / 60);
                         const user_account_balance = Math.round(calculated_elapsed_time * 1000);
+
+                        console.log(`User ${user_steam_id} has an added account balance of ${user_account_balance}`);
 
                         user_balance_updates.set(user_steam_id, user_account_balance);
                         login_times.delete(user_steam_id);
@@ -299,69 +301,83 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
             });
         });
 
-        let file_contents = '';
-        let ftp_login_file_contents_lines = '';
+        let ftp_login_log_file_bulk_contents = '';
+        let ftp_login_log_file_processed_contents_string_array;
+        let received_chat_login_messages = [];
+        let file_contents_steam_ids_array = [];
+        let file_contents_steam_name_array = [];
+        let file_contents_steam_ids;
+        let file_contents_steam_messages;
+
         const user_steam_ids = {};
 
         await new Promise((resolve, reject) => {
             stream.on('data', (chunk) => {
-                const process_chunk = chunk.toString().replace(/\u0000/g, '');
-                file_contents += process_chunk;
+                
+                const processed_chunk = chunk.toString().replace(/\u0000/g, '');
+                ftp_login_log_file_bulk_contents += processed_chunk;
+                ftp_login_log_file_processed_contents_string_array = ftp_login_log_file_bulk_contents.split('\n');
                 
                 /**
                 * Whenever the bot restarts, prevent duplicate older log files from being re-read and processed by the program. Set the first line to be processed as the total 
                 * number of lines that currently exist in the FTP file. 
                 */
-                if (!has_initial_line_been_processed_logins) {
-                    last_line_processed_ftp_login_log = ftp_login_file_contents_lines.length;
+                if (!has_initial_line_been_processed_login_log) {
+                    last_line_processed_ftp_login_log = ftp_login_log_file_bulk_contents.length;
                 }
-            });
-            stream.on('end', () => {
-                ftp_login_file_contents_lines = file_contents.split('\n');
-                const current_file_content_hash = crypto.createHash('md5').update(file_contents).digest('hex');
+                
+                if (ftp_login_log_file_bulk_contents.length > 1) {
+                    for (let i = last_line_processed_ftp_login_log; i < ftp_login_log_file_processed_contents_string_array.length; i++) {
+                        received_chat_login_messages.push(ftp_login_log_file_processed_contents_string_array[i]);
+                        /**
+                         * When iterating through the stored strings, if any string exists that indicates a user has both left and joined the server, 
+                         * append the user steam id into an array and call the function to get user money for the length of their session
+                         */
+                        if (ftp_login_log_file_processed_contents_string_array[i].match(login_log_steam_id_regex));
+                            file_contents_steam_ids = ftp_login_log_file_processed_contents_string_array[i].match(login_log_steam_id_regex);
+                            file_contents_steam_messages = ftp_login_log_file_processed_contents_string_array[i].match(login_log_steam_name_regex);
 
-                if (current_file_content_hash === existing_cached_file_content_hash_login_log) {
-                    return;
-                } else {
-                    existing_cached_file_content_hash_login_log = current_file_content_hash;
-                }
-
-                if (ftp_login_file_contents_lines.length > 1) {
-
-                    if (last_line_processed_ftp_login_log < ftp_login_file_contents_lines.length) {
-                        ftp_login_file_contents_lines.slice(0, last_line_processed_ftp_login_log.length);
+                            file_contents_steam_ids_array = Object.values(file_contents_steam_ids);
+                            file_contents_steam_name_array = Object.values(file_contents_steam_messages);
                     }
-                    /**
-                    * The return values from the .match() function return an object containing the substrings which match the pattern specified in the regex string
-                    */
-                    if (!login_log_file_contents.match(login_log_steam_id_regex) || !login_log_file_contents.match(login_log_steam_name_regex)) {
-                        return;
-                    }
-
-                    const file_contents_steam_ids = login_log_file_contents.match(login_log_steam_id_regex);
-                    const file_contents_steam_messages = login_log_file_contents.match(login_log_steam_name_regex);
-            
-
-                    const file_contents_steam_ids_array = Object.values(file_contents_steam_ids);
-                    const file_contents_steam_name_array = Object.values(file_contents_steam_messages);
-
-
                     for (let i = 0; i < file_contents_steam_ids_array.length; i++) {
                         user_steam_ids[file_contents_steam_ids_array[i]] = file_contents_steam_name_array[i];
                     }
                 }
+            });
+
+            stream.on('end', () => {
+                /**
+                 * Set the last processed line of the old FTP login file so that we do not iterate over any already-processed lines in the FTP files
+                 * After each process, hash the existing file so that the file is not read over again if it is the same
+                 */
+                last_line_processed_ftp_login_log = ftp_login_log_file_processed_contents_string_array.length;
+
+                const current_file_contents_hash = crypto.createHash('md5').update(ftp_login_log_file_bulk_contents).digest('hex');
+                
+                if (current_file_contents_hash === existing_cached_file_content_hash_login_log) {
+                    return;
+                }
+                existing_cached_file_content_hash_login_log = current_file_contents_hash; 
+
+                has_initial_line_been_processed_login_log = true;
+
+                /**
+                 * Call each of the helper functions to perform specific actions and clear the old chat login messages array to maintain room for
+                 * any future login messages
+                 */
+                determinePlayerLoginSessionMoney(received_chat_login_messages);
+
+                insertSteamUsersIntoDatabase(Object.keys(user_steam_ids), Object.values(user_steam_ids));
+        
+                teleportNewPlayersToLocation(user_steam_ids);
+
+                received_chat_login_messages = [];
+              
                 resolve();
             });
             stream.on('error', reject);
         });
-
-        await determinePlayerLoginSessionMoney(login_log_file_content_individual_lines);
-
-        await insertSteamUsersIntoDatabase(Object.keys(user_steam_ids), Object.values(user_steam_ids));
-
-        await teleportNewPlayersToLocation(user_steam_ids);
-
-        has_initial_line_been_processed_logins = true;
     } catch (error) {
         console.log('Error processing login log file:', error);
         response.status(500).json({ error: 'Failed to process files' });
