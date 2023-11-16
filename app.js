@@ -1207,7 +1207,7 @@ async function handleIngameSCUMChatMessages() {
     }
 }
 async function processQueue() {
-    while (user_command_queue.length() > 0) { 
+    while (user_command_queue.size() > 0) { 
         /**
          * After a command has finished execution in the queue, shift the values one spot to remove the command which has been executed. Extract the command 
          * and the steam id of the user who executed the command

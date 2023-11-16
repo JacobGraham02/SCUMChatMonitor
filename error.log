@@ -119,3 +119,9 @@
     at readableAddChunk (node:internal/streams/readable:297:9)
     at Readable.push (node:internal/streams/readable:234:10)
     at TCP.onStreamRead (node:internal/stream_base_commons:190:23)
+2023-11-16T04:43:12.804Z: Error: Unhandled Rejection at: [object Promise], reason: TypeError: user_command_queue.length is not a function
+    at process.<anonymous> (C:\Users\Jacob\Desktop\SCUMChatMonitor\app.js:1176:14)
+    at process.emit (node:events:513:28)
+    at emit (node:internal/process/promises:149:20)
+    at processPromiseRejections (node:internal/process/promises:283:27)
+    at process.processTicksAndRejections (node:internal/process/task_queues:96:32)
