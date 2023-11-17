@@ -71,7 +71,7 @@ const login_log_steam_name_regex = /([a-zA-Z0-9 ._-]{0,32}\([0-9]{1,10}\))/g;
 /**
  * The following regex string is for chat messages when they appear in the chat log file. 
  */
-const chat_log_messages_regex = /(?<=Global: |Local: |Admin: )\/[^\n]*[^'\n]/g;
+const chat_log_messages_regex = /(?<=Global: |Local: |Admin: |Squad:)\/[^\n]*[^'\n]/g;
 
 /**
  * The following 3 strings must be hardcoded according to how the gportal ftp server is structured. The use of 2 \\ characters is necessary to equal one \ character
