@@ -20,6 +20,7 @@ const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const { EmbedBuilder } = require('discord.js');
 
 const Queue = require('./utils/Queue');
+const Logger = require('./utils/Logger');
 const CheckTcpConnection = require('./utils/CheckTcpConnection');
 /**
  * Modules and other files which are custom made for the application
@@ -142,6 +143,8 @@ let has_initial_line_been_processed_chat_log = false;
 
 const user_command_queue = new Queue();
 
+const error_logger = new Logger('C:\\Users\\Wilson\\Desktop\\ScumChatMonitorErrors');
+
 const login_times = new Map();
 
 const user_balance_updates = new Map();
@@ -243,28 +246,16 @@ async function determinePlayerLoginSessionMoney(logs) {
  * @returns {Array} An array containing object(s) in the following format: {steam_id: string, player_message: string}
  */
 async function readAndFormatGportalFtpServerLoginLog(request, response) {
-    /**
-    * If GPortal's FTP server does not respond within 30 seconds, throw an error indicating that the server cannot be reached
-    */
-    const ftp_timeout_milliseconds = 30000; 
     let ftp_client;
+
     try {
         ftp_client = new FTPClient();
+        
         await new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => {
-                ftp_client.end();
-                reject(new Error('Connection to FTP server timed out'));
-            }, ftp_timeout_milliseconds);
-
-            ftp_client.on('ready', () => {
-                clearTimeout(timeout);
-                resolve();
-            });
+            ftp_client.on('ready', resolve);
             ftp_client.on('error', (err) => {
-                clearTimeout(timeout);
-                reject(err);
+                reject(new Error(`FTP connection error: ${err.message}`));
             });
-
             ftp_client.connect(gportal_ftp_config);
         });
 
@@ -285,7 +276,7 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
 
         if (matching_files.length === 0) {
             response.status(500).json({ message: `No files were found that started with the prefix ${gportal_ftp_server_filename_prefix_login}` });
-            ftpClient.end();
+            ftp_client.end();
             return;
         }
 
@@ -294,7 +285,7 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
         const stream = await new Promise((resolve, reject) => {
             ftp_client.get(file_path, (error, stream) => {
                 if (error) {
-                    reject(`The file was present in gportal, but could not be fetched. ${error}`);
+                    reject(new Error(`The file was present in gportal, but could not be fetched. ${error}`));
                 } else {
                     resolve(stream);
                 }
@@ -379,7 +370,7 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
             stream.on('error', reject);
         });
     } catch (error) {
-        console.log('Error processing login log file:', error);
+        console.error('Error processing login log file:', error);
         response.status(500).json({ error: 'Failed to process files' });
     } finally {
         if (ftp_client) {
@@ -423,16 +414,17 @@ async function teleportNewPlayersToLocation(online_users) {
  * @returns {Array} An array containing object(s) in the following format: {steam_id: string, player_message: string}
  */
 async function readAndFormatGportalFtpServerChatLog(request, response) {
-    let ftp_client;
-    try {
-        ftp_client = new FTPClient();
+    const ftp_client = new FTPClient();
 
+    try {
         /**
          * Attempt to establish a connection with the FTP server, and provide handlers to handle the result of the operation
          */
         await new Promise((resolve, reject) => {
             ftp_client.on('ready', resolve);
-            ftp_client.on('error', reject);
+            ftp_client.on('error', (error) => {
+                reject(new Error(`FTP connection error: ${error.message}`));
+            });
             ftp_client.connect(gportal_ftp_config);
         });
 
@@ -443,7 +435,7 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
         const files = await new Promise((resolve, reject) => {
             ftp_client.list(gportal_ftp_server_target_directory, (error, files) => {
                 if (error) {
-                    reject('Failed to retrieve file listing');
+                    reject(new Error(`Failed to retrieve file listings: ${error.message}`));
                 } else {
                     resolve(files);
                 }
@@ -474,7 +466,7 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
         const stream = await new Promise((resolve, reject) => {
             ftp_client.get(file_path, (error, stream) => {
                 if (error) {
-                    reject(`The file was present in gportal, but could not be fetched. ${error}`);
+                    reject(new Error(`The file was present in gportal, but could not be fetched. ${error}`));
                 }
                 else {
                     resolve(stream);
@@ -551,10 +543,14 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
                 }
                 resolve();
             });
-            stream.on('error', reject);
+            stream.on('error', (error) => {
+                reject(new Error(`Stream error: ${error.message}`));
+            });
         });
 
-        return file_contents_steam_id_and_messages;
+        if (file_contents_steam_id_and_messages) {
+            return file_contents_steam_id_and_messages;
+        }
 
     } catch (error) {
         console.log('Error processing files:', error);
@@ -658,7 +654,7 @@ function startFtpFileProcessingIntervalChatLog() {
  * Start an interval of reading login log messages from gportal which repeats every 10 seconds
  */
 function startFtpFileProcessingIntervalLoginLog() {
-    read_login_ftp_file_interval = setInterval(readAndFormatGportalFtpServerLoginLog, 10000);
+    read_login_ftp_file_interval = setInterval(readAndFormatGportalFtpServerLoginLog, 15000);
 }
 
 /**
@@ -833,30 +829,6 @@ for (const command_file of command_files_list) {
 }
 
 /**
- * The following function can be used for development or debugging purposes to find out if your system can identify when the SCUM game is running 
- */
-function checkIfScumGameRunning(callback) {
-    const processName = 'SCUM';
-
-    const command = `tasklist /FI "IMAGENAME eq ${processName}.exe"`;
-
-    exec(command, (error, stdout, stderr) => {
-        if (error || stderr) {
-            console.error(`Error executing command: ${error || stderr}`);
-            callback(false);
-            return;
-        }
-
-        const output = stdout.toLowerCase();
-
-        // Check if the process name exists in the output
-        const isRunning = output.includes(processName.toLowerCase());
-
-        callback(isRunning);
-    });
-}
-
-/**
  * The discord API triggers an event called 'ready' when the discord bot is ready to respond to commands and other input. 
  */
 client_instance.on('ready', () => {
@@ -868,13 +840,9 @@ client_instance.on('ready', () => {
     /**
      * Access the discord API channel cache for a specific guild (server) and fetch channels via their id
      */
-    const discord_channel_id_for_heartbeat = '1146531098290028614';
-    const discord_channel_id_for_scum_game = '1173048671420559521';
     const discord_channel_id_for_scum_chat = '1173100035135766539';
     const discord_channel_id_for_bot_in_game = '1173331877004845116';
     const discord_bot_in_scum_game_channel = client_instance.channels.cache.get(discord_channel_id_for_bot_in_game);
-    const discord_heartbeat_channel = client_instance.channels.cache.get(discord_channel_id_for_heartbeat);
-    const discord_scum_game_status = client_instance.channels.cache.get(discord_channel_id_for_scum_game);
     const discord_scum_game_ingame_messages_chat = client_instance.channels.cache.get(discord_channel_id_for_scum_chat);
 
     /**
@@ -883,34 +851,24 @@ client_instance.on('ready', () => {
      * logs to another array, and compare that array to the next iteration of chat logs. 
      */
     setInterval(() => {
-        checkIfScumGameRunning((isRunning) => {
-            if (player_chat_messages_sent_inside_scum !== undefined) {
-                if (!arraysEqual(previous_chat_message, player_chat_messages_sent_inside_scum)) {
-                    // Messages have changed, send new messages
-                    previous_chat_message = player_chat_messages_sent_inside_scum.slice(); // Copy the array
-                    for (let i = 0; i < player_chat_messages_sent_inside_scum.length; i++) {
-                        if (player_chat_messages_sent_inside_scum[i]) {
-                            const embedded_message = new EmbedBuilder()
-                                .setColor(0x299bcc)
-                                .setTitle('SCUM In-game chat')
-                                .setThumbnail('https://i.imgur.com/dYtjF3w.png')
-                                .setDescription(`${player_chat_messages_sent_inside_scum[i]}`)
-                                .setTimestamp()
-                                .setFooter({ text: 'SCUM Bot Monitor', iconURL: 'https://i.imgur.com/dYtjF3w.png' });
-                            discord_scum_game_ingame_messages_chat.send({ embeds: [embedded_message] });
-                        }
+        if (player_chat_messages_sent_inside_scum !== undefined) {
+            if (!arraysEqual(previous_chat_message, player_chat_messages_sent_inside_scum)) {
+                // Messages have changed, send new messages
+                previous_chat_message = player_chat_messages_sent_inside_scum.slice(); // Copy the array
+                for (let i = 0; i < player_chat_messages_sent_inside_scum.length; i++) {
+                    if (player_chat_messages_sent_inside_scum[i]) {
+                        const embedded_message = new EmbedBuilder()
+                            .setColor(0x299bcc)
+                            .setTitle('SCUM In-game chat')
+                            .setThumbnail('https://i.imgur.com/dYtjF3w.png')
+                            .setDescription(`${player_chat_messages_sent_inside_scum[i]}`)
+                            .setTimestamp()
+                            .setFooter({ text: 'SCUM Bot Monitor', iconURL: 'https://i.imgur.com/dYtjF3w.png' });
+                        discord_scum_game_ingame_messages_chat.send({ embeds: [embedded_message] });
                     }
                 }
             }
-
-            /**
-             * A callback function from checkIfScumGameRunning is returned which checks to see if the SCUM game is currently running on the host machine. 
-             * We use a callback function because the Node.js package 'exec' is asynchronous, but this program is synchronous. 
-             */
-            if (isRunning) {
-                discord_scum_game_status.send('The SCUM game is running');
-            } 
-        });
+        }
     }, 60000);
 
     /**
@@ -922,24 +880,13 @@ client_instance.on('ready', () => {
     setInterval(() => {
         tcpConnectionChecker.checkWindowsHasTcpConnectionToGameServer((game_connection_exists) => {
             if (game_connection_exists) {
-                discord_bot_in_scum_game_channel.send('The bot has established a connection with the game server');
+                discord_bot_in_scum_game_channel.send('The bot is online and connected to the SCUM server');
             } else {
+                discord_bot_in_scum_game_channel.send('The bot is offline');
                 reinitializeBotOnServer();
             }
         });
     }, 300000);
-
-    /**
-     * A 1-minute interval which will send a message to the discord guild via the discord API to inform administrators that the bot is currently running on the 
-     * target computer. 
-     */
-    setInterval(() => {
-        if (discord_heartbeat_channel) {
-            discord_heartbeat_channel.send('The bot is currently running');
-        } else {
-            console.log('An error has occurred - Please inform the bot developer that the specified discord channel could not be fetched');
-        }
-    }, 60000);
 
     /**
      * Inform administrators that the bot has successfully logged into the Discord guild
@@ -1151,29 +1098,8 @@ async function enqueueCommand(user_chat_message_object) {
     await processQueue();
 }
 
-/**
- * This function is meant to catch any error that could occur in the program at run time and write those errors to a file, to allow
- * better debugging of the program when it crashes. 
- * @param {any} error any Error thrown by the application
- */
-const logError = (error) => {
-    const logFilePath = path.join(__dirname, 'error.log'); // Set the path for the error log file
-
-    // Create or append to the error log file
-    fs.appendFile(logFilePath, `${new Date().toISOString()}: ${error.stack}\n`, (err) => {
-        if (err) {
-            console.error('Error writing to error log:', err);
-        }
-    });
-
-    // Log the error to the console
-    console.error('Uncaught Exception or Unhandled Rejection:', error);
-};
-
-// Attach the error handler
-process.on('uncaughtException', logError);
-process.on('unhandledRejection', (reason, promise) => {
-    logError(new Error(`Unhandled Rejection at: ${promise}, reason: ${reason}`));
+process.on('uncaughtException', (error) => {
+    error_logger.logError(error);
 });
 
 // Optionally, listen for the process to exit gracefully
@@ -1190,7 +1116,7 @@ async function handleIngameSCUMChatMessages() {
     /**
      * Fetch the data from the resolved promise returned by readAndFormatGportalFtpServerChatLog. This contains all of the chat messages said on the server. 
      */
-    const ftp_server_chat_log = await readAndFormatGportalFtpServerChatLog();
+    const ftp_server_chat_log = readAndFormatGportalFtpServerChatLog();
     /**
      * If the chat log returns a falsy value, immediately return
      */

@@ -9,8 +9,11 @@
     "name": "Jacob Graham"
   },
   "scripts": {
-    "start": "start node app.js",
+    "start": "pm2 start app.js",
     "build": "pkg .",
+    "status": "pm2 status app.js",
+    "restart": "pm2 restart app.js",
+    "logs": "pm2 logs app.js",
     "test": "nodemon app.js",
     "debug": "nodemon --inspect app.js"
   },
@@ -42,6 +45,7 @@
     "passport": "^0.6.0",
     "passport-local": "^1.0.0",
     "pkg": "^5.8.1",
+    "pm2": "^5.3.0",
     "pug": "^3.0.2",
     "uuid": "^9.0.0"
   },
