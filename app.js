@@ -25,7 +25,7 @@ const CheckTcpConnection = require('./utils/CheckTcpConnection');
  * Modules and other files which are custom made for the application
  */
 const hashAndValidatePassword = require('./modules/hashAndValidatePassword');
-const UserRepository = require('./database/UserRepository');
+const UserRepository = require('./database/MongoDb/UserRepository');
 const { discord_bot_token } = require('./config.json');
 var indexRouter = require('./routes/index');
 var adminRouter = require('./routes/admin');
