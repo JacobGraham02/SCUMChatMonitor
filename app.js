@@ -72,7 +72,7 @@ const login_log_steam_name_regex = /([a-zA-Z0-9 ._-]{0,32}\([0-9]{1,10}\))/g;
 /**
  * The following regex string is for chat messages when they appear in the chat log file. 
  */
-const chat_log_messages_regex = /(?<=Global: |Local: |Admin: |Squad:)\/[^\n]*[^'\n]/g;
+const chat_log_messages_regex = /(?<=Global: |Local: |Admin: |Squad: )\/[^\n]*[^'\n]/g;
 
 /**
  * The following 3 strings must be hardcoded according to how the gportal ftp server is structured. The use of 2 \\ characters is necessary to equal one \ character
@@ -582,13 +582,19 @@ function stopCheckLocalServerTimeInterval() {
 async function reinitializeBotOnServer() {
     await sleep(10000);
     moveMouseToContinueButtonXYLocation();
-    await sleep(80000);
+    await sleep(100000);
     pressMouseLeftClickButton();
-    await sleep(80000);
+    await sleep(100000);
     pressCharacterKeyT();
     await sleep(5000);
     pressTabKey();
     await sleep(5000);
+    tcpConnectionChecker.checkWindowsCanPingGameServer((bot_connected_to_game_server) => {
+        if (bot_connected_to_game_server) {
+            startFtpFileProcessingIntervalChatLog();
+            startFtpFileProcessingIntervalLoginLog();
+        }
+    });
     await enqueueCommand('Wilson bot has been activated and is ready to use');
 }
 
@@ -651,7 +657,7 @@ function startFtpFileProcessingIntervalChatLog() {
 }
 
 /**
- * Start an interval of reading login log messages from gportal which repeats every 10 seconds
+ * Start an interval of reading login log messages from gportal which repeats every 15 seconds
  */
 function startFtpFileProcessingIntervalLoginLog() {
     read_login_ftp_file_interval = setInterval(readAndFormatGportalFtpServerLoginLog, 15000);
@@ -660,14 +666,14 @@ function startFtpFileProcessingIntervalLoginLog() {
 /**
  * Terminate any existing intervals for the gportal login file
  */
-function stopFileProcessingIntervalLoginFile() {
+function stopFileProcessingIntervalLoginLog() {
     clearInterval(read_login_ftp_file_interval);
 }
 
 /**
  * Terminate any existing intervals for the gportal ingame chat file
  */
-function stopFileProcessingIntervalChatFile() {
+function stopFileProcessingIntervalChatLog() {
     clearInterval(read_login_ftp_file_interval);
 }
 
@@ -882,11 +888,12 @@ client_instance.on('ready', () => {
             if (game_connection_exists) {
                 discord_bot_in_scum_game_channel.send('The bot is online and connected to the SCUM server');
             } else {
-                discord_bot_in_scum_game_channel.send('The bot is offline');
+                stopFileProcessingIntervalChatLog();
+                stopFileProcessingIntervalLoginLog();
                 reinitializeBotOnServer();
             }
         });
-    }, 300000);
+    }, 60000);
 
     /**
      * Inform administrators that the bot has successfully logged into the Discord guild
