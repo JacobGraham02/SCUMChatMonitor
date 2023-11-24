@@ -143,7 +143,7 @@ let has_initial_line_been_processed_chat_log = false;
 
 const user_command_queue = new Queue();
 
-const error_logger = new Logger('C:\\Users\\Wilson\\Desktop\\ScumChatMonitorErrors');
+const error_logger = new Logger(process.env.scumbot_error_log);
 
 const login_times = new Map();
 
@@ -275,6 +275,7 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
             .sort((file_one, file_two) => file_two.date - file_one.date);
 
         if (matching_files.length === 0) {
+            error_logger.logError(`No files were found that started with the prefix ${gportal_ftp_server_filename_prefix_login}: ${error}`);
             response.status(500).json({ message: `No files were found that started with the prefix ${gportal_ftp_server_filename_prefix_login}` });
             ftp_client.end();
             return;
@@ -285,7 +286,8 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
         const stream = await new Promise((resolve, reject) => {
             ftp_client.get(file_path, (error, stream) => {
                 if (error) {
-                    reject(new Error(`The file was present in gportal, but could not be fetched. ${error}`));
+                    error_logger.logError(`The ftp login file was present in GPortal, but could not be fetched: ${error}`);
+                    reject(new Error(`The ftp login file was present in GPortal, but could not be fetched. ${error}`));
                 } else {
                     resolve(stream);
                 }
@@ -331,6 +333,7 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
                             file_contents_steam_ids_array = Object.values(file_contents_steam_ids);
                             file_contents_steam_name_array = Object.values(file_contents_steam_messages);
                     }
+                    scum_chat_messages = received_chat_login_messages;
                     for (let i = 0; i < file_contents_steam_ids_array.length; i++) {
                         user_steam_ids[file_contents_steam_ids_array[i]] = file_contents_steam_name_array[i];
                     }
@@ -370,7 +373,7 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
             stream.on('error', reject);
         });
     } catch (error) {
-        console.error('Error processing login log file:', error);
+        error_logger.logError(`Error processing the GPortal FTP login log file: ${error}`);
         response.status(500).json({ error: 'Failed to process files' });
     } finally {
         if (ftp_client) {
@@ -435,6 +438,7 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
         const files = await new Promise((resolve, reject) => {
             ftp_client.list(gportal_ftp_server_target_directory, (error, files) => {
                 if (error) {
+                    error_logger.logError(`Failed to retrieve file listings from GPortal: ${error.message}`);
                     reject(new Error(`Failed to retrieve file listings: ${error.message}`));
                 } else {
                     resolve(files);
@@ -455,6 +459,7 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
          * indicating that no target files were found
          */
         if (matching_files.length === 0) {
+            error_logger.logError(`No files were found that started with the prefix ${gportal_ftp_server_filename_prefix_chat}: ${error}`);
             response.status(500).json({ message: `No files were found that started with the prefix ${gportal_ftp_server_filename_prefix_chat}` });
             return;
         }
@@ -466,7 +471,8 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
         const stream = await new Promise((resolve, reject) => {
             ftp_client.get(file_path, (error, stream) => {
                 if (error) {
-                    reject(new Error(`The file was present in gportal, but could not be fetched. ${error}`));
+                    error_logger.logError(`The file is present in GPortal, but can not be fetched: ${error} `);
+                    reject(new Error(`The file was present in gportal, but could not be fetched: ${error}`));
                 }
                 else {
                     resolve(stream);
@@ -544,6 +550,7 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
                 resolve();
             });
             stream.on('error', (error) => {
+                
                 reject(new Error(`Stream error: ${error.message}`));
             });
         });
@@ -553,7 +560,7 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
         }
 
     } catch (error) {
-        console.log('Error processing files:', error);
+        error_logger.logError(`Error when processing the SCUM chat log files: ${error}`);
         response.status(500).json({ error: 'Failed to process files' });
     } finally {
         if (ftp_client) {
@@ -607,7 +614,7 @@ async function moveMouseToContinueButtonXYLocation() {
     const command = `powershell.exe -command "Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class P { [DllImport(\\"user32.dll\\")] public static extern bool SetCursorPos(int x, int y); }'; [P]::SetCursorPos(${x_cursor_position}, ${y_cursor_position})"`;
     exec(command, (error) => {
         if (error) {
-            console.error(`Error moving the mouse the mouse to x 470, y 550 and left-clicking:${error}`);
+            error_logger.logError(`Error when moving the mouse to x 470 and y 550: ${error}`);
         }
     });
 }
@@ -619,7 +626,7 @@ function pressMouseLeftClickButton() {
     const command = `powershell.exe -command "Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class P { [DllImport(\\"user32.dll\\")] public static extern void mouse_event(int dwFlags, int dx, int dy, int dwData, int dwExtraInfo); }'; $leftDown = 0x0002; $leftUp = 0x0004; [P]::mouse_event($leftDown, 0, 0, 0, 0); [P]::mouse_event($leftUp, 0, 0, 0, 0);"`;
     exec(command, (error) => {
         if (error) {
-            console.error(`Error when simulating a left click on the mouse`);
+            error_logger.logError(`Error when left clicking the mouse: ${error}`);
         } 
     });
 }
@@ -841,15 +848,16 @@ client_instance.on('ready', () => {
     /**
      * previous_chat_message array holds previous chat messages so that messages are not repeated into the discord channel
      */
-    let previous_chat_message = [];
+    let previous_chat_messages = [];
+    let previous_login_messages = []; 
 
     /**
      * Access the discord API channel cache for a specific guild (server) and fetch channels via their id
      */
+    const discord_channel_id_for_logins = '1173048671420559521';
     const discord_channel_id_for_scum_chat = '1173100035135766539';
-    const discord_channel_id_for_bot_in_game = '1173331877004845116';
-    const discord_bot_in_scum_game_channel = client_instance.channels.cache.get(discord_channel_id_for_bot_in_game);
     const discord_scum_game_ingame_messages_chat = client_instance.channels.cache.get(discord_channel_id_for_scum_chat);
+    const discord_scum_game_login_messages_chat = client_instance.channels.cache.get(discord_channel_id_for_logins);
 
     /**
      * A 30-second interval that reads all contents from the in-game SCUM server chat and uses the discord API EmbedBuilder to write a nicely-formatted chat message
@@ -858,24 +866,40 @@ client_instance.on('ready', () => {
      */
     setInterval(() => {
         if (player_chat_messages_sent_inside_scum !== undefined) {
-            if (!arraysEqual(previous_chat_message, player_chat_messages_sent_inside_scum)) {
+            if (!arraysEqual(previous_chat_messages, player_chat_messages_sent_inside_scum)) {
                 // Messages have changed, send new messages
-                previous_chat_message = player_chat_messages_sent_inside_scum.slice(); // Copy the array
+                previous_chat_messages = player_chat_messages_sent_inside_scum.slice(); // Copy the array
                 for (let i = 0; i < player_chat_messages_sent_inside_scum.length; i++) {
-                    if (player_chat_messages_sent_inside_scum[i]) {
-                        const embedded_message = new EmbedBuilder()
-                            .setColor(0x299bcc)
-                            .setTitle('SCUM In-game chat')
-                            .setThumbnail('https://i.imgur.com/dYtjF3w.png')
-                            .setDescription(`${player_chat_messages_sent_inside_scum[i]}`)
-                            .setTimestamp()
-                            .setFooter({ text: 'SCUM Bot Monitor', iconURL: 'https://i.imgur.com/dYtjF3w.png' });
-                        discord_scum_game_ingame_messages_chat.send({ embeds: [embedded_message] });
-                    }
+                    const embedded_message = new EmbedBuilder()
+                        .setColor(0x299bcc)
+                        .setTitle('SCUM In-game chat')
+                        .setThumbnail('https://i.imgur.com/dYtjF3w.png')
+                        .setDescription(`${player_chat_messages_sent_inside_scum[i]}`)
+                        .setTimestamp()
+                        .setFooter({ text: 'SCUM Bot Monitor', iconURL: 'https://i.imgur.com/dYtjF3w.png' });
+                    discord_scum_game_ingame_messages_chat.send({ embeds: [embedded_message] });
                 }
             }
         }
     }, 60000);
+
+    setInterval(() => {
+        if (received_chat_login_messages !== undefined) {
+            if (!arraysEqual(previous_login_messages, received_chat_login_messages)) {
+                previous_login_messages = received_chat_login_messages.slice();
+                for (let i = 0; i < received_chat_login_messages.length; i++) { 
+                    const embedded_message = new EmbedBuilder()
+                        .setColor(0x299bcc)
+                        .setTitle('SCUM login information')
+                        .setThumbnail('https://i.imgur.com/dYtjF3w.png')
+                        .setDescription(`${received_chat_login_messages[i]}`)
+                        .setTimestamp()
+                        .setFooter({ text: 'SCUM Bot Monitor', iconURL: 'https://i.imgur.com/dYtjF3w.png' });
+                    discord_scum_game_login_messages_chat.send({ embeds: [embedded_message] });
+                }
+            }
+        }
+    }, 65000);
 
     /**
      * A 5-minute interval which returns a callback function from a class which checks to see if the bot is connected to the SCUM game server.
@@ -984,7 +1008,7 @@ function copyToClipboard(text) {
     const command = `powershell.exe -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Clipboard]::SetText('${text.replace(/'/g, "''")}')"`
     exec(command, (error) => {
         if (error) {
-            console.error('Error copying to clipboard:', error);
+            error_logger.logError(`Error copying contents to the clipboard: ${error}`);
         } 
     });
 }
@@ -999,7 +1023,7 @@ function pasteFromClipboard() {
     const command = `powershell.exe -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('^v')"`
     exec(command, (error) => {
         if (error) {
-            console.error('Error pasting from clipboard:', error);
+            error_logger.logError(`Error pasting the contents from clipboard: ${error}`);
         } 
     });
 }
@@ -1014,7 +1038,7 @@ function pressTabKey() {
     const command = `powershell.exe -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('{TAB}')"`;
     exec(command, (error) => {
         if (error) {
-            console.error('Error simulating the a tab key press');
+            error_logger.logError(`Error when pressing the tab key: ${error}`);
         } 
     });
 }
@@ -1029,7 +1053,7 @@ function pressCharacterKeyT() {
     const command = `powershell.exe -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('t')`;
     exec(command, (error) => {
         if (error) {
-            console.error('T character simulating enter key press:', error);
+            error_logger.logError(`Error when pressing the character key T: ${error}`);
         } 
     });
 }
@@ -1045,7 +1069,7 @@ function pressBackspaceKey() {
     const command = `powershell.exe -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('{BACKSPACE}')`;
     exec(command, (error) => {
         if (error) {
-            console.error('Error simulating backspace key press:', error);
+            error_logger.logError(`Error when pressing the backspace key: ${error}`);
         } 
     });
 }
@@ -1060,7 +1084,7 @@ function pressEnterKey() {
     const command = `powershell.exe -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('{Enter}')`;
     exec(command, (error) => {
         if (error) {
-            console.error('Error simulating enter key press:', error);
+            error_logger.logError(`Error when pressing the enter key: ${error}`);
         } 
     });
 }
@@ -1111,6 +1135,7 @@ process.on('uncaughtException', (error) => {
 
 // Optionally, listen for the process to exit gracefully
 process.on('exit', (code) => {
+    error_logger.logError(`Process exited with code: ${error}`);
     console.log(`Process exited with code ${code}`);
 });
 
@@ -1195,7 +1220,7 @@ async function processQueue() {
         }
 
         if (user_account_balance < function_property_data.command_cost) {
-            console.log(`${client_ingame_chat_name}, you do not have enough money to use this package. Use the command /balance to check your balance.`);
+            await enqueueCommand(`${client_ingame_chat_name}, you do not have enough money to use this package. Use the command /balance to check your balance.`);
             continue;
         }
         /**
