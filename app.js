@@ -1,4 +1,4 @@
-require('dotenv').config({ path:'.env' });
+require('dotenv').config({path:'.env'});
 
 /**
  * Nodejs and express specific dependencies
@@ -40,7 +40,7 @@ const client_instance = new Client({
     ]
 });
 
-const tcpConnectionChecker = new CheckTcpConnection(process.env.scum_game_server_remote_address, process.env.scum_game_server_remote_port);
+const tcpConnectionChecker = new CheckTcpConnection(process.env.scum_game_server_address, process.env.scum_game_server_port);
 
 /** Each channel in a discord server is identified by a unique integer value
  */
@@ -143,7 +143,7 @@ let has_initial_line_been_processed_chat_log = false;
 
 const user_command_queue = new Queue();
 
-const error_logger = new Logger(process.env.scumbot_error_log);
+const error_logger = new Logger();
 
 const login_times = new Map();
 
@@ -333,7 +333,7 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
                             file_contents_steam_ids_array = Object.values(file_contents_steam_ids);
                             file_contents_steam_name_array = Object.values(file_contents_steam_messages);
                     }
-                    scum_chat_messages = received_chat_login_messages;
+                    scum_ftp_log_login_messages = received_chat_login_messages;
                     for (let i = 0; i < file_contents_steam_ids_array.length; i++) {
                         user_steam_ids[file_contents_steam_ids_array[i]] = file_contents_steam_name_array[i];
                     }
@@ -348,10 +348,10 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
                 last_line_processed_ftp_login_log = ftp_login_log_file_processed_contents_string_array.length;
 
                 const current_file_contents_hash = crypto.createHash('md5').update(ftp_login_log_file_bulk_contents).digest('hex');
-                
                 if (current_file_contents_hash === existing_cached_file_content_hash_login_log) {
                     return;
                 }
+                player_ftp_log_login_messages = received_chat_login_messages;
                 existing_cached_file_content_hash_login_log = current_file_contents_hash; 
 
                 has_initial_line_been_processed_login_log = true;
@@ -547,6 +547,7 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
                     existing_cached_file_content_hash_chat_log = current_chat_log_file_hash;
                     has_initial_line_been_processed_chat_log = true;
                 }
+
                 resolve();
             });
             stream.on('error', (error) => {
@@ -596,12 +597,6 @@ async function reinitializeBotOnServer() {
     await sleep(5000);
     pressTabKey();
     await sleep(5000);
-    tcpConnectionChecker.checkWindowsCanPingGameServer((bot_connected_to_game_server) => {
-        if (bot_connected_to_game_server) {
-            startFtpFileProcessingIntervalChatLog();
-            startFtpFileProcessingIntervalLoginLog();
-        }
-    });
     await enqueueCommand('Wilson bot has been activated and is ready to use');
 }
 
@@ -856,8 +851,10 @@ client_instance.on('ready', () => {
      */
     const discord_channel_id_for_logins = '1173048671420559521';
     const discord_channel_id_for_scum_chat = '1173100035135766539';
+    const discord_channel_id_for_bot_online = '1173331877004845116';
     const discord_scum_game_ingame_messages_chat = client_instance.channels.cache.get(discord_channel_id_for_scum_chat);
     const discord_scum_game_login_messages_chat = client_instance.channels.cache.get(discord_channel_id_for_logins);
+    const discord_scum_game_bot_online_chat = client_instance.channels.cache.get(discord_channel_id_for_bot_online);
 
     /**
      * A 30-second interval that reads all contents from the in-game SCUM server chat and uses the discord API EmbedBuilder to write a nicely-formatted chat message
@@ -884,15 +881,15 @@ client_instance.on('ready', () => {
     }, 60000);
 
     setInterval(() => {
-        if (received_chat_login_messages !== undefined) {
-            if (!arraysEqual(previous_login_messages, received_chat_login_messages)) {
-                previous_login_messages = received_chat_login_messages.slice();
-                for (let i = 0; i < received_chat_login_messages.length; i++) { 
+        if (scum_ftp_log_login_messages !== undefined) {
+            if (!arraysEqual(previous_login_messages, scum_ftp_log_login_messages)) {
+                previous_login_messages = scum_ftp_log_login_messages.slice();
+                for (let i = 0; i < scum_ftp_log_login_messages.length; i++) { 
                     const embedded_message = new EmbedBuilder()
                         .setColor(0x299bcc)
                         .setTitle('SCUM login information')
                         .setThumbnail('https://i.imgur.com/dYtjF3w.png')
-                        .setDescription(`${received_chat_login_messages[i]}`)
+                        .setDescription(`${scum_ftp_log_login_messages[i]}`)
                         .setTimestamp()
                         .setFooter({ text: 'SCUM Bot Monitor', iconURL: 'https://i.imgur.com/dYtjF3w.png' });
                     discord_scum_game_login_messages_chat.send({ embeds: [embedded_message] });
@@ -910,10 +907,9 @@ client_instance.on('ready', () => {
     setInterval(() => {
         tcpConnectionChecker.checkWindowsHasTcpConnectionToGameServer((game_connection_exists) => {
             if (game_connection_exists) {
-                discord_bot_in_scum_game_channel.send('The bot is online and connected to the SCUM server');
+                discord_scum_game_bot_online_chat.send('The bot is online and connected to the SCUM server');
             } else {
-                stopFileProcessingIntervalChatLog();
-                stopFileProcessingIntervalLoginLog();
+                console.log('Bot not connected to server');
                 reinitializeBotOnServer();
             }
         });
@@ -1147,8 +1143,10 @@ process.on('exit', (code) => {
 async function handleIngameSCUMChatMessages() {
     /**
      * Fetch the data from the resolved promise returned by readAndFormatGportalFtpServerChatLog. This contains all of the chat messages said on the server. 
-     */
-    const ftp_server_chat_log = readAndFormatGportalFtpServerChatLog();
+     *console.log('Ftp server chat log is: ' + ftp_server_chat_log);
+    */
+    const ftp_server_chat_log = await readAndFormatGportalFtpServerChatLog();
+
     /**
      * If the chat log returns a falsy value, immediately return
      */
@@ -1160,7 +1158,6 @@ async function handleIngameSCUMChatMessages() {
      * For each command that has been extracted from the chat log, place the command in a queue for execution
      */
     for (let i = 0; i < ftp_server_chat_log.length; i++) {
-        console.log(ftp_server_chat_log[i]);
         await enqueueCommand(ftp_server_chat_log[i]);
     }
 }

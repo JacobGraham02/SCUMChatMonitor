@@ -1,15 +1,20 @@
 const fs = require('fs');
 
 module.exports = class Logger {
-    constructor(logFilePath) {
-        this.logFilePath = logFilePath;
+    constructor() {
+        this.log_file_path = 'C:\\Users\\Wilson\\Desktop\\ScumChatMonitorErrors.txt';
     }
 
     logError(error) {
-        const errorMessage = `${new Date().toISOString()}: ${error.stack || error}\n`;
+        const error_message = `${new Date().toISOString()}: ${error.stack || error}\n`;
+
+        if (this.log_file_path === undefined) {
+            console.log('Log file path is undefined');
+            return
+        }
 
         // Create or append to the error log file
-        fs.appendFile(this.logFilePath, errorMessage, (err) => {
+        fs.appendFile(this.log_file_path, error_message, (err) => {
             if (err) {
                 console.error('Error writing to error log file:', err);
             }
