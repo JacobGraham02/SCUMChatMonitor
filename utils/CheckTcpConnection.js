@@ -22,8 +22,11 @@ module.exports = class CheckTcpConnection {
             }
             const target_connection_string = `${this.game_server_address}:${this.game_server_port}`;
             const netstat_connections = stdout.split('\n');
-            const filtered_connection_lines = netstat_connections.filter(line => line.trim().includes(target_connection_string));
-            callback(filtered_connection_lines.length>=1);
+            for (let i = 0; i < netstat_connections.length; i++) {
+                if (netstat_connections[i].includes(target_connection_string)) {
+                    callback(true);
+                }
+            }
         });
     };
 
