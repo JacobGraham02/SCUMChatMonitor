@@ -11,7 +11,7 @@ module.exports = class Logger {
         const error_message = `${new Date().toISOString()}: ${error.stack || error}\n`;
 
         if (this.log_file_errors_path === undefined) {
-            console.log('Log file path is undefined');
+            console.log('Log file path is undefined for log error');
             return
         }
 
@@ -31,14 +31,14 @@ module.exports = class Logger {
         const log_message = `${new Date().toISOString()}: ${message}\n`;
 
         if (this.log_file_messages_path === undefined) {
-            console.log('Log file path is undefined');
+            console.log('Log file path is undefined for log message');
             return
         }
 
         // Create or append to the error log file
         fs.appendFile(this.log_file_messages_path, log_message, (err) => {
             if (err) {
-                console.error('Error writing to error log file:', err);
+                console.error('Error writing to message log file:', err);
             }
         });
     }

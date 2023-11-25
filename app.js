@@ -183,6 +183,10 @@ let player_ftp_log_login_messages = [];
 */
 let player_chat_messages_sent_inside_scum = [];
 
+let previous_player_chat_messages = [];
+
+let previous_player_login_messages = [];
+
 
 /**
  * The below functions start the login and chat log intervals for the bot, and the check local server time intervals
@@ -891,18 +895,21 @@ function sendPlayerMessagesToDiscord(discord_scum_game_chat_messages, discord_ch
     };
 
     if (discord_scum_game_chat_messages !== undefined) {
+        if (!arraysEqual(previous_player_chat_messages, discord_scum_game_chat_messages)) {
+            previous_player_chat_messages = discord_scum_game_chat_messages.slice();
         /*
         * If the previous chat messages and the new chat messages have not changed, we do not need to process the chat log over again
         */ 
-        for (let i = 0; i < discord_scum_game_chat_messages.length; i++) {
-            const embedded_message = new EmbedBuilder()
-                .setColor(0x299bcc)
-                .setTitle('SCUM In-game chat')
-                .setThumbnail('https://i.imgur.com/dYtjF3w.png')
-                .setDescription(`${discord_scum_game_chat_messages[i]}`)
-                .setTimestamp()
-                .setFooter({ text: 'SCUM Bot Monitor', iconURL: 'https://i.imgur.com/dYtjF3w.png' });
-            discord_channel.send({ embeds: [embedded_message] });
+            for (let i = 0; i < discord_scum_game_chat_messages.length; i++) {
+                const embedded_message = new EmbedBuilder()
+                    .setColor(0x299bcc)
+                    .setTitle('SCUM In-game chat')
+                    .setThumbnail('https://i.imgur.com/dYtjF3w.png')
+                    .setDescription(`${discord_scum_game_chat_messages[i]}`)
+                    .setTimestamp()
+                    .setFooter({ text: 'SCUM Bot Monitor', iconURL: 'https://i.imgur.com/dYtjF3w.png' });
+                discord_channel.send({ embeds: [embedded_message] });
+            }
         }
     }
 }
@@ -919,18 +926,21 @@ function sendPlayerLoginMessagesToDiscord(discord_scum_game_login_messages, disc
     };
 
     if (discord_scum_game_login_messages !== undefined) {
+        if (!arraysEqual(previous_player_login_messages, discord_scum_game_login_messages)) {
+            previous_player_login_messages = discord_scum_game_login_messages.slice();
         /*
         * If the previous login log messages and the new login log messages have not changed, we do not need to process the login log over again
         */ 
-        for (let i = 0; i < discord_scum_game_login_messages.length; i++) { 
-            const embedded_message = new EmbedBuilder()
-                .setColor(0x299bcc)
-                .setTitle('SCUM login information')
-                .setThumbnail('https://i.imgur.com/dYtjF3w.png')
-                .setDescription(`${scum_ftp_log_login_messages[i]}`)
-                .setTimestamp()
-                .setFooter({ text: 'SCUM Bot Monitor', iconURL: 'https://i.imgur.com/dYtjF3w.png' });
-            discord_channel.send({ embeds: [embedded_message] });
+            for (let i = 0; i < discord_scum_game_login_messages.length; i++) { 
+                const embedded_message = new EmbedBuilder()
+                    .setColor(0x299bcc)
+                    .setTitle('SCUM login information')
+                    .setThumbnail('https://i.imgur.com/dYtjF3w.png')
+                    .setDescription(`${discord_scum_game_login_messages[i]}`)
+                    .setTimestamp()
+                    .setFooter({ text: 'SCUM Bot Monitor', iconURL: 'https://i.imgur.com/dYtjF3w.png' });
+                discord_channel.send({ embeds: [embedded_message] });
+            }
         }
     }
 }
@@ -961,12 +971,6 @@ function checkIfGameServerOnline() {
  * The discord API triggers an event called 'ready' when the discord bot is ready to respond to commands and other input. 
  */
 client_instance.on('ready', () => {
-    /**
-     * previous_chat_message array holds previous chat messages so that messages are not repeated into the discord channel
-     */
-    //let previous_chat_messages = [];
-    //let previous_login_messages = []; 
-
     /**
      * Access the discord API channel cache for a specific guild (server) and fetch channels via their id
      */
@@ -1025,6 +1029,24 @@ client_instance.on('ready', () => {
      */
     console.log(`The bot is logged in as ${client_instance.user.tag}`);
 });
+
+/**
+ * Checks if the contents of arrayOne is equal arrayTwo, and the length of arrayOne is equal to arrayTwo
+ * We only have to iterate over one array to check the contents of both because the arrays being equal naturally assumes that they are both the 
+ * same length with the same contents
+ * @param {Array} arrayOne
+ * @param {Array} arrayTwo
+ * @returns
+ */
+function arraysEqual(arrayOne, arrayTwo) { 
+    if (arrayOne.length !== arrayTwo.length) {
+        return false;
+    }
+    for (let i = 0; i < arrayOne.length; i++){
+        if (arrayOne[i] !== arrayTwo[i]) return false;
+    }
+    return true;
+}
 
 /**
  * When an interaction (command) to executed on discord - for example: !discord - the discord API triggers an event called 'interactionCreate'. 

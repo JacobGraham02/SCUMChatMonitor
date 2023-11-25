@@ -39,7 +39,7 @@ module.exports = class CheckTcpConnection {
     checkWindowsCanPingGameServer(callback) {
         exec(`ping ${this.game_server_address}`, (error, stdout, stderr) => {
             if (error) {
-                this.logger.logError(`There was an error when attempting to ping the game server IP address. Error: ${stderr}`);
+                this.logger.logError(`There was an error when attempting to ping the game server IP address. Error: ${error}`);
                 callback(false);
                 return;
             }
