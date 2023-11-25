@@ -1,9 +1,10 @@
 const { exec } = require('child_process');
 module.exports = class CheckTcpConnection {
 
-    constructor(game_server_remote_address, game_server_remote_port) {
+    constructor(game_server_remote_address, game_server_remote_port, message_logger) {
         this.game_server_address = game_server_remote_address;
         this.game_server_port = game_server_remote_port;
+        this.logger = message_logger;
         this.address = '';
         this.port = 0;
     };
@@ -16,16 +17,16 @@ module.exports = class CheckTcpConnection {
     checkWindowsHasTcpConnectionToGameServer(callback) {
         exec('netstat -an', (error, stdout, stderr) => {
             if (error) {
-                console.error(`There was an error when attempting to look for the game server IP address and port from netstat list. Error: ${stderr}`);
+                this.logger.logError(`There was an error when attempting to look for the game server IP address and port from netstat list. Error: ${stderr}`);
                 callback(false);
                 return;
             }
             const target_connection_string = `${this.game_server_address}:${this.game_server_port}`;
-            const netstat_connections = stdout.split('\n');
-            for (let i = 0; i < netstat_connections.length; i++) {
-                if (netstat_connections[i].includes(target_connection_string)) {
-                    callback(true);
-                }
+            const target_connection_string_regex = new RegExp(target_connection_string);
+            if (target_connection_string_regex.test(stdout)) {
+                callback(true);
+            } else {
+                callback(false);
             }
         });
     };
@@ -35,17 +36,20 @@ module.exports = class CheckTcpConnection {
      * Because the game server restarts every day at approximately 18:00, we must ping the server to see if the server is online before doing anything on the server. 
      * @param {boolean} callback 
      */
-    // checkWindowsCanPingGameServer(callback) {
-    //     exec(`ping ${this.game_server_address}`, (error, stdout, stderr) => {
-    //         if (error) {
-    //             console.error(`There was an error when attempting to ping the game server IP address. Error: ${stderr}`);
-    //             callback(false);
-    //             return;
-    //         }
-    //         const target_result_string_substring = `Reply from ${this.remote_address}:`;
-    //         const ping_responses = stdout.split('\n');
-    //         const filtered_ping_responses = ping_responses.filter(line => line.includes(target_result_string_substring));
-    //         callback(filtered_ping_responses.length>1);
-    //     });
-    // };
+    checkWindowsCanPingGameServer(callback) {
+        exec(`ping ${this.game_server_address}`, (error, stdout, stderr) => {
+            if (error) {
+                this.logger.logError(`There was an error when attempting to ping the game server IP address. Error: ${stderr}`);
+                callback(false);
+                return;
+            }
+            const target_ping_reply_string = `Reply from ${this.game_server_address}:`;
+            const target_ping_reply_string_regex = new RegExp(target_ping_reply_string);
+            if (target_ping_reply_string_regex.test(stdout)) {
+                callback(true);
+            } else {
+                callback(false);
+            }
+        });
+    };
 }

@@ -9,9 +9,8 @@
     "name": "Jacob Graham"
   },
   "scripts": {
-    "start": "nssm start scumchatmonitor",
+    "start": ".\\scumchatmonitor.exe",
     "build": "pkg .",
-    "restart": "nssm restart scumchatmonitor",
     "test": "nodemon app.js",
     "debug": "nodemon --inspect app.js"
   },
