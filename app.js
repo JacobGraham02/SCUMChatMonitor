@@ -638,7 +638,8 @@ async function reinitializeBotOnServer() {
     await sleep(5000);
     pressTabKey();
     await sleep(5000);
-    message_logger.logError(`Wilson bot has been activated and is ready to use`);
+    message_logger.logMessage(`Wilson bot has been activated and is ready to use`);
+    await sleep(5000);
     await enqueueCommand('Wilson bot has been activated and is ready to use');
 }
 
