@@ -93,7 +93,6 @@ const gportal_ftp_config = {
     user: process.env.gportal_ftp_username,
     password: process.env.gportal_ftp_password,
     connTimeout: 60000,
-    keepalive: 60000
 };
 
 /**
