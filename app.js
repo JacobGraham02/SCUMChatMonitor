@@ -85,13 +85,15 @@ const gportal_ftp_server_filename_prefix_chat = 'chat_';
 const server_port = 3000;
 
 /**
- * hardcoded gportal ftp configuration to connect with the ftp server
+ * GPortal FTP server credentials with a timeout time of 60 seconds in case the server is busy or slow. 
  */
 const gportal_ftp_config = {
     host: process.env.gportal_ftp_hostname,
     port: process.env.gportal_ftp_hostname_port,
     user: process.env.gportal_ftp_username,
     password: process.env.gportal_ftp_password,
+    connTimeout: 60000,
+    keepalive: 60000
 };
 
 /**
