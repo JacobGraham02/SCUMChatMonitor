@@ -21,6 +21,7 @@ const { EmbedBuilder } = require('discord.js');
 
 const Queue = require('./utils/Queue');
 const Logger = require('./utils/Logger');
+const ServerInfo = require('./api/battlemetrics/ServerInfo');
 const CheckTcpConnection = require('./utils/CheckTcpConnection');
 /**
  * Modules and other files which are custom made for the application
@@ -158,6 +159,11 @@ const user_command_queue = new Queue();
 * Traditional logging system to log errors and other messages
 */
 const message_logger = new Logger();
+
+/**
+ * A class instance which holds a function that hits the Battlemetrics server API
+ */
+const battlemetrics_server_info = new ServerInfo();
 
 /** 
 * Injects variables into the class to add functionality in checking the SCUM game server and GPortal, where the game server is hosted
