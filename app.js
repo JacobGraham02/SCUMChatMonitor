@@ -96,6 +96,8 @@ const gportal_ftp_config = {
     connTimeout: 60000,
 };
 
+let gportal_log_file_ftp_client = undefined;
+
 /**
  * Name of username and login fields used on the login form 
  */
@@ -283,6 +285,17 @@ async function determinePlayerLoginSessionMoney(logs) {
     }
 }
 
+async function getValidFtpConnectionToGportal() {
+    console.log('get valid ftp connection to gportal');
+    gportal_log_file_ftp_client = new FTPClient();
+    return new Promise((resolve, reject) => {
+        gportal_log_file_ftp_client.connect(gportal_ftp_config);
+        gportal_log_file_ftp_client.on('ready', resolve(true));
+        gportal_log_file_ftp_client.on('error', (error) => {reject(new Error(`FTP connection error: ${error.message}`))});
+        console.log(gportal_log_file_ftp_client.status);
+    });
+}
+
 /**
  * This asynchronous function reads login log files from the FTP server hosted on GPortal for my SCUM server
  * The npm package 'FTP' provides functionality to process the data fetched from the GPortal FTP server and extract the relevant 
@@ -292,21 +305,13 @@ async function determinePlayerLoginSessionMoney(logs) {
  * @returns {Array} An array containing object(s) in the following format: {steam_id: string, player_message: string}
  */
 async function readAndFormatGportalFtpServerLoginLog(request, response) {
-    let ftp_client;
-
     try {
-        ftp_client = new FTPClient();
-        
-        await new Promise((resolve, reject) => {
-            ftp_client.on('ready', resolve);
-            ftp_client.on('error', (err) => {
-                reject(new Error(`FTP connection error: ${err.message}`));
-            });
-            ftp_client.connect(gportal_ftp_config);
-        });
+        if (!gportal_log_file_ftp_client) {
+            await getValidFtpConnectionToGportal();
+        }
 
         const files = await new Promise((resolve, reject) => {
-            ftp_client.list(gportal_ftp_server_target_directory, (error, files) => {
+            gportal_log_file_ftp_client.list(gportal_ftp_server_target_directory, (error, files) => {
                 if (error) {
                     message_logger.logError('Error retrieving file listing:', error);
                     reject('Failed to retrieve file listing');
@@ -323,14 +328,14 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
         if (matching_files.length === 0) {
             message_logger.logError(`No files were found that started with the prefix ${gportal_ftp_server_filename_prefix_login}: ${error}`);
             response.status(500).json({ message: `No files were found that started with the prefix ${gportal_ftp_server_filename_prefix_login}` });
-            ftp_client.end();
+            gportal_log_file_ftp_client.end();
             return;
         }
 
         const file_path = `${gportal_ftp_server_target_directory}${matching_files[0].name}`;
 
         const stream = await new Promise((resolve, reject) => {
-            ftp_client.get(file_path, (error, stream) => {
+            gportal_log_file_ftp_client.get(file_path, (error, stream) => {
                 if (error) {
                     message_logger.logError(`The ftp login file was present in GPortal, but could not be fetched: ${error}`);
                     reject(new Error(`The ftp login file was present in GPortal, but could not be fetched. ${error}`));
@@ -422,9 +427,7 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
         message_logger.logError(`Error processing the GPortal FTP login log file: ${error}`);
         response.status(500).json({ error: 'Failed to process files' });
     } finally {
-        if (ftp_client) {
-            ftp_client.end();
-        }   
+        console.log('Player login file read');
     }
 }
 /**
@@ -463,26 +466,20 @@ async function teleportNewPlayersToLocation(online_users) {
  * @returns {Array} An array containing object(s) in the following format: {steam_id: string, player_message: string}
  */
 async function readAndFormatGportalFtpServerChatLog(request, response) {
-    const ftp_client = new FTPClient();
-
     try {
         /**
          * Attempt to establish a connection with the FTP server, and provide handlers to handle the result of the operation
          */
-        await new Promise((resolve, reject) => {
-            ftp_client.on('ready', resolve);
-            ftp_client.on('error', (error) => {
-                reject(new Error(`FTP connection error: ${error.message}`));
-            });
-            ftp_client.connect(gportal_ftp_config);
-        });
+        if (!gportal_log_file_ftp_client) {
+            await getValidFtpConnectionToGportal();
+        }
 
         /**
          * Fetch a list of all the files in the specified directory on GPortal. In this instance, we fetch all of the files from
          * the path 'SCUM\\Saved\\SaveFiles\\Logs\\', which will give us access to the chat log file that we need
          */
         const files = await new Promise((resolve, reject) => {
-            ftp_client.list(gportal_ftp_server_target_directory, (error, files) => {
+            gportal_log_file_ftp_client.list(gportal_ftp_server_target_directory, (error, files) => {
                 if (error) {
                     message_logger.logError(`Failed to retrieve file listings from GPortal: ${error.message}`);
                     reject(new Error(`Failed to retrieve file listings: ${error.message}`));
@@ -515,7 +512,7 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
          */
         const file_path = `${gportal_ftp_server_target_directory}${matching_files[0].name}`;
         const stream = await new Promise((resolve, reject) => {
-            ftp_client.get(file_path, (error, stream) => {
+            gportal_log_file_ftp_client.get(file_path, (error, stream) => {
                 if (error) {
                     message_logger.logError(`The file is present in GPortal, but can not be fetched: ${error} `);
                     reject(new Error(`The file was present in gportal, but could not be fetched: ${error}`));
@@ -610,9 +607,7 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
         message_logger.logError(`Error when processing the SCUM chat log files: ${error}`);
         response.status(500).json({ error: 'Failed to process files' });
     } finally {
-        if (ftp_client) {
-            ftp_client.end();
-        }
+        console.log('Player message file read');
         received_chat_messages = [];
     }
 }
