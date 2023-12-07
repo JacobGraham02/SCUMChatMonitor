@@ -21,7 +21,7 @@ const { EmbedBuilder } = require('discord.js');
 
 const Queue = require('./utils/Queue');
 const Logger = require('./utils/Logger');
-const ServerInfo = require('./api/battlemetrics/ServerInfo');
+const ServerInfoCommand = require('./api/battlemetrics/ServerInfoCommand');
 const CheckTcpConnection = require('./utils/CheckTcpConnection');
 /**
  * Modules and other files which are custom made for the application
@@ -93,7 +93,8 @@ const gportal_ftp_config = {
     port: process.env.gportal_ftp_hostname_port,
     user: process.env.gportal_ftp_username,
     password: process.env.gportal_ftp_password,
-    connTimeout: 60000,
+    connTimeout: 600000,
+    keepAlive: 10000
 };
 
 let gportal_log_file_ftp_client = undefined;
@@ -165,7 +166,7 @@ const message_logger = new Logger();
 /**
  * A class instance which holds a function that hits the Battlemetrics server API
  */
-const battlemetrics_server_info = new ServerInfo();
+const battlemetrics_server_info = new ServerInfoCommand();
 
 /** 
 * Injects variables into the class to add functionality in checking the SCUM game server and GPortal, where the game server is hosted
@@ -201,6 +202,7 @@ let previous_player_login_messages = [];
  * The below functions start the login and chat log intervals for the bot, and the check local server time intervals
  */
 
+establishFtpConnectionToGportal();
 startFtpFileProcessingIntervalLoginLog();
 startFtpFileProcessingIntervalChatLog();
 startCheckLocalServerTimeInterval();
@@ -285,14 +287,16 @@ async function determinePlayerLoginSessionMoney(logs) {
     }
 }
 
-async function getValidFtpConnectionToGportal() {
-    console.log('get valid ftp connection to gportal');
+async function establishFtpConnectionToGportal() {
     gportal_log_file_ftp_client = new FTPClient();
-    return new Promise((resolve, reject) => {
-        gportal_log_file_ftp_client.connect(gportal_ftp_config);
-        gportal_log_file_ftp_client.on('ready', resolve(true));
+    gportal_log_file_ftp_client.removeAllListeners();
+    gportal_log_file_ftp_client.addListener('close', () => {
+        establishFtpConnectionToGportal();
+    });
+    await new Promise((resolve, reject) => {
+        gportal_log_file_ftp_client.on('ready', resolve);
         gportal_log_file_ftp_client.on('error', (error) => {reject(new Error(`FTP connection error: ${error.message}`))});
-        console.log(gportal_log_file_ftp_client.status);
+        gportal_log_file_ftp_client.connect(gportal_ftp_config);
     });
 }
 
@@ -306,10 +310,6 @@ async function getValidFtpConnectionToGportal() {
  */
 async function readAndFormatGportalFtpServerLoginLog(request, response) {
     try {
-        if (!gportal_log_file_ftp_client) {
-            await getValidFtpConnectionToGportal();
-        }
-
         const files = await new Promise((resolve, reject) => {
             gportal_log_file_ftp_client.list(gportal_ftp_server_target_directory, (error, files) => {
                 if (error) {
@@ -426,9 +426,7 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
     } catch (error) {
         message_logger.logError(`Error processing the GPortal FTP login log file: ${error}`);
         response.status(500).json({ error: 'Failed to process files' });
-    } finally {
-        console.log('Player login file read');
-    }
+    } 
 }
 /**
  * This function determines if players joining the server are new. If so, they are teleported to a specific area on the map. 
@@ -451,7 +449,7 @@ async function teleportNewPlayersToLocation(online_users) {
         if (user_first_join_results) {
             user_steam_id = user_first_join_results.user_steam_id;
             await sleep(60000);
-            await enqueueCommand(`#Teleport -129023.125 -91330.055 36830.551 ${user_steam_id}`);
+            await runCommand(`#Teleport -129023.125 -91330.055 36830.551 ${user_steam_id}`);
         }
         await user_repository.updateUser(key, { user_joining_server_first_time: 1 });
     }
@@ -467,13 +465,6 @@ async function teleportNewPlayersToLocation(online_users) {
  */
 async function readAndFormatGportalFtpServerChatLog(request, response) {
     try {
-        /**
-         * Attempt to establish a connection with the FTP server, and provide handlers to handle the result of the operation
-         */
-        if (!gportal_log_file_ftp_client) {
-            await getValidFtpConnectionToGportal();
-        }
-
         /**
          * Fetch a list of all the files in the specified directory on GPortal. In this instance, we fetch all of the files from
          * the path 'SCUM\\Saved\\SaveFiles\\Logs\\', which will give us access to the chat log file that we need
@@ -607,7 +598,6 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
         message_logger.logError(`Error when processing the SCUM chat log files: ${error}`);
         response.status(500).json({ error: 'Failed to process files' });
     } finally {
-        console.log('Player message file read');
         received_chat_messages = [];
     }
 }
@@ -641,7 +631,7 @@ async function reinitializeBotOnServer() {
     await sleep(5000);
     message_logger.logMessage(`Wilson bot has been activated and is ready to use`);
     await sleep(5000);
-    await enqueueCommand('Wilson bot has been activated and is ready to use');
+    await runCommand('Wilson bot has been activated and is ready to use');
 }
 
 /**
@@ -690,7 +680,7 @@ async function checkLocalServerTime() {
         };
 
         if (server_restart_messages[current_minute]) {
-            await enqueueCommand(`#Announce ${server_restart_messages[current_minute]}`);
+            await runCommand(`#Announce ${server_restart_messages[current_minute]}`);
         }
     }
 }

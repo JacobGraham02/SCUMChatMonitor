@@ -1,6 +1,6 @@
 const { exec } = require('child_process');
 
-module.exports = class ServerInfo {
+module.exports = class ServerInfoCommand {
 
     constructor(battlemetrics_server_id) {
         this.battlemetrics_id = battlemetrics_server_id;
