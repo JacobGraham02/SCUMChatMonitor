@@ -4,7 +4,7 @@ module.exports = function (user_account) {
         data: new SlashCommandBuilder()
             .setName('drill')
             .setDescription('Spawns a drill'),
-        command_data: [`${user_account.user_steam_name} your package has been dispatched`, `#SpawnItem Drill 1 Location ${user_account.user_steam_id}`, `#Teleport 0 0 0`],
+        command_data: [`${user_account.user_steam_name} your package has been dispatched`, `#SpawnItem Drill 1 Location ${user_account.user_steam_id}`],
         authorization_role_name: [],
         command_cost: 500,
 
