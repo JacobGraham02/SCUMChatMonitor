@@ -6,7 +6,7 @@ module.exports = function (user_account) {
             .setName('discord')
             .setDescription('Generates a link for discord'),
         command_data: ['Discord: https://discord.gg/4BYPXWSFkv'],
-        authorization_role_name: [],
+        authorization_role_name: [undefined],
         command_cost: 0,
 
         async execute(interaction) {

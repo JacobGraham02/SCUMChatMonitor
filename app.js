@@ -961,7 +961,8 @@ function checkTcpConnectionToServer(discord_scum_game_chat_messages) {
         if (game_connection_exists) {
             discord_scum_game_chat_messages.send('The bot is online and connected to the SCUM server');
         } else {
-            reinitializeBotOnServer();
+            console.log('Bot is not connected');
+            //reinitializeBotOnServer();
         }
     });
 }

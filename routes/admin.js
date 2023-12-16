@@ -12,7 +12,7 @@ function isLoggedIn(request, response, next) {
     }
 }
 
-router.get(['/login-success','/commands'], isLoggedIn, function (request, response, next) {
+router.get(['/login-success','/commands', '/'], isLoggedIn, function (request, response) {
     const parent_directory_from_routes_folder = path.resolve(__dirname, '..');
     fs.readdir(path.join(parent_directory_from_routes_folder, '/commands'), (error, files) => {
         
@@ -20,21 +20,38 @@ router.get(['/login-success','/commands'], isLoggedIn, function (request, respon
             console.error(error);
             return;
         };
-        const range=request.query.range || '1&10';
-        const [startRangeNumber, endRangeNumber] = range.split('&').map(Number);
-        const current_page = startRangeNumber / 10;
-        const total_command_files_count = files.length;
-        const command_files_in_range = files.slice(startRangeNumber-1, endRangeNumber);
 
-        console.log('Total command files is: ' + command_files_in_range.length);
-        console.log('Total command files divided by 10 is: ' + command_files_in_range.length/10);
+        const command_buttons_per_page = 10;
+        // Assuming 'range' is your query parameter in the format 'start&end'
+        const range = request.query.range || '1&10';
+        const [start_range_number, end_range_number] = range.split('&').map(Number);
+
+        // Calculate the current page number based on the starting range
+        const current_page_number = Math.ceil(start_range_number / command_buttons_per_page);
+
+        // Calculate the total number of pages
+        const total_number_of_pages = Math.ceil(files.length / command_buttons_per_page);
+
+        // Calculate the dynamic range of page numbers for pagination
+        const visible_pages = 3; // Adjust the number of visible pages in the pagination
+        let start_page = Math.max(1, current_page_number - Math.floor(visible_pages / 2));
+        let end_page = Math.min(total_number_of_pages, start_page + visible_pages - 1);
+        start_page = Math.max(1, end_page - visible_pages + 1); // Adjust start page if end page is at the limit
+
+        const page_numbers = Array.from(
+            { length: (end_page - start_page) + 1 }, 
+            (_, i) => start_page + i);
+
+        // Slice the 'files' array to get the files for the current page
+        const command_files_in_range = files.slice(start_range_number - 1, end_range_number);
 
         response.render('admin/index', {
             title: `Admin dashboard`,
             message: `You have successfully logged in`,
             command_files: command_files_in_range,
-            total_command_files: total_command_files_count,
-            current_page_of_commands: current_page,
+            current_page_of_commands: current_page_number,
+            total_command_files: files.length,
+            page_numbers: page_numbers, // Include this new variable
             user: request.user
         });
     });
@@ -118,18 +135,6 @@ router.post('/commands/:filename', function (request, response) {
     fs.writeFileSync(file_path, updated_file_content, 'utf-8');
 
     response.redirect('/admin/');
-});
-
-router.get('/', isLoggedIn, function (request, response, next) {
-    const parent_directory_from_routes_folder = path.resolve(__dirname, '..');
-    fs.readdir(path.join(parent_directory_from_routes_folder, '/commands'), (error, files) => {
-
-        if (error) {
-            console.error(error);
-            return; 
-        }
-        response.render('admin/index', { title: 'Admin dashboard', command_files: files, user: request.user });
-    });
 });
 
 module.exports = router;

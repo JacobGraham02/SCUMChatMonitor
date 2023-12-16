@@ -412,7 +412,28 @@ a {
 }
 
 .pagination {
-    background: blue;
+    border: 2px dotted purple;
+    display: flex;
+    flex-direction: row;
+    width: 50%;
+    align-items: center;
+    justify-content: center;
+}
+
+.pagination_list {
+    margin: 0;
+    padding: 0;
+    border: 2px dashed blue;
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    align-items: inherit;
+    justify-content: space-evenly;
+    list-style-type: none;
+}
+
+.pagination_list li {
+    width: 100%;
 }
 
 #bot_command_list li {
@@ -423,7 +444,7 @@ a {
     width: 100%;
 }
 
-.bot_command_list_item_edit, .bot_command_list_item_delete, #create_new_command_link_anchor, button {
+.bot_command_list_item_edit, .bot_command_list_item_delete, #create_new_command_link_anchor, button, .pagination_page_item {
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: .25rem;
     box-shadow: rgba(0, 0, 0, 0.02) 0 1px 3px 0;

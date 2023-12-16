@@ -21,12 +21,12 @@ block content
 						div.bot_item_delete
 							a.bot_command_list_item_delete(href=``) Delete this command
 				-}
+		//- We must start at page 1 and go until we reach the last page when displaying commands
 		nav.pagination
 			ul.pagination_list
-				//- We must start at page 1 and go until we reach the last page when displaying commands
-				-for (let page = 1; page <= total_number_of_pages; page++) {
-					li.page_item(class=current_page_of_commands === page ? 'active': '')
-						a.page_link(href=`/admin/commands?range=${(page-1) * command_buttons_per_page + 1}&${page * command_buttons_per_page}`) #{page}
-				-}
+				for page in page_numbers 
+					li.pagination_page_item(class=current_page_of_commands === page ? 'active': '')
+						a.pagination_page_link(href=`/admin/commands?range=${(page-1) * command_buttons_per_page + 1}&${page * command_buttons_per_page}`) #{page}
+				
 
 	script(src='/javascripts/admin_index_page.js')
