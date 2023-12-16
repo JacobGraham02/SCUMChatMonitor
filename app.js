@@ -168,8 +168,6 @@ const message_logger = new Logger();
  */
 const battlemetrics_server_info = new ServerInfoCommand();
 
-let connected_to_gportal_ftp_server = false;
-
 /** 
 * Injects variables into the class to add functionality in checking the SCUM game server and GPortal, where the game server is hosted
 */
@@ -293,15 +291,12 @@ async function establishFtpConnectionToGportal() {
     gportal_log_file_ftp_client = new FTPClient();
     gportal_log_file_ftp_client.removeAllListeners();
     gportal_log_file_ftp_client.addListener('close', () => {
-        connected_to_gportal_ftp_server = false;
         establishFtpConnectionToGportal();
     });
     await new Promise((resolve, reject) => {
         gportal_log_file_ftp_client.on('ready', resolve);
         gportal_log_file_ftp_client.on('error', (error) => {reject(new Error(`FTP connection error: ${error.message}`))});
-        gportal_log_file_ftp_client.connect(gportal_ftp_config, () => {
-            connected_to_gportal_ftp_server = true;
-        });
+        gportal_log_file_ftp_client.connect(gportal_ftp_config);
     });
 }
 
@@ -314,9 +309,6 @@ async function establishFtpConnectionToGportal() {
  * @returns {Array} An array containing object(s) in the following format: {steam_id: string, player_message: string}
  */
 async function readAndFormatGportalFtpServerLoginLog(request, response) {
-    if (!connected_to_gportal_ftp_server) {
-        return;
-    }
     try {
         const files = await new Promise((resolve, reject) => {
             gportal_log_file_ftp_client.list(gportal_ftp_server_target_directory, (error, files) => {
@@ -472,9 +464,6 @@ async function teleportNewPlayersToLocation(online_users) {
  * @returns {Array} An array containing object(s) in the following format: {steam_id: string, player_message: string}
  */
 async function readAndFormatGportalFtpServerChatLog(request, response) {
-    if (!connected_to_gportal_ftp_server) {
-        return;
-    }
     try {
         /**
          * Fetch a list of all the files in the specified directory on GPortal. In this instance, we fetch all of the files from
@@ -639,9 +628,9 @@ async function reinitializeBotOnServer() {
     moveMouseToContinueButtonXYLocation();
     await sleep(10000);
     pressMouseLeftClickButton();
-    await sleep(5000);
+    await sleep(20000);
     pressCharacterKeyT();
-    await sleep(5000);
+    await sleep(20000);
     pressTabKey();
     await sleep(5000);
     message_logger.logMessage(`Wilson bot has been activated and is ready to use`);
@@ -653,8 +642,8 @@ async function reinitializeBotOnServer() {
  * Executes a Windows powershell command to simulate a user moving the cursor to a specific (X, Y) location on screen. This is an asynchronous operation.
  */
 async function moveMouseToContinueButtonXYLocation() {
-    const x_cursor_position = 458;
-    const y_cursor_position = 614;
+    const x_cursor_position = 466;
+    const y_cursor_position = 619;
     const command = `powershell.exe -command "Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class P { [DllImport(\\"user32.dll\\")] public static extern bool SetCursorPos(int x, int y); }'; [P]::SetCursorPos(${x_cursor_position}, ${y_cursor_position})"`;
     exec(command, (error) => {
         if (error) {
