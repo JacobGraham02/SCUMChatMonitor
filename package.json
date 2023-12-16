@@ -9,7 +9,7 @@
     "name": "Jacob Graham"
   },
   "scripts": {
-    "start": ".\\scumchatmonitor.exe",
+    "start": "node app.js",
     "build": "pkg .",
     "test": "nodemon app.js",
     "debug": "nodemon --inspect app.js"

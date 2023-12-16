@@ -620,11 +620,15 @@ function stopCheckLocalServerTimeInterval() {
  */
 async function reinitializeBotOnServer() {
     message_logger.logMessage(`The bot is offline. Attempting to log the bot back into the server`);
-    await sleep(10000);
+    await sleep(5000);
+    moveMouseToPressOkForMessage();
+    await sleep(100000);
+    pressMouseLeftClickButton();
+    await sleep(5000);
     moveMouseToContinueButtonXYLocation();
     await sleep(100000);
     pressMouseLeftClickButton();
-    await sleep(100000);
+    await sleep(5000);
     pressCharacterKeyT();
     await sleep(5000);
     pressTabKey();
@@ -638,14 +642,22 @@ async function reinitializeBotOnServer() {
  * Executes a Windows powershell command to simulate a user moving the cursor to a specific (X, Y) location on screen. This is an asynchronous operation.
  */
 async function moveMouseToContinueButtonXYLocation() {
-    const x_cursor_position = 476;
-    const y_cursor_position = 589;
+    const x_cursor_position = 458;
+    const y_cursor_position = 614;
     const command = `powershell.exe -command "Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class P { [DllImport(\\"user32.dll\\")] public static extern bool SetCursorPos(int x, int y); }'; [P]::SetCursorPos(${x_cursor_position}, ${y_cursor_position})"`;
     exec(command, (error) => {
         if (error) {
             message_logger.logError(`Error when moving the mouse to x 470 and y 550: ${error}`);
         }
     });
+}
+
+/**
+ * Executes a Windows powershell command to simulate a user moving the cursor to a specific (X, Y) location on screen. This is an asynchronous operation.
+ */
+async function moveMouseToPressOkForMessage() {
+    const x_cursor_position = 958;
+    const y_cursor_position = 536;
 }
 
 /**
@@ -943,6 +955,7 @@ function checkTcpConnectionToServer(discord_scum_game_chat_messages) {
         if (game_connection_exists) {
             discord_scum_game_chat_messages.send('The bot is online and connected to the SCUM server');
         } else {
+            console.log('Bot is not connected to server');
             reinitializeBotOnServer();
         }
     });

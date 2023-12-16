@@ -411,6 +411,9 @@ a {
     margin: 1%;
 }
 
+.pagination {
+    background: blue;
+}
 
 #bot_command_list li {
     display: flex;

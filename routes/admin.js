@@ -20,10 +20,21 @@ router.get(['/login-success','/commands'], isLoggedIn, function (request, respon
             console.error(error);
             return;
         };
+        const range=request.query.range || '1&10';
+        const [startRangeNumber, endRangeNumber] = range.split('&').map(Number);
+        const current_page = startRangeNumber / 10;
+        const total_command_files_count = files.length;
+        const command_files_in_range = files.slice(startRangeNumber-1, endRangeNumber);
+
+        console.log('Total command files is: ' + command_files_in_range.length);
+        console.log('Total command files divided by 10 is: ' + command_files_in_range.length/10);
+
         response.render('admin/index', {
             title: `Admin dashboard`,
             message: `You have successfully logged in`,
-            command_files: files,
+            command_files: command_files_in_range,
+            total_command_files: total_command_files_count,
+            current_page_of_commands: current_page,
             user: request.user
         });
     });

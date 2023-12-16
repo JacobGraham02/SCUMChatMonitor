@@ -2,6 +2,9 @@ extends layout
 
 block variables
 	- var page_title= title 
+	- var command_buttons_per_page = 10
+	- var current_page_number = 1
+	- var total_number_of_pages = Math.ceil(total_command_files / command_buttons_per_page) // Returns smallest integer greater than or equal to (command_files.length / command_buttons_per_page)
 
 block content
 	div#deleteModalContainer
@@ -11,13 +14,19 @@ block content
 			a#create_new_command_link_anchor(href='/admin/commands/new') Create new command
 		article#bot_command_list_container_article
 			ul#bot_command_list
-				- for (let i = 0; i < command_files.length; i++) {
-					li.bot_command_list_item_edit_li
+				-for (let i = (current_page_number - 1) * command_buttons_per_page; i < Math.min(current_page_number * command_buttons_per_page, command_files.length); i++) {
+					li.bot_command_list_item_edit_li 
 						div.bot_item_edit
 							a.bot_command_list_item_edit(href=`/admin/commands/${command_files[i]}`)= command_files[i]
 						div.bot_item_delete
 							a.bot_command_list_item_delete(href=``) Delete this command
-							//- /admin/commands/delete/${command_files[i]}
+				-}
+		nav.pagination
+			ul.pagination_list
+				//- We must start at page 1 and go until we reach the last page when displaying commands
+				-for (let page = 1; page <= total_number_of_pages; page++) {
+					li.page_item(class=current_page_of_commands === page ? 'active': '')
+						a.page_link(href=`/admin/commands?range=${(page-1) * command_buttons_per_page + 1}&${page * command_buttons_per_page}`) #{page}
 				-}
 
 	script(src='/javascripts/admin_index_page.js')
