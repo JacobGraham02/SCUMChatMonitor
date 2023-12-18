@@ -11,11 +11,11 @@
   "scripts": {
     "start": "node app.js",
     "build": "pkg .",
-    "test": "nodemon app.js",
-    "debug": "nodemon --inspect app.js"
+    "test": "nodemon app.js"
   },
   "devDependencies": {
-    "eslint": "^8.42.0"
+    "eslint": "^8.42.0",
+    "nodemon": "^3.0.2"
   },
   "dependencies": {
     "@discordjs/builders": "^1.6.3",
@@ -51,7 +51,7 @@
       "commands/**/*.js"
     ],
     "targets": [
-      "node18-win-x64"
+      "node20-win-x64"
     ],
     "assets": [
       "gmail-credentials.json",
