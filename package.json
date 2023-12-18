@@ -51,7 +51,7 @@
       "commands/**/*.js"
     ],
     "targets": [
-      "node20-win-x64"
+      "node18-win-x64"
     ],
     "assets": [
       "gmail-credentials.json",
