@@ -13,18 +13,28 @@ block content
 	main#command_new_page
 		div#create_command_page_heading_container
 			h1#create_command_page_header_h1 Create a new command and register it with the bot
-		form#create_commands_file_form(method='POST', action='/admin/commands/new', enctype='application/x-www-form-urlencoded') 
-			section#new_command_section
+
+			aside#new_command_page_button_aside
+				button#toggle_easy_command_mode_button(type='button') Easy command creation mode
+				button#toggle_advanced_command_mode_button(type='button') Advanced command creation mode
+
+		form#create_commands_file_form_advanced(method='POST', action='/admin/commands/new', enctype='application/x-www-form-urlencoded') 
+			section#new_command_section_easy
+				fieldset#dropdown_menu_for_spawn_item 
+
+			section#new_command_section_advanced
 				fieldset#commands_file_javascript_code
 					label#javascript_command_code(for='javascript_command_code') Write the command code below:
 					textarea#commands_file_javascript_textarea(name='javascript_command_code', rows='30', cols='70')= code
 
-				article#edit_command_form_field_buttons
-					fieldset#save_command_changes
-						button#create_new_command_button(type='submit') Create new command
+			article#edit_command_form_field_buttons
+				fieldset#save_command_changes
+					button#create_new_command_button(type='submit') Create 
 
-					fieldset#cancel_command_changes
-						button#cancel_changes_to_command_button(type='button') Cancel changes
+				fieldset#cancel_command_changes
+					button#cancel_changes_to_command_button(type='button') Cancel
+
+		
 			
 	script(src='/javascripts/commands_form.js')
 

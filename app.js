@@ -31,6 +31,8 @@ const UserRepository = require('./database/MongoDb/UserRepository');
 const { discord_bot_token } = require('./config.json');
 var indexRouter = require('./routes/index');
 var adminRouter = require('./routes/admin');
+const PlayerInfoCommand = require('./api/ipapi/PlayerInfoCommand');
+const SteamUserInfoCommand = require('./api/steam/SteamUserInfoCommand');
 
 const client_instance = new Client({
     intents: [GatewayIntentBits.Guilds,
@@ -62,6 +64,13 @@ const chat_log_steam_id_regex = /([0-9]{17})/g;
  * The following regex string is for steam names which match the same format as the ones in gportal's ftp files: username(number); e.g. boss612man(100)
  */
 const login_log_steam_name_regex = /([a-zA-Z0-9 ._-]{0,32}\([0-9]{1,10}\))/g;
+
+/**
+ * The following regex string is to identify and extract the ipv4 address from gportal's ftp log files.
+ * An example message will look like the following: 2023.12.19-17.18.57: '72.140.43.39 76561198244922296:jacobdgraham02(2)' logged in at: X=218481.953 Y=243331.516 Z=28960.289
+ * We want to extract only the substring '72.140.43.39' 
+ */
+const ipv4_address_regex = /'((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}/g;
 
 /**
  * The below commented out regex string matches all of the chat log messages sent by the chat bot, Wilson. This regex string can be used to keep track of Wilson. 
@@ -168,6 +177,10 @@ const message_logger = new Logger();
  */
 const battlemetrics_server_info = new ServerInfoCommand();
 
+const ipApi_player_info = new PlayerInfoCommand();
+
+const steam_web_api_player_info = new SteamUserInfoCommand(process.env.steam_web_api_key);
+
 /** 
 * Injects variables into the class to add functionality in checking the SCUM game server and GPortal, where the game server is hosted
 */
@@ -196,6 +209,14 @@ let player_chat_messages_sent_inside_scum = [];
 let previous_player_chat_messages = [];
 
 let previous_player_login_messages = [];
+
+let previous_player_ipv4_addresses = [];
+
+let player_ipv4_addresses = [];
+
+let user_steam_ids = {};
+
+let user_steam_id = {};
 
 
 /**
@@ -353,8 +374,6 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
         let file_contents_steam_ids;
         let file_contents_steam_messages;
 
-        const user_steam_ids = {};
-
         await new Promise((resolve, reject) => {
             stream.on('data', (chunk) => {
                 
@@ -369,10 +388,19 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
                 if (!has_initial_line_been_processed_login_log) {
                     last_line_processed_ftp_login_log = ftp_login_log_file_bulk_contents.length;
                 }
+
+                if (player_ipv4_addresses.length >= 1) {
+                    player_ipv4_addresses = [];
+                }
                 
                 if (ftp_login_log_file_bulk_contents.length > 1) {
                     for (let i = last_line_processed_ftp_login_log; i < ftp_login_log_file_processed_contents_string_array.length; i++) {
                         received_chat_login_messages.push(ftp_login_log_file_processed_contents_string_array[i]);
+                        /**
+                         * We must remove the first character of the ipv4 address because it is the ' character, which will not work for an address
+                         */
+                        player_ipv4_addresses.push(ftp_login_log_file_processed_contents_string_array[i].match(ipv4_address_regex)[0].substring(1));
+                        
                         /**
                          * When iterating through the stored strings, if any string exists that indicates a user has both left and joined the server, 
                          * append the user steam id into an array and call the function to get user money for the length of their session
@@ -445,6 +473,10 @@ async function teleportNewPlayersToLocation(online_users) {
          * Replacing the ' characters enclosing the string so we get a valid number
          */
         key.replace(/'/g, "");
+        /*
+        Only find a user in the MongoDB database if they have not yet joined the server (i.e. with the property 'user_joining_server_first_time' equal to 0)
+        After a user joins the server, that property is updated to contain a value of '1'
+        */
         user_first_join_results = await user_repository.findUserByIdIfFirstServerJoin(key);
         if (user_first_join_results) {
             user_steam_id = user_first_join_results.user_steam_id;
@@ -956,12 +988,62 @@ function sendPlayerLoginMessagesToDiscord(discord_scum_game_login_messages, disc
     }
 }
 
+async function sendNewPlayerLoginMessagesToDiscord(player_ipv4_addresses, user_steam_ids, discord_channel) {
+    if (player_ipv4_addresses === undefined) {
+        message_logger.logError(`The SCUM log in messages could not be fetched and are undefined`);
+        return;
+    };
+    if (discord_channel === undefined) {
+        message_logger.logError(`The Discord channel for logging new player log in messages could not be fetched and is undefined`);
+        return;
+    }
+    if (player_ipv4_addresses !== undefined) {
+        if (!arraysEqual(previous_player_ipv4_addresses, player_ipv4_addresses)) {
+            previous_player_ipv4_addresses = player_ipv4_addresses.slice();
+        /*
+        * If the previous login log messages and the new login log messages have not changed, we do not need to process the login log over again
+        First, fetch all of the steam ids acquired from gportal's ftp login file. Because we want to display player data, we must 
+        use both the steam and a third-party API to fetch information based on their steam account id and their IPv4 address. 
+        */ 
+            const steam_user_ids = Object.keys(user_steam_ids);
+            for (let i = 0; i < player_ipv4_addresses.length; i++) { 
+                ipApi_player_info.setPlayerIpAddress(player_ipv4_addresses[i]);
+                steam_web_api_player_info.setPlayerSteamId(steam_user_ids[i]);
+
+                player_info = await ipApi_player_info.fetchJsonApiDataFromIpApiDotCom();
+                player_steam_info = await steam_web_api_player_info.fetchJsonApiDataFromSteamWebApi();
+                player_steam_data = player_steam_info.response.players[0];
+                
+                    const embedded_message = new EmbedBuilder()
+                        .setColor(0x299bcc)
+                        .setTitle('SCUM new player login information')
+                        .setThumbnail('https://i.imgur.com/dYtjF3w.png')
+                        .addFields(
+                            {name:"Steam id",value:player_steam_data.steamid,inline:true},
+                            {name:"Steam name",value:player_steam_data.personaname,inline:true},
+                            {name:"Profile Url",value:player_steam_data.profileurl,inline:true},
+                            {name:"IPv4 address",value:player_info.query,inline:true},
+                            {name:"Country",value:player_info.country,inline:true},
+                            {name:"Region name",value:player_info.regionName,inline:true},
+                            {name:"City",value:player_info.city,inline:true},
+                            {name:"Timezone",value:player_info.timezone,inline:true},
+                            {name:"Service provider",value:player_info.isp,inline:true},
+                            {name:"Organization",value:player_info.org,inline:true},
+                            {name:"AS",value:player_info.as,inline:true}
+                        )
+                        .setTimestamp()
+                        .setFooter({ text: 'SCUM Bot Monitor', iconURL: 'https://i.imgur.com/dYtjF3w.png' });
+                    discord_channel.send({ embeds: [embedded_message] });
+            }
+        }
+    }
+}
+
 function checkTcpConnectionToServer(discord_scum_game_chat_messages) {
     tcpConnectionChecker.checkWindowsHasTcpConnectionToGameServer((game_connection_exists) => {
         if (game_connection_exists) {
             discord_scum_game_chat_messages.send('The bot is online and connected to the SCUM server');
         } else {
-            console.log('Bot is not connected');
             //reinitializeBotOnServer();
         }
     });
@@ -989,9 +1071,11 @@ client_instance.on('ready', () => {
     const discord_channel_id_for_logins = '1173048671420559521';
     const discord_channel_id_for_scum_chat = '1173100035135766539';
     const discord_channel_id_for_bot_online = '1173331877004845116';
+    const discord_channel_id_for_first_time_logins = '1186748092788260944';
     const discord_scum_game_ingame_messages_chat = client_instance.channels.cache.get(discord_channel_id_for_scum_chat);
     const discord_scum_game_login_messages_chat = client_instance.channels.cache.get(discord_channel_id_for_logins);
     const discord_scum_game_bot_online_chat = client_instance.channels.cache.get(discord_channel_id_for_bot_online);
+    const discord_scum_game_first_time_logins_chat = client_instance.channels.cache.get(discord_channel_id_for_first_time_logins);
 
     /**
      * A 60-second interval that reads all contents from the in-game SCUM server chat and uses the discord API EmbedBuilder to write a nicely-formatted chat message
@@ -1014,6 +1098,12 @@ client_instance.on('ready', () => {
             return;
         }
         sendPlayerLoginMessagesToDiscord(player_ftp_log_login_messages, discord_scum_game_login_messages_chat);
+        if (user_steam_ids !== undefined) {
+            console.log("user steam ids is not undefined");
+            sendNewPlayerLoginMessagesToDiscord(player_ipv4_addresses, user_steam_ids, discord_scum_game_first_time_logins_chat);
+        } else {
+            console.log("user steam ids is undefined");
+        }
     }, gportal_ftp_server_log_interval_seconds["20"]);
 
     /**
@@ -1032,9 +1122,9 @@ client_instance.on('ready', () => {
      * and therefore can access all of the computer resources
      * We use a callback function because the Node.js package 'exec' is asynchronous, but this callback function is synchronous
      */
-    setInterval(() => {
-        checkIfGameServerOnline();
-    }, gportal_ftp_server_log_interval_seconds["60"]);
+    // setInterval(() => {
+    //     checkIfGameServerOnline();
+    // }, gportal_ftp_server_log_interval_seconds["60"]);
 
     /**
      * Inform administrators that the bot has successfully logged into the Discord guild

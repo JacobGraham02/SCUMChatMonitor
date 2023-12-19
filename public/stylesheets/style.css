@@ -76,11 +76,30 @@ body {
     flex-direction: column;
 }
 
-#commands_file_javascript_form, #create_commands_file_form {
+#new_command_page_button_aside {
+    display: flex;
+    width: 60%;
+    flex-direction: row;
+    justify-content: space-evenly;
+}
+
+#commands_file_javascript_form, #create_commands_file_form_advanced {
     display: flex;
     align-items: center;
     justify-content: center;
     flex-direction: column;
+}
+
+#create_commands_file_form_advanced {
+    display: block;
+}
+
+.advancedCommandCreationButtonSelected {
+    background: red;
+}
+
+.easyCommandCreationButtonSelected {
+    background: green;
 }
 
 #edit_command_form_field_buttons {
@@ -109,7 +128,7 @@ body {
     flex-direction: column;
 }
 
-#edit_command_section, #new_command_section {
+#edit_command_section {
     width: 90%;
     display: flex;
     flex-direction: column;
@@ -311,10 +330,6 @@ fieldset {
     font-size: 120%;
 }
 
-.login_input {
-    font-size: 120%;
-}
-
 #index_page_header_buttons {
     display: flex;
     align-items: center;
@@ -415,7 +430,8 @@ a {
     border: 2px dotted purple;
     display: flex;
     flex-direction: row;
-    width: 50%;
+    width: 30%;
+    max-width: 40%;
     align-items: center;
     justify-content: center;
 }
@@ -433,7 +449,9 @@ a {
 }
 
 .pagination_list li {
+    font-size: 200%;
     width: 100%;
+    text-align: center;
 }
 
 #bot_command_list li {
@@ -444,7 +462,7 @@ a {
     width: 100%;
 }
 
-.bot_command_list_item_edit, .bot_command_list_item_delete, #create_new_command_link_anchor, button, .pagination_page_item {
+.bot_command_list_item_edit, .bot_command_list_item_delete, #create_new_command_link_anchor, button {
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: .25rem;
     box-shadow: rgba(0, 0, 0, 0.02) 0 1px 3px 0;
