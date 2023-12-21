@@ -138,20 +138,8 @@ module.exports = function (user_account) {
     const parent_directory_from_routes = path.resolve(__dirname, '..');
     const file_path = path.join(parent_directory_from_routes, '/commands', new_command_name + '.js');
     fs.writeFileSync(file_path, command_content, 'utf-8');
-    //response.redirect('/admin/');
+    response.redirect('/admin/');
 });
-
-// const templateString = "Location ${user_account.}!";
-// const templateVars = {
-//     name: "world"    
-// }
-
-// const fillTemplate = function(templateString, templateVars){
-//     return new Function("return `"+templateString +"`;").call(templateVars);
-// }
-
-// console.log(fillTemplate(templateString, templateVars));
-
 
 router.post('/commands/:filename', function (request, response) {
 

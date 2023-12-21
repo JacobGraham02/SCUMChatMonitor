@@ -5,7 +5,7 @@ const advanced_create_command_section = document.querySelector('#new_command_sec
 const easy_create_command_section = document.querySelector('#new_command_section_easy');
 const create_command_form = document.querySelector('#create_commands_file_form');
 const create_command_form_items_datalist = document.querySelector('#items_list');
-const create_command_form_items_input = document.querySelector('#item_input');
+const create_command_form_items_input = document.querySelectorAll('.item_input');
 const create_command_page_buttons = document.querySelectorAll('button');
 const addItemButton = document.querySelector('#add_item_button');
 
@@ -980,16 +980,19 @@ function generateAdditionalInputFields() {
     outer_parent_section.appendChild(inner_parent_section);
 }
 
-create_command_form_items_input.addEventListener('input', function() {
-    const search_query = create_command_form_items_input.value.toLowerCase();
-    const filtered_items = items_list.filter(item => {
-        item.label.toLowerCase().includes(search_query);
+create_command_form_items_input.forEach(input => {
+    input.addEventListener('click', function() {
+        const search_query = this.value.toLowerCase();
+        const filtered_items = scum_items_list.filter(item => {
+            item.label.toLowerCase().includes(search_query);
+        });
+        populateDataItemsList(filtered_items);
     });
-    populateDataItemsList(filtered_items)
 });
 
 cancel_command_button.addEventListener('click', () => {
-    history.back();
+    console.log('cancel button was clicked');
+    //history.back();
 });
 
 create_command_page_buttons.forEach(button => {

@@ -8,7 +8,7 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-var session = require('express-session');
+var session = require('express-session');// Define the modal at the end of your body tag in the layout file
 const crypto = require('crypto');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
@@ -88,11 +88,6 @@ const chat_log_messages_regex = /(?<=Global: |Local: |Admin: |Squad: )\/[^\n]*[^
 const gportal_ftp_server_target_directory = 'SCUM\\Saved\\SaveFiles\\Logs\\';
 const gportal_ftp_server_filename_prefix_login = 'login_';
 const gportal_ftp_server_filename_prefix_chat = 'chat_';
-
-/**
- * TCP connections are established at this port 
- */
-const server_port = 3000;
 
 /**
  * GPortal FTP server credentials with a timeout time of 60 seconds in case the server is busy or slow. 
@@ -889,8 +884,8 @@ app.use(function (req, res, next) {
     next(createError(404));
 });
 
-app.listen(server_port, function () {
-    console.log(`Server is running on port ${server_port}`);
+app.listen(process.env.PORT, function () {
+    console.log(`Server is running on port ${process.env.PORT}`);
 })
 
 // error handler
