@@ -88,34 +88,70 @@ router.delete('/commands/delete/:file', (request, response) => {
 });
 
 router.post('/commands/new', isLoggedIn, (request, response, next) => {
-    const new_command_name = request.body.command_name_input;
-    const new_command_description = request.body.command_description_input;
-    const new_command_data = request.body.command_data_input;
-    const new_command_authorized_roles = request.body.command_authorized_roles_input;
-    const parent_directory_from_routes = path.resolve(__dirname, '..');
-    const file_path = path.join(parent_directory_from_routes, '/commands', new_command_name + '.js');
+    const new_command_name = request.body.command_name;
+    const new_command_description = request.body.command_description;
+    const command_items = request.body.item_input;
+    const command_cost = request.body.command_cost_input;
+    const placeholder = 1;  // Assuming this is a placeholder value
+    let command_data_string = "";
+
+    // Construct the command_data_string with each command individually quoted
+    if (!Array.isArray(command_items)) {
+        command_data_string = `"#SpawnItem ${command_items} 1 Location ${placeholder}"`;
+    } else {
+        command_data_string = command_items.map(item => `"#SpawnItem ${item} 1 Location ${placeholder}"`).join(', ');
+    }
 
     const command_content = `
-    const { SlashCommandBuilder } = require('@discordjs/builders');
-    
-module.exports = function (player_steam_id) {
+const { SlashCommandBuilder } = require('@discordjs/builders');
+
+module.exports = function (user_account) {
     const object = {
         data: new SlashCommandBuilder()
-         .setName('${new_command_name}')
-         .setDescription('${new_command_description}'),
-        command_data: '${new_command_data}',
-        authorization_role_name: ['${new_command_authorized_roles}'],
-        command_cost: ${command_cost}
+            .setName('${new_command_name}')
+            .setDescription('${new_command_description}'),
+        command_data: ['{user_steam_name} your package has been dispatched', ${command_data_string}],
+        authorization_role_name: [],
+        command_cost: ${command_cost},
 
         async execute(interaction) {
-            await interaction.reply('Please log into TheTrueCastaways SCUM server and type ${new_command_name} into local or global chat');
+            this.replaceCommandDataLocation(user_account.user_steam_id);
+            await interaction.reply("Please log into TheTrueCastaways SCUM server and type the command '/${new_command_name}' into local or global chat");
+        },
+
+        replaceCommandUserSteamName() {
+            this.command_data = this.command_data.map(command_string => {
+                return command_string.replace('{user_steam_name}', user_steam_name);
+            });
+        },
+
+        replaceCommandItemSpawnLocation() {
+            this.command_data = this.command_data.map(command_string => {
+                return command_string.replace('Location 1', 'Location ' + user_account.user_steam_id);
+            })
         }
     }
     return object;
 }`;
+
+    // Write the content to the command file
+    const parent_directory_from_routes = path.resolve(__dirname, '..');
+    const file_path = path.join(parent_directory_from_routes, '/commands', new_command_name + '.js');
     fs.writeFileSync(file_path, command_content, 'utf-8');
-    response.redirect('/admin/');
+    //response.redirect('/admin/');
 });
+
+// const templateString = "Location ${user_account.}!";
+// const templateVars = {
+//     name: "world"    
+// }
+
+// const fillTemplate = function(templateString, templateVars){
+//     return new Function("return `"+templateString +"`;").call(templateVars);
+// }
+
+// console.log(fillTemplate(templateString, templateVars));
+
 
 router.post('/commands/:filename', function (request, response) {
 

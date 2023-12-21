@@ -1397,6 +1397,17 @@ async function processQueue() {
         const client_command_data = function_property_data.command_data;
         const client_command_data_cost = function_property_data.command_cost;
 
+        if (typeof function_property_data.replaceCommandUserSteamName === 'function') {
+            console.log('command file has replaceCommandUserSteamName');
+            function_property_data.replaceCommandUserSteamName();
+        }
+        
+        if (typeof function_property_data.replaceCommandItemSpawnLocation === 'function') {
+            console.log('command file has replaceCommandItemSpawnLocation');
+            function_property_data.replaceCommandItemSpawnLocation();
+        } 
+        
+
         /**
          * Remove the weird (0-9{1,4}) value which is appended onto each username in the GPortal chat log. 
          * The GPortal chat log generates usernames like: jacobdgraham02(102). Therefore, we will use regex to replace that with: jacobdgraham02
