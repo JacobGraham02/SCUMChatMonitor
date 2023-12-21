@@ -83,15 +83,29 @@ body {
     justify-content: space-evenly;
 }
 
-#commands_file_javascript_form, #create_commands_file_form_advanced {
+#commands_file_javascript_form {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-evenly;
     flex-direction: column;
 }
 
-#create_commands_file_form_advanced {
-    display: block;
+#create_commands_file_form {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 90%;
+    max-width: 90%;
+}
+
+#new_command_section_advanced {
+    width: 100%;
+}
+
+#create_commands_file_form fieldset {
+    margin-bottom: 1%;
 }
 
 .advancedCommandCreationButtonSelected {
@@ -102,11 +116,132 @@ body {
     background: green;
 }
 
+#new_command_section_easy {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border: 2px solid purple;
+    height: 100%;
+    width: 100%;
+}
+
+.new_command_label {
+    font-size: 125%;
+}
+
+.new_command_input_field {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 100%;
+    margin: 1%;
+}
+
+.input_for_easy_command_creation {
+    display: flex;
+    width: 50%;
+    flex-direction: column;
+}
+
+.individual_add_item_label_and_input {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 50%;
+    max-width: 50%;
+    max-height: 100%;
+}
+
+#add_command_name_container {
+    width: 100%;
+}
+
+#command_name {
+    width: 50%;
+}
+
+#add_command_cost {
+    display: flex;
+    width: 100%;
+}
+
+#add_command_cost_fields_container {
+    width: 100%;
+}
+
+#command_item_name {
+    display: flex;
+    width: 100%;
+}
+
+#command_cost_input {
+    width: 50%;
+}
+
+#dropdown_menu_for_spawn_item {
+    width: 100%;
+}
+
 #edit_command_form_field_buttons {
     display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#command_item_description {
+    display: flex;
+    width: 100%;
+}
+
+#command_description {
+    width: 95%;
+}
+
+#add_command_description_container {
+    width: 100%;
+}
+
+#add_item_fields_container {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    height: 100%;
+    width: 100%;
+}
+
+.new_command_input_field, .new_command_label {
+    width: 48%; /* Adjust as needed */
+    margin-right: 2%; /* Space between items */
+    min-width: 0;
+    flex-basis: 20%;
+}
+
+#add_another_item_button_container {
+    display: flex;
+    width: 100%;
+    height: fit-content;
+    justify-content: center;
+    align-items: center;
+    align-self: flex-end;
+}
+
+#edit_command_form_field_buttons {
+    margin-top: auto;
+    margin-bottom: auto;
+    display: flex;
+    flex-direction: row;
     align-items: center;
     justify-content: center;
-    justify-content: center;
+}
+
+#save_command_changes {
+    align-items: flex-end;
+}
+
+#cancel_command_changes {
+    align-items: flex-end;
 }
 
 #create_new_command_link_container {
@@ -129,7 +264,7 @@ body {
 }
 
 #edit_command_section {
-    width: 90%;
+    width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -137,7 +272,6 @@ body {
 }
 
 #commands_file_javascript_code {
-    width: 95%;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -360,11 +494,6 @@ fieldset {
     align-items: center;
 }
 
-#login_section #login_username_field input {
-    height: 20%;
-    width: 70%;
-}
-
 #login_section #login_password_field {
     height: 40%;
     width: 100%;
@@ -373,9 +502,9 @@ fieldset {
     align-items: center;
 }
 
-#login_section #login_password_field input {
-    height: 20%;
-    width: 70%;
+#login_section #login_password_field input, #login_username_field input {
+    height: 10%;
+    width: 100%;
 }
 
 .login_fieldset {
@@ -462,7 +591,7 @@ a {
     width: 100%;
 }
 
-.bot_command_list_item_edit, .bot_command_list_item_delete, #create_new_command_link_anchor, button {
+.bot_command_list_item_edit, .bot_command_list_item_delete, #create_new_command_link_anchor {
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: .25rem;
     box-shadow: rgba(0, 0, 0, 0.02) 0 1px 3px 0;
@@ -667,6 +796,10 @@ button:active {
             "header footer footer footer footer footer";
     }
 
+    #dropdown_menu_for_spawn_item {
+        width: 60%;
+    }
+
     #login_fields_form {
         width: 90%;
         height: 90%;
@@ -685,6 +818,11 @@ button:active {
         max-height: none;
         /* Transform the list to top of side section */
         /* background: #efeff5; */
+    }
+
+    #login_section #login_password_field input, #login_username_field input {
+        height: 10%;
+        width: 30%;
     }
 
     #website_menu_username_container {

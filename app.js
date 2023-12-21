@@ -218,15 +218,14 @@ let user_steam_ids = {};
 
 let user_steam_id = {};
 
-
 /**
  * The below functions start the login and chat log intervals for the bot, and the check local server time intervals
  */
 
-establishFtpConnectionToGportal();
-startFtpFileProcessingIntervalLoginLog();
-startFtpFileProcessingIntervalChatLog();
-startCheckLocalServerTimeInterval();
+// establishFtpConnectionToGportal();
+// startFtpFileProcessingIntervalLoginLog();
+// startFtpFileProcessingIntervalChatLog();
+// startCheckLocalServerTimeInterval();
  
 /**
  * This function loops through each of the strings located in the string array 'logs', and parses out various substrings to manipulate them.
@@ -316,7 +315,10 @@ async function establishFtpConnectionToGportal() {
     });
     await new Promise((resolve, reject) => {
         gportal_log_file_ftp_client.on('ready', resolve);
-        gportal_log_file_ftp_client.on('error', (error) => {reject(new Error(`FTP connection error: ${error.message}`))});
+        gportal_log_file_ftp_client.on('error', (error) => {
+            reject(new Error(`FTP connection error: ${error.message}`))
+            runCommand(`The bot is currently offline. Please wait until further notice before executing any commands`);
+        });
         gportal_log_file_ftp_client.connect(gportal_ftp_config);
     });
 }
@@ -1049,17 +1051,17 @@ function checkTcpConnectionToServer(discord_scum_game_chat_messages) {
     });
 }
 
-function checkIfGameServerOnline() {
-    tcpConnectionChecker.checkWindowsCanPingGameServer((game_server_online) => {
-        if (game_server_online) {
-            startFtpFileProcessingIntervalLoginLog();
-            startFtpFileProcessingIntervalChatLog();
-        } else {
-            stopFileProcessingIntervalChatLog();
-            stopFileProcessingIntervalLoginLog();
-        }
-    });
-}
+// function checkIfGameServerOnline() {
+//     tcpConnectionChecker.checkWindowsCanPingGameServer((game_server_online) => {
+//         if (game_server_online) {
+//             startFtpFileProcessingIntervalLoginLog();
+//             startFtpFileProcessingIntervalChatLog();
+//         } else {
+//             stopFileProcessingIntervalChatLog();
+//             stopFileProcessingIntervalLoginLog();
+//         }
+//     });
+// }
 
 /**
  * The discord API triggers an event called 'ready' when the discord bot is ready to respond to commands and other input. 
@@ -1099,11 +1101,8 @@ client_instance.on('ready', () => {
         }
         sendPlayerLoginMessagesToDiscord(player_ftp_log_login_messages, discord_scum_game_login_messages_chat);
         if (user_steam_ids !== undefined) {
-            console.log("user steam ids is not undefined");
             sendNewPlayerLoginMessagesToDiscord(player_ipv4_addresses, user_steam_ids, discord_scum_game_first_time_logins_chat);
-        } else {
-            console.log("user steam ids is undefined");
-        }
+        } 
     }, gportal_ftp_server_log_interval_seconds["20"]);
 
     /**
