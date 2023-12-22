@@ -26,8 +26,10 @@ const hashAndValidatePassword = require('./modules/hashAndValidatePassword');
 const UserRepository = require('./database/MongoDb/UserRepository');
 var indexRouter = require('./routes/index');
 var adminRouter = require('./routes/admin');
+var apiExecutableRecompilation = require('./api/recompile/recompile-executable');
 const PlayerInfoCommand = require('./api/ipapi/PlayerInfoCommand');
 const SteamUserInfoCommand = require('./api/steam/SteamUserInfoCommand');
+const recompileExecutable = require('./api/recompile/recompile-executable');
 const discord_bot_token = process.env.discord_wilson_bot_token;
 
 const client_instance = new Client({
@@ -843,6 +845,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/admin', adminRouter);
+app.use('/api/', apiExecutableRecompilation);
 
 app.post('/login', passport.authenticate('local', {
     successRedirect: 'admin/login-success',

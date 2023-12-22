@@ -4,15 +4,16 @@ mixin menu(data)
    input#menu-btn.menu-btn(type='checkbox')
    label.menu-icon(for='menu-btn')
     span.navicon
-   div#navbar_welcome_message
-    -if (user === undefined) {
-       h1#user_administrator_name_heading Welcome, user 
-       a#index_page_home_button(href='/' title='A link to go to the website home page')
-        img#menu_links_image(src='../../images/WilsonBotMenu.png', alt='The WilsonBot logo')
-    -} else {
-       h1#user_administrator_name_heading Welcome, user
-    -}
    ul.menu
+    a#index_page_home_button(href='/' title='A link to go to the website home page')
+     img#menu_links_image(src='../../images/WilsonBotMenu.png', alt='The WilsonBot logo')
+    li 
+       div#navbar_welcome_message
+        -if (user === undefined) {
+          h1#user_administrator_name_heading Welcome, user 
+        -} else {
+          h1#user_administrator_name_heading Welcome, user
+        -}
     li
      div#logout_button_container
      -if (user !== undefined) {    
@@ -21,3 +22,4 @@ mixin menu(data)
      -} else {
        a#index_page_login_button.menu_item(href='login' title='A link to go to the site login page') Log in to your account 
      -}
+    button#recompile-executable-button(type="button") Recompile application
