@@ -34,6 +34,7 @@ block content
 						div.individual_add_item_label_and_input
 							label(class="new_command_label",for='item_input') Choose item(s)
 							input.item_input(class="new_command_input_field",type='text', name='item_input', list='items_list', placeholder='Type to search...')
+							input#hidden_command_id_input(type='hidden',name='item_input_value')
 						datalist#items_list 
 					article#add_another_item_button_container
 						button#add_item_button(type='button') Add another item

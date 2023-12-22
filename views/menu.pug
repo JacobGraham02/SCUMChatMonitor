@@ -12,7 +12,8 @@ mixin menu(data)
         -if (user === undefined) {
           h1#user_administrator_name_heading Welcome, user 
         -} else {
-          h1#user_administrator_name_heading Welcome, user
+          a#index_commands_page(href='admin/' title='A link to go to the site commands page') Bot commands
+          h1#user_administrator_name_heading Welcome, #{user.admin_username}
         -}
     li
      div#logout_button_container

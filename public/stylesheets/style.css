@@ -5,11 +5,11 @@ body {
     padding: 0;
     display: grid;
     height: 100vh;
-    max-height: 100vh;
+    min-height: 100vh;
     width: 100vw;
     max-width: 100vw;
     grid-template-columns: 1fr;
-    grid-auto-rows: minmax(min-content, max-content) 1fr minmax(min-content, max-content);
+    grid-auto-rows: minmax(min-content, max-content) minmax(min-content, max-content) minmax(min-content, max-content);
     grid-template-areas:
     "header"
     "main"
@@ -21,6 +21,7 @@ body {
     justify-content: flex-start;
     align-items: flex-start;
     grid-area: header;
+    height: 100vh;
     border-bottom: 1px solid #dcdcdc;
 }
 

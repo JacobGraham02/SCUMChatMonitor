@@ -8,6 +8,8 @@ const create_command_form_items_datalist = document.querySelector('#items_list')
 const create_command_form_items_input = document.querySelectorAll('.item_input');
 const create_command_page_buttons = document.querySelectorAll('button');
 const addItemButton = document.querySelector('#add_item_button');
+const initial_spawn_item_input = document.querySelector('.item_input');
+const initial_spawn_item_hidden_input = document.querySelector('#hidden_command_id_input');
 
 const scum_items_list = [
     { value: "#SpawnItem BP_Weapon_M82A1", label: "Weapon M82A1" },
@@ -947,6 +949,7 @@ const scum_items_list = [
 ];
 
 populateDataItemsList(scum_items_list);
+populateOriginalHiddenInputFieldWithValue();
 addItemButton.addEventListener('click', generateAdditionalInputFields);
 /**
  * Populates a dropdown menu list with all of the items you can spawn in SCUM. We first clear any existing entries from the list. 
@@ -961,10 +964,24 @@ function populateDataItemsList(items_list) {
     });
 }
 
+function populateOriginalHiddenInputFieldWithValue() {
+    initial_spawn_item_input.addEventListener('change', function() {
+        const selected_item_label = this.value;
+        const selected_item = scum_items_list.find(item => item.label === selected_item_label)
+        if (selected_item) {
+            initial_spawn_item_hidden_input.value = selected_item.value;
+        }
+    });
+}
+
 function generateAdditionalInputFields() {
     const new_input = document.createElement('input');
     const new_input_label = document.createElement('label');
+    const hidden_input = document.createElement('input');
     const inner_parent_section = document.createElement('div');
+    hidden_input.type = 'hidden';
+    hidden_input.name = 'item_input_value';
+    hidden_input.id = 'hidden_command_id_input';
     inner_parent_section.className = "individual_add_item_label_and_input";
     new_input_label.className ="new_command_label";
     new_input_label.htmlFor = 'item_input'
@@ -977,7 +994,17 @@ function generateAdditionalInputFields() {
     const outer_parent_section = document.querySelector('#add_item_fields_container');
     inner_parent_section.appendChild(new_input_label);
     inner_parent_section.appendChild(new_input);
+    inner_parent_section.appendChild(hidden_input);
     outer_parent_section.appendChild(inner_parent_section);
+
+    new_input.addEventListener('change', function() {
+        const selected_item_label = this.value;
+        const selected_item = scum_items_list.find(item => item.label === selected_item_label)
+        console.log(selected_item);
+        if (selected_item) {
+            hidden_input.value = selected_item.value;
+        }
+    });
 }
 
 create_command_form_items_input.forEach(input => {

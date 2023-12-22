@@ -90,16 +90,15 @@ router.delete('/commands/delete/:file', (request, response) => {
 router.post('/commands/new', isLoggedIn, (request, response, next) => {
     const new_command_name = request.body.command_name;
     const new_command_description = request.body.command_description;
-    const command_items = request.body.item_input;
     const command_cost = request.body.command_cost_input;
-    const placeholder = 1;  // Assuming this is a placeholder value
+    const command_items = request.body.item_input_value;
+    const placeholder = 1;  
     let command_data_string = "";
 
-    // Construct the command_data_string with each command individually quoted
     if (!Array.isArray(command_items)) {
-        command_data_string = `"#SpawnItem ${command_items} 1 Location ${placeholder}"`;
+        command_data_string = `"${command_items} 1 Location ${placeholder}"`;
     } else {
-        command_data_string = command_items.map(item => `"#SpawnItem ${item} 1 Location ${placeholder}"`).join(', ');
+        command_data_string = command_items.map(item => `"${item} 1 Location ${placeholder}"`).join(', ');
     }
 
     const command_content = `
