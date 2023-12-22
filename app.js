@@ -8,7 +8,7 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-var session = require('express-session');// Define the modal at the end of your body tag in the layout file
+var session = require('express-session');
 const crypto = require('crypto');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
@@ -18,21 +18,17 @@ const FTPClient = require('ftp');
 const MongoStore = require('connect-mongo');
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const { EmbedBuilder } = require('discord.js');
-
 const Queue = require('./utils/Queue');
 const Logger = require('./utils/Logger');
 const ServerInfoCommand = require('./api/battlemetrics/ServerInfoCommand');
 const CheckTcpConnection = require('./utils/CheckTcpConnection');
-/**
- * Modules and other files which are custom made for the application
- */
 const hashAndValidatePassword = require('./modules/hashAndValidatePassword');
 const UserRepository = require('./database/MongoDb/UserRepository');
-const { discord_bot_token } = require('./config.json');
 var indexRouter = require('./routes/index');
 var adminRouter = require('./routes/admin');
 const PlayerInfoCommand = require('./api/ipapi/PlayerInfoCommand');
 const SteamUserInfoCommand = require('./api/steam/SteamUserInfoCommand');
+const discord_bot_token = process.env.discord_wilson_bot_token;
 
 const client_instance = new Client({
     intents: [GatewayIntentBits.Guilds,
