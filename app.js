@@ -880,8 +880,8 @@ app.use(function (req, res, next) {
     next(createError(404));
 });
 
-app.listen(process.env.PORT, function () {
-    console.log(`Server is running on port ${process.env.PORT}`);
+app.listen(process.env.port, function () {
+    console.log(`Server is running on port ${process.env.port}`);
 })
 
 // error handler
