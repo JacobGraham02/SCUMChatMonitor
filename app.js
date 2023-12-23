@@ -18,6 +18,7 @@ const FTPClient = require('ftp');
 const MongoStore = require('connect-mongo');
 const { Client, Collection, GatewayIntentBits, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
 const { EmbedBuilder } = require('discord.js');
+const myEmitter = require('./utils/EventEmitter');
 const Queue = require('./utils/Queue');
 const Logger = require('./utils/Logger');
 const ServerInfoCommand = require('./api/battlemetrics/ServerInfoCommand');
@@ -199,27 +200,48 @@ let player_ftp_log_login_messages = [];
 */
 let player_chat_messages_sent_inside_scum = [];
 
+/**
+ * An array which acts as a cache to hold previous player chat messages. This array is used to compare with any new player chat message array because both GPortal and SCUM lack any 
+ * capabilities in terms of data management for FTP. This array is assigned a new value each time the chat log FTP file is read.
+ */
 let previous_player_chat_messages = [];
 
+/**
+ * An array which acts as a cache to hold previous player login messages. This array is used to compare with any new player login array because both GPortal and SCUM lack any 
+ * capabilities in terms of data management for FTP. This array is assigned a new value each time the login FTP file is read. 
+ */
 let previous_player_login_messages = [];
 
+/**
+ * An array which acts as a cache to hold previous player ipv4 addresses. This array is assigned a new value each time the login FTP file is read, as the IP addresses are acquired through
+ * the SCUM log in FTP files.
+ */
 let previous_player_ipv4_addresses = [];
 
+/**
+ * An array which acts as a cache to hold current player ipv4 addresses. This array is assigned a new value each time the login FTP file is read, as the IP addresses are acquired through
+ * the SCUM log in FTP files.
+ */
 let player_ipv4_addresses = [];
 
+/**
+ * A placeholder object to hold multiple player steam ids in one structure. Both GPortal and SCUM lack any data processing capabilities, so I have to use workarounds to capture
+ * relevant data
+ */
 let user_steam_ids = {};
 
+/**
+ * A placeholder object to hold one player steam id in one structure. Both GPortal and SCUM lack any data processing capabilities, so I have to use workarounds to capture
+ * relevant data
+ */
 let user_steam_id = {};
 
 /**
- * The below functions start the login and chat log intervals for the bot, and the check local server time intervals
+ * Global boolean variable defining if the bot is having any errors or not
  */
+gportal_ftp_connection_issue = true;
 
-// establishFtpConnectionToGportal();
-// startFtpFileProcessingIntervalLoginLog();
-// startFtpFileProcessingIntervalChatLog();
-// startCheckLocalServerTimeInterval();
- 
+
 /**
  * This function loops through each of the strings located in the string array 'logs', and parses out various substrings to manipulate them.
  * 
@@ -300,14 +322,24 @@ async function determinePlayerLoginSessionMoney(logs) {
     }
 }
 
+/**
+ * Uses the npm package 'ftp' to create an FTPClient and establish a connection with the FTP server on GPortal. 
+ * Each time a connection is closed, an attempt is made to reestablish a connection with GPortal.
+ * A variable 'gportal_ftp_connection_issue' is set to true or false depending on if a connection to the GPortal FTP server can be made
+ * 
+ */
 async function establishFtpConnectionToGportal() {
     gportal_log_file_ftp_client = new FTPClient();
     gportal_log_file_ftp_client.removeAllListeners();
     gportal_log_file_ftp_client.addListener('close', () => {
+        gportal_ftp_connection_issue = false;
         establishFtpConnectionToGportal();
     });
     await new Promise((resolve, reject) => {
-        gportal_log_file_ftp_client.on('ready', resolve);
+        gportal_log_file_ftp_client.on('ready', () => {
+            gportal_ftp_connection_issue = true;
+            resolve();
+        });
         gportal_log_file_ftp_client.on('error', (error) => {
             reject(new Error(`FTP connection error: ${error.message}`))
             runCommand(`The bot is currently offline. Please wait until further notice before executing any commands`);
@@ -325,6 +357,9 @@ async function establishFtpConnectionToGportal() {
  * @returns {Array} An array containing object(s) in the following format: {steam_id: string, player_message: string}
  */
 async function readAndFormatGportalFtpServerLoginLog(request, response) {
+    if (!gportal_ftp_connection_issue) {
+        return;
+    }
     try {
         const files = await new Promise((resolve, reject) => {
             gportal_log_file_ftp_client.list(gportal_ftp_server_target_directory, (error, files) => {
@@ -475,6 +510,7 @@ async function teleportNewPlayersToLocation(online_users) {
         user_first_join_results = await user_repository.findUserByIdIfFirstServerJoin(key);
         if (user_first_join_results) {
             user_steam_id = user_first_join_results.user_steam_id;
+            myEmitter.emit('newUserJoined');
             await sleep(60000);
             await runCommand(`#Teleport -129023.125 -91330.055 36830.551 ${user_steam_id}`);
         }
@@ -491,6 +527,9 @@ async function teleportNewPlayersToLocation(online_users) {
  * @returns {Array} An array containing object(s) in the following format: {steam_id: string, player_message: string}
  */
 async function readAndFormatGportalFtpServerChatLog(request, response) {
+    if (!gportal_ftp_connection_issue) {
+        return;
+    }
     try {
         /**
          * Fetch a list of all the files in the specified directory on GPortal. In this instance, we fetch all of the files from
@@ -1036,26 +1075,34 @@ async function sendNewPlayerLoginMessagesToDiscord(player_ipv4_addresses, user_s
 }
 
 function checkTcpConnectionToServer(discord_scum_game_chat_messages) {
+    message_for_discord_chat = '';
     tcpConnectionChecker.checkWindowsHasTcpConnectionToGameServer((game_connection_exists) => {
         if (game_connection_exists) {
-            discord_scum_game_chat_messages.send('The bot is online and connected to the SCUM server');
+            message_for_discord_chat = 'The bot is online and connected to the SCUM server';
+            if (!gportal_ftp_connection_issue) {
+                message_for_discord_chat = 'The bot is having FTP connection issues';
+            }
+            discord_scum_game_chat_messages.send(`${message_for_discord_chat}`);
         } else {
-            //reinitializeBotOnServer();
+            reinitializeBotOnServer();
         }
     });
 }
 
-// function checkIfGameServerOnline() {
-//     tcpConnectionChecker.checkWindowsCanPingGameServer((game_server_online) => {
-//         if (game_server_online) {
-//             startFtpFileProcessingIntervalLoginLog();
-//             startFtpFileProcessingIntervalChatLog();
-//         } else {
-//             stopFileProcessingIntervalChatLog();
-//             stopFileProcessingIntervalLoginLog();
-//         }
-//     });
-// }
+function checkIfGameServerOnline() {
+    tcpConnectionChecker.checkWindowsCanPingGameServer((game_server_online) => {
+        if (game_server_online) {
+            startFtpFileProcessingIntervalLoginLog();
+            startFtpFileProcessingIntervalChatLog();
+            establishFtpConnectionToGportal();
+            startCheckLocalServerTimeInterval();
+        } else {
+            stopFileProcessingIntervalChatLog();
+            stopFileProcessingIntervalLoginLog();
+            stopCheckLocalServerTimeInterval();
+        }
+    });
+}
 
 /**
  * The discord API triggers an event called 'ready' when the discord bot is ready to respond to commands and other input. 
@@ -1064,11 +1111,11 @@ client_instance.on('ready', () => {
     /**
      * Access the discord API channel cache for a specific guild (server) and fetch channels via their id
      */
-    const discord_channel_id_for_logins = '1173048671420559521';
-    const discord_channel_id_for_scum_chat = '1173100035135766539';
-    const discord_channel_id_for_bot_online = '1173331877004845116';
-    const discord_channel_id_for_first_time_logins = '1186748092788260944';
-    const discord_channel_id_for_server_info = '1187933089779953726';
+    const discord_channel_id_for_logins = process.env.discord_channel_id_for_logins
+    const discord_channel_id_for_scum_chat = process.env.discord_channel_id_for_scum_chat
+    const discord_channel_id_for_bot_online = process.env.discord_channel_id_for_bot_online
+    const discord_channel_id_for_first_time_logins = process.env.discord_channel_id_for_first_time_logins
+    const discord_channel_id_for_server_info = process.env.discord_channel_id_for_server_info
     const discord_scum_game_ingame_messages_chat = client_instance.channels.cache.get(discord_channel_id_for_scum_chat);
     const discord_scum_game_login_messages_chat = client_instance.channels.cache.get(discord_channel_id_for_logins);
     const discord_scum_game_bot_online_chat = client_instance.channels.cache.get(discord_channel_id_for_bot_online);
@@ -1096,9 +1143,6 @@ client_instance.on('ready', () => {
             return;
         }
         sendPlayerLoginMessagesToDiscord(player_ftp_log_login_messages, discord_scum_game_login_messages_chat);
-        if (user_steam_ids !== undefined) {
-            sendNewPlayerLoginMessagesToDiscord(player_ipv4_addresses, user_steam_ids, discord_scum_game_first_time_logins_chat);
-        } 
     }, gportal_ftp_server_log_interval_seconds["20"]);
 
     /**
@@ -1117,11 +1161,15 @@ client_instance.on('ready', () => {
      * and therefore can access all of the computer resources
      * We use a callback function because the Node.js package 'exec' is asynchronous, but this callback function is synchronous
      */
-    // setInterval(() => {
-    //     checkIfGameServerOnline();
-    // }, gportal_ftp_server_log_interval_seconds["60"]);
+    setInterval(() => {
+        checkIfGameServerOnline();
+    }, gportal_ftp_server_log_interval_seconds["60"]);
 
-    // battlemetrics_server_info
+    /**
+     * Use the Discord API ButtonBuilder to build a button that will return a JSON API response from the Battlemetrics API to indicate the current status of the server
+     * We must add an ActionRowBuilder to add functionality, or action events, to the button
+     * After the button is constructed, we will send that button to the discord chat we are targeting
+     */
     const server_info_button = new ButtonBuilder()
 		.setCustomId('serverinfo')
 		.setLabel('View server info')
@@ -1133,6 +1181,15 @@ client_instance.on('ready', () => {
     discord_scum_game_server_info_chat.send({
         content: "Click the button below to get server information",
         components: [button_row]
+    });
+
+    /**
+     * After an event is emitted that indicates a new player has joined the server, we must execute a function that will populate discord with the information fo the new user
+     */
+    myEmitter.on('newUserJoined', async() => {
+        if (user_steam_ids !== undefined) {
+            sendNewPlayerLoginMessagesToDiscord(player_ipv4_addresses, user_steam_ids, discord_scum_game_first_time_logins_chat);
+        } 
     });
 
     /**
