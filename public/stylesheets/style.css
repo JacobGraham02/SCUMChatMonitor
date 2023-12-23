@@ -91,7 +91,7 @@ body {
     flex-direction: column;
 }
 
-#create_commands_file_form {
+#create_commands_file_form, #commands_file_javascript_form {
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -258,7 +258,7 @@ body {
     font-size: 150%;
 }
 
-#command_new_page {
+#command_new_page, #command_edit_page {
     display: flex;
     align-items: center;
     flex-direction: column;

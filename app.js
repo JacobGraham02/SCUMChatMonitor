@@ -16,7 +16,7 @@ const { exec } = require('child_process');
 const fs = require('node:fs');
 const FTPClient = require('ftp');
 const MongoStore = require('connect-mongo');
-const { Client, Collection, GatewayIntentBits } = require('discord.js');
+const { Client, Collection, GatewayIntentBits, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
 const { EmbedBuilder } = require('discord.js');
 const Queue = require('./utils/Queue');
 const Logger = require('./utils/Logger');
@@ -1068,10 +1068,12 @@ client_instance.on('ready', () => {
     const discord_channel_id_for_scum_chat = '1173100035135766539';
     const discord_channel_id_for_bot_online = '1173331877004845116';
     const discord_channel_id_for_first_time_logins = '1186748092788260944';
+    const discord_channel_id_for_server_info = '1187933089779953726';
     const discord_scum_game_ingame_messages_chat = client_instance.channels.cache.get(discord_channel_id_for_scum_chat);
     const discord_scum_game_login_messages_chat = client_instance.channels.cache.get(discord_channel_id_for_logins);
     const discord_scum_game_bot_online_chat = client_instance.channels.cache.get(discord_channel_id_for_bot_online);
     const discord_scum_game_first_time_logins_chat = client_instance.channels.cache.get(discord_channel_id_for_first_time_logins);
+    const discord_scum_game_server_info_chat = client_instance.channels.cache.get(discord_channel_id_for_server_info);
 
     /**
      * A 60-second interval that reads all contents from the in-game SCUM server chat and uses the discord API EmbedBuilder to write a nicely-formatted chat message
@@ -1119,6 +1121,20 @@ client_instance.on('ready', () => {
     //     checkIfGameServerOnline();
     // }, gportal_ftp_server_log_interval_seconds["60"]);
 
+    // battlemetrics_server_info
+    const server_info_button = new ButtonBuilder()
+		.setCustomId('serverinfo')
+		.setLabel('View server info')
+		.setStyle(ButtonStyle.Success);
+
+	const button_row = new ActionRowBuilder()
+		.addComponents(server_info_button);
+
+    discord_scum_game_server_info_chat.send({
+        content: "Click the button below to get server information",
+        components: [button_row]
+    });
+
     /**
      * Inform administrators that the bot has successfully logged into the Discord guild
      */
@@ -1144,16 +1160,47 @@ function arraysEqual(arrayOne, arrayTwo) {
 }
 
 /**
- * When an interaction (command) to executed on discord - for example: !discord - the discord API triggers an event called 'interactionCreate'. 
- */
-client_instance.on('interactionCreate',
-    /**
-     * When the discord API triggers the interactionCreate event, an asynchronous function is executed with the interaction passed in as a parameter value. 
-     * If the interaction is not a command, the function does not continue executing.
-     * @param {any} interaction 
-     * @returns ceases execution of the function if the interaction is not a command, if the user sent the message in the wrong channel, or if the user cannot use this command
-     */
-    async (interaction) => {
+* When the discord API triggers the interactionCreate event, an asynchronous function is executed with the interaction passed in as a parameter value. 
+* If the interaction is not a command, the function does not continue executing.
+* @param {any} interaction 
+* @returns ceases execution of the function if the interaction is not a command, if the user sent the message in the wrong channel, or if the user cannot use this command
+*/
+client_instance.on('interactionCreate',  async (interaction) => {
+    if (interaction.isButton()) {
+        if (interaction.customId === 'serverinfo') {
+            const battlemetrics_server_data_object = await battlemetrics_server_info.fetchJsonApiDataFromBattlemetrics();
+            const battlemetrics_server_json_data = battlemetrics_server_data_object.data.attributes;
+            const battlemetrics_server_id = battlemetrics_server_json_data.id;
+            const battlemetrics_server_name = battlemetrics_server_json_data.name;
+            const battlemetrics_server_ip = battlemetrics_server_json_data.ip;
+            const battlemetrics_server_port = battlemetrics_server_json_data.port;
+            const battlemetrics_server_players = battlemetrics_server_json_data.players;
+            const battlemetrics_server_max_players = battlemetrics_server_json_data.maxPlayers;
+            const battlemetrics_server_rank = battlemetrics_server_json_data.rank;
+            const battlemetrics_server_version = battlemetrics_server_json_data.details.version;
+            const battlemetrics_server_time = battlemetrics_server_json_data.details.time;
+            const embedded_message = new EmbedBuilder()
+                .setColor(0x299bcc)
+                .setTitle(`${process.env.server_name}`)
+                .setThumbnail(`https://i.imgur.com/dYtjF3w.png`)
+                .addFields(
+                    {name:'Server name',value:battlemetrics_server_name,inline:true},
+                    {name:'Server Id',value:battlemetrics_server_id,inline:true},
+                    {name:'IPv4 server address',value:battlemetrics_server_ip,inline:true},
+                    {name:'Server port',value:battlemetrics_server_port.toString(),inline:true},
+                    {name:'Current online players',value:String(battlemetrics_server_players),inline:true},
+                    {name:'Server maximum online players',value:String(battlemetrics_server_max_players),inline:true},
+                    {name:'Server ranking',value:String(battlemetrics_server_rank),inline:true},
+                    {name:'Server version',value:battlemetrics_server_version,inline:true},
+                    {name:'Server time',value:battlemetrics_server_time,inline:true}
+                )
+                .setTimestamp()
+                .setFooter({text:'SCUM bot monitor', iconURL: 'https://i.imgur.com/dYtjF3w.png'});
+
+            await interaction.reply({embeds: [embedded_message],ephemeral:true});
+        }
+    }
+
     if (!interaction.isCommand()) {
         return;
     }

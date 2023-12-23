@@ -2,7 +2,6 @@ var express = require('express');
 var router = express.Router();
 const fs = require('fs');
 var path = require('path');
-const extractFromUserCommands = require('../modules/extractDataFromCommands');
 
 function isLoggedIn(request, response, next) {
     if (request.isAuthenticated()) {
@@ -70,9 +69,7 @@ router.get('/commands/:file', (request, response) => {
             console.error(error);
             return;
         }
-        const command_data_text = extractFromUserCommands.fetchCommandDataFromCommand(command_code);
-        const authorization_roles_data_text = extractFromUserCommands.fetchAuthorizationRolesFromCommand(command_code);
-        response.render('admin/command', { data: request.user, code: command_code, command_data: command_data_text, authorization_roles: authorization_roles_data_text, file_name: javascript_file_name });
+        response.render('admin/command', { data: request.user, file_name: javascript_file_name });
     });
 });
 

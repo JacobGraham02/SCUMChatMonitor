@@ -955,9 +955,9 @@ addItemButton.addEventListener('click', generateAdditionalInputFields);
  * Populates a dropdown menu list with all of the items you can spawn in SCUM. We first clear any existing entries from the list. 
  * @param {datalist} itemsList 
  */
-function populateDataItemsList(items_list) {
+function populateDataItemsList() {
     create_command_form_items_datalist.innerHTML = '';
-    items_list.forEach(item => {
+    scum_items_list.forEach(item => {
         const datalist_option = document.createElement('option');
         datalist_option.value = item.label;
         create_command_form_items_datalist.appendChild(datalist_option);
@@ -1018,8 +1018,7 @@ create_command_form_items_input.forEach(input => {
 });
 
 cancel_command_button.addEventListener('click', () => {
-    console.log('cancel button was clicked');
-    //history.back();
+    history.back();
 });
 
 create_command_page_buttons.forEach(button => {
