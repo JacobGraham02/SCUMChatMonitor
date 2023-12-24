@@ -9,7 +9,7 @@ body {
     width: 100vw;
     max-width: 100vw;
     grid-template-columns: 1fr;
-    grid-auto-rows: minmax(min-content, max-content) minmax(min-content, max-content) minmax(min-content, max-content);
+    grid-auto-rows: minmax(min-content, max-content) 1fr minmax(min-content, max-content);
     grid-template-areas:
     "header"
     "main"
@@ -21,8 +21,6 @@ body {
     justify-content: flex-start;
     align-items: flex-start;
     grid-area: header;
-    height: 100vh;
-    border-bottom: 1px solid #dcdcdc;
 }
 
 #menu_container {
@@ -56,10 +54,7 @@ body {
 }
 
 #navbar_welcome_message {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
+    text-align: center;
 }
 
 
@@ -122,7 +117,6 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    border: 2px solid purple;
     height: 100%;
     width: 100%;
 }
@@ -310,11 +304,19 @@ body {
 
 #menu_container {
     display: flex;
+    height: fit-content;
     flex-direction: row;
     align-items: flex-start;
 }
 
+#admin_index_main {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    text-align: center;
+}
 .menu {
+    height: 100%;
     width: 100%;
     margin: 0;
     padding: 0;
@@ -322,9 +324,9 @@ body {
     list-style: none;
     overflow: hidden;
     display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    flex-direction: column;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-evenly;
 }
 
 #main_menu_items {
@@ -334,6 +336,26 @@ body {
     align-items: center;
     flex-direction: column;
     width: 100%;
+}
+
+#admin_index_page_container {
+    border: 2px solid red;
+    display: flex;
+    width: 80%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.welcome_to_scumbot_interface_paragraph {
+    line-height: 1.5;
+    font-size: 100%;
+    font-weight: bold;
+}
+
+#welcome_to_scumbot_interface_recompile_executable_button_span, #welcome_to_scumbot_interface_bot_command_list_button_span {
+    color: red;
 }
 
 #main_menu_items * {
@@ -770,7 +792,8 @@ button:active {
     }
 
     #menu_links_image {
-        scale: 3;
+        height: 100%;
+        width: 100%;
         object-fit: cover;
         display: block;
     }
@@ -790,6 +813,7 @@ button:active {
         flex-direction: column;
         justify-content: space-evenly;
         align-items: center;
+        text-align: center;
     }
 
     #menu_container {
@@ -803,9 +827,14 @@ button:active {
     #navbar_welcome_message {
         width: 100%;
         display: flex;
-        flex-direction: row;
-        justify-content: center;
-        align-items: flex-start;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-evenly;
+        height: 100%;
+    }
+
+    #admin_index_page_container {
+        font-size: 125%;
     }
 
     .header .menu-icon {

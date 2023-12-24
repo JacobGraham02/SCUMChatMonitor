@@ -169,7 +169,7 @@ const message_logger = new Logger();
 /**
  * A class instance which holds a function that hits the Battlemetrics server API
  */
-const battlemetrics_server_info = new ServerInfoCommand();
+const battlemetrics_server_info = new ServerInfoCommand(process.env.battlemetrics_server_id);
 
 const ipApi_player_info = new PlayerInfoCommand();
 
@@ -241,6 +241,7 @@ let user_steam_id = {};
  */
 gportal_ftp_connection_issue = true;
 
+let check_local_server_time_interval;
 
 /**
  * This function loops through each of the strings located in the string array 'logs', and parses out various substrings to manipulate them.
@@ -338,11 +339,10 @@ async function establishFtpConnectionToGportal() {
     await new Promise((resolve, reject) => {
         gportal_log_file_ftp_client.on('ready', () => {
             gportal_ftp_connection_issue = true;
-            resolve();
+            resolve;
         });
         gportal_log_file_ftp_client.on('error', (error) => {
             reject(new Error(`FTP connection error: ${error.message}`))
-            runCommand(`The bot is currently offline. Please wait until further notice before executing any commands`);
         });
         gportal_log_file_ftp_client.connect(gportal_ftp_config);
     });
@@ -357,9 +357,6 @@ async function establishFtpConnectionToGportal() {
  * @returns {Array} An array containing object(s) in the following format: {steam_id: string, player_message: string}
  */
 async function readAndFormatGportalFtpServerLoginLog(request, response) {
-    if (!gportal_ftp_connection_issue) {
-        return;
-    }
     try {
         const files = await new Promise((resolve, reject) => {
             gportal_log_file_ftp_client.list(gportal_ftp_server_target_directory, (error, files) => {
@@ -527,9 +524,6 @@ async function teleportNewPlayersToLocation(online_users) {
  * @returns {Array} An array containing object(s) in the following format: {steam_id: string, player_message: string}
  */
 async function readAndFormatGportalFtpServerChatLog(request, response) {
-    if (!gportal_ftp_connection_issue) {
-        return;
-    }
     try {
         /**
          * Fetch a list of all the files in the specified directory on GPortal. In this instance, we fetch all of the files from
@@ -669,11 +663,14 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
 }
 
 function startCheckLocalServerTimeInterval() {
-    checkLocalServerTime = setInterval(checkLocalServerTime, gportal_ftp_server_log_interval_seconds["60"]);
+    if (typeof check_local_server_time_interval !== undefined) {
+        clearInterval(check_local_server_time_interval);
+    }
+    check_local_server_time_interval = setInterval(checkLocalServerTime, gportal_ftp_server_log_interval_seconds["60"]);
 }
 
 function stopCheckLocalServerTimeInterval() {
-    clearInterval(checkLocalServerTime);
+    clearInterval(check_local_server_time_interval);
 }
 
 /**
@@ -1170,23 +1167,24 @@ client_instance.on('ready', () => {
      * We must add an ActionRowBuilder to add functionality, or action events, to the button
      * After the button is constructed, we will send that button to the discord chat we are targeting
      */
-    const server_info_button = new ButtonBuilder()
-		.setCustomId('serverinfo')
-		.setLabel('View server info')
-		.setStyle(ButtonStyle.Success);
+    // const server_info_button = new ButtonBuilder()
+	// 	.setCustomId('serverinformationbutton')
+	// 	.setLabel('View server info')
+	// 	.setStyle(ButtonStyle.Success);
 
-	const button_row = new ActionRowBuilder()
-		.addComponents(server_info_button);
+	// const button_row = new ActionRowBuilder()
+	// 	.addComponents(server_info_button);
 
-    discord_scum_game_server_info_chat.send({
-        content: "Click the button below to get server information",
-        components: [button_row]
-    });
+    // discord_scum_game_server_info_chat.send({
+    //     content: "Click the button below to get server information",
+    //     components: [button_row]
+    // });
 
     /**
      * After an event is emitted that indicates a new player has joined the server, we must execute a function that will populate discord with the information fo the new user
      */
-    myEmitter.on('newUserJoined', async() => {
+    myEmitter.on('newUserJoined', function() {
+        console.log('new player emitter triggered');
         if (user_steam_ids !== undefined) {
             sendNewPlayerLoginMessagesToDiscord(player_ipv4_addresses, user_steam_ids, discord_scum_game_first_time_logins_chat);
         } 
@@ -1224,7 +1222,7 @@ function arraysEqual(arrayOne, arrayTwo) {
 */
 client_instance.on('interactionCreate',  async (interaction) => {
     if (interaction.isButton()) {
-        if (interaction.customId === 'serverinfo') {
+        if (interaction.customId === 'serverinformationbutton') {
             const battlemetrics_server_data_object = await battlemetrics_server_info.fetchJsonApiDataFromBattlemetrics();
             const battlemetrics_server_json_data = battlemetrics_server_data_object.data.attributes;
             const battlemetrics_server_id = battlemetrics_server_json_data.id;
@@ -1254,7 +1252,7 @@ client_instance.on('interactionCreate',  async (interaction) => {
                 .setTimestamp()
                 .setFooter({text:'SCUM bot monitor', iconURL: 'https://i.imgur.com/dYtjF3w.png'});
 
-            await interaction.reply({embeds: [embedded_message],ephemeral:true});
+            await interaction.reply({embeds:[embedded_message],ephemeral:true});
         }
     }
 
@@ -1484,7 +1482,6 @@ async function processQueue() {
         if (!client_instance.commands.get(command_to_execute)) {
             continue;
         }
-
         /**
          * Fetch the user from the database with an id that corresponds with the one associated with the executed command. After, fetch all of properties and data from the user and command
          * that is relevant

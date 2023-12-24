@@ -1,32 +1,15 @@
 extends layout
 
 block variables
-	- var page_title= title 
-	- var command_buttons_per_page = 10
-	- var current_page_number = 1
-	- var total_number_of_pages = Math.ceil(total_command_files / command_buttons_per_page) // Returns smallest integer greater than or equal to (command_files.length / command_buttons_per_page)
+    - var page_title= 'Welcome to Scum Chat Monitor!' 
 
-block content
-	div#deleteModalContainer
-	main#commands_page_main
-		h1#list_of_commands List of Commands
-		aside#create_new_command_link_container
-			a#create_new_command_link_anchor(href='/admin/commands/new') Create new command
-		article#bot_command_list_container_article
-			ul#bot_command_list
-				-for (let i = (current_page_number - 1) * command_buttons_per_page; i < Math.min(current_page_number * command_buttons_per_page, command_files.length); i++) {
-					li.bot_command_list_item_edit_li 
-						div.bot_item_edit
-							a.bot_command_list_item_edit(href=`/admin/commands/${command_files[i]}`)= command_files[i]
-						div.bot_item_delete
-							a.bot_command_list_item_delete(href=``) Delete this command
-				-}
-		//- We must start at page 1 and go until we reach the last page when displaying commands
-		nav.pagination
-			ul.pagination_list
-				for page in page_numbers 
-					li.pagination_page_item(class=current_page_of_commands === page ? 'active': '')
-						a.pagination_page_link(href=`/admin/commands?range=${(page-1) * command_buttons_per_page + 1}&${page * command_buttons_per_page}`) #{page}
-				
+block content(user)
+    main#admin_index_main
+        section#admin_index_page_container
+            h1#welcome_to_scumbot_interface_heading 
+             | Welcome to the Scum Chat Monitor web interface, #{user.admin_username}.
+            p.welcome_to_scumbot_interface_paragraph This website interface is currently in-progress, and is lacking certain features. Right now, you can only view a list of commands and click a button to recompile an executable to use for the application. You can access these buttons on the menu on the left-hand side of the screen. 
+            p.welcome_to_scumbot_interface_paragraph The <span id="welcome_to_scumbot_interface_bot_command_list_button_span">Bot commands</span> button brings you to a page  that lists all of the commands available to the bot. The edit functionality does not currently work, and you can only add commands.
+            p.welcome_to_scumbot_interface_paragraph The <span id="welcome_to_scumbot_interface_recompile_executable_button_span">Recompile executable</span> button allows you to recompile the application executable, adding any new commands to the bot.
 
-	script(src='/javascripts/admin_index_page.js')
+            

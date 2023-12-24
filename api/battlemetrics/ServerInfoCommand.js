@@ -5,7 +5,7 @@ module.exports = class ServerInfoCommand {
     }
 
     async fetchJsonApiDataFromBattlemetrics() {
-        const response = await fetch(`https://api.battlemetrics.com/servers/21048997`);
+        const response = await fetch(`https://api.battlemetrics.com/servers/${this.battlemetrics_id}`);
         const battlemetrics_server_info = await response.json();
         return battlemetrics_server_info;
     }

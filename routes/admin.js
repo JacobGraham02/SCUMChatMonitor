@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 const fs = require('fs');
 var path = require('path');
+const { exec } = require('child_process');
 
 function isLoggedIn(request, response, next) {
     if (request.isAuthenticated()) {
@@ -11,7 +12,11 @@ function isLoggedIn(request, response, next) {
     }
 }
 
-router.get(['/login-success','/commands', '/'], isLoggedIn, function (request, response) {
+router.get('/login-success', isLoggedIn, function(request, response) {
+    response.render('admin/index', { user: request.user });
+});
+
+router.get(['/commands', '/'], isLoggedIn, function (request, response) {
     const parent_directory_from_routes_folder = path.resolve(__dirname, '..');
     fs.readdir(path.join(parent_directory_from_routes_folder, '/commands'), (error, files) => {
         
@@ -44,7 +49,7 @@ router.get(['/login-success','/commands', '/'], isLoggedIn, function (request, r
         // Slice the 'files' array to get the files for the current page
         const command_files_in_range = files.slice(start_range_number - 1, end_range_number);
 
-        response.render('admin/index', {
+        response.render('admin/command_list', {
             title: `Admin dashboard`,
             message: `You have successfully logged in`,
             command_files: command_files_in_range,
@@ -73,6 +78,25 @@ router.get('/commands/:file', (request, response) => {
     });
 });
 
+router.post('/recompile', (request, response) => {
+    const output_directory = path.join(__dirname, '..', 'executable');
+    const application_name = 'scumchatmonitor';
+    const build_command = `pkg . --output ${path.join(output_directory, application_name)}`;
+
+    exec(build_command, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Error: ${error}`);
+            return response.status(500).send(`Error recompiling executable: ${error}`);
+        }
+        if (stderr) {
+            console.error(`Stderr: ${stderr}`);
+            return response.status(500).send(`Error recompiling executable: ${stderr}`);
+        }
+        const alert_information = `The application has been successfully recompiled`;
+        response.render('admin/index', { data: request.user, alert_info: alert_information });
+    });
+});
+
 router.delete('/commands/delete/:file', (request, response) => {
     const file_path = request.params.file;
     const javascript_file_path = path.basename(file_path);
@@ -80,7 +104,6 @@ router.delete('/commands/delete/:file', (request, response) => {
     const full_path = path.join(parent_directory_from_routes, '/commands', javascript_file_path);
 
     fs.unlinkSync(full_path);
-    console.log(`File ${full_path} was successfully deleted`);
     response.status(200).send(`File ${full_path} was successfully deleted`);
 });
 
@@ -134,7 +157,7 @@ module.exports = function (user_account) {
     const parent_directory_from_routes = path.resolve(__dirname, '..');
     const file_path = path.join(parent_directory_from_routes, '/commands', new_command_name + '.js');
     fs.writeFileSync(file_path, command_content, 'utf-8');
-    response.redirect('/admin/');
+    response.redirect('/admin/index');
 });
 
 router.post('/commands/:filename', function (request, response) {

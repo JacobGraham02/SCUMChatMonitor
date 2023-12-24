@@ -7,16 +7,20 @@ mixin menu(data)
    ul.menu
     li
       div#navbar_welcome_message
-    -if (data.admin_username !== undefined) {
-       a#index_page_home_button(href='/admin/commands' title='A link to go to the website home page')
-        img#menu_links_image(src='../../images/WilsonBotMenu.png', alt='The WilsonBot logo')
-       h1#user_administrator_name_heading Welcome, #{data.admin_username}
-       a(href='/admin/commands' title='A link to go to the site commands page') Bot commands 
-    -} else {
-       h1#user_administrator_name_heading Welcome, user
-    -}
-      
-      div#logout_button_container
+       -if (data.admin_username !== undefined) {
+         a#index_page_home_button(href='/admin/commands' title='A link to go to the website home page')
+          img#menu_links_image(src='../../images/WilsonBotMenu.png', alt='The WilsonBot logo')
+         h1#user_administrator_name_heading Welcome, #{data.admin_username}
+    li
+      a(href='/admin/commands' title='A link to go to the site commands page') Bot commands 
+       -} else {
+         h1#user_administrator_name_heading Welcome, user
+       -}
+    li 
+     div#logout_button_container
       form#global_site_navigation_logout_form(action='/logout' method='POST')
        button#gui_bot_web_interface_logout_button(type="submit") Log out
-      button#recompile-executable-button(type="button") Recompile application
+    li
+     div#recompile_executable_button_container
+      form#global_site_navigation_recompile_application_executable(action='/admin/recompile', method='POST')
+       button#recompile_executable_button(type="submit") Recompile executable
