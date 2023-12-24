@@ -339,7 +339,6 @@ body {
 }
 
 #admin_index_page_container {
-    border: 2px solid red;
     display: flex;
     width: 80%;
     flex-direction: column;
