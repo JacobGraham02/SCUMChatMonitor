@@ -507,9 +507,20 @@ async function teleportNewPlayersToLocation(online_users) {
         user_first_join_results = await user_repository.findUserByIdIfFirstServerJoin(key);
         if (user_first_join_results) {
             user_steam_id = user_first_join_results.user_steam_id;
-            myEmitter.emit('newUserJoined');
+            
+            try {
+            await sendNewPlayerLoginMessagesToDiscord(player_ipv4_addresses, user_steam_id, discord_scum_game_first_time_logins_chat);
+            } catch (error) {
+                console.error(`An error has occurred sending the new player login messages to discord: ${error}`);
+            }
+
             await sleep(60000);
-            await runCommand(`#Teleport -129023.125 -91330.055 36830.551 ${user_steam_id}`);
+
+            try {
+                await runCommand(`#Teleport -129023.125 -91330.055 36830.551 ${user_steam_id}`);
+            } catch (error) {
+                console.error(`An error has occurred when attempting to teleport the player to the spawn location area: ${error}`);
+            }
         }
         await user_repository.updateUser(key, { user_joining_server_first_time: 1 });
     }
@@ -1020,7 +1031,7 @@ function sendPlayerLoginMessagesToDiscord(discord_scum_game_login_messages, disc
     }
 }
 
-async function sendNewPlayerLoginMessagesToDiscord(player_ipv4_addresses, user_steam_ids, discord_channel) {
+async function sendNewPlayerLoginMessagesToDiscord(player_ipv4_addresses, user_steam_id, discord_channel) {
     if (player_ipv4_addresses === undefined) {
         message_logger.logError(`The SCUM log in messages could not be fetched and are undefined`);
         return;
@@ -1037,15 +1048,12 @@ async function sendNewPlayerLoginMessagesToDiscord(player_ipv4_addresses, user_s
         First, fetch all of the steam ids acquired from gportal's ftp login file. Because we want to display player data, we must 
         use both the steam and a third-party API to fetch information based on their steam account id and their IPv4 address. 
         */ 
-            const steam_user_ids = Object.keys(user_steam_ids);
+            steam_web_api_player_info.setPlayerSteamId(user_steam_id);
             for (let i = 0; i < player_ipv4_addresses.length; i++) { 
                 ipApi_player_info.setPlayerIpAddress(player_ipv4_addresses[i]);
-                steam_web_api_player_info.setPlayerSteamId(steam_user_ids[i]);
-
                 player_info = await ipApi_player_info.fetchJsonApiDataFromIpApiDotCom();
                 player_steam_info = await steam_web_api_player_info.fetchJsonApiDataFromSteamWebApi();
                 player_steam_data = player_steam_info.response.players[0];
-                
                     const embedded_message = new EmbedBuilder()
                         .setColor(0x299bcc)
                         .setTitle('SCUM new player login information')
@@ -1117,7 +1125,6 @@ client_instance.on('ready', () => {
     const discord_scum_game_login_messages_chat = client_instance.channels.cache.get(discord_channel_id_for_logins);
     const discord_scum_game_bot_online_chat = client_instance.channels.cache.get(discord_channel_id_for_bot_online);
     const discord_scum_game_first_time_logins_chat = client_instance.channels.cache.get(discord_channel_id_for_first_time_logins);
-    const discord_scum_game_server_info_chat = client_instance.channels.cache.get(discord_channel_id_for_server_info);
 
     /**
      * A 60-second interval that reads all contents from the in-game SCUM server chat and uses the discord API EmbedBuilder to write a nicely-formatted chat message
