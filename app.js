@@ -509,7 +509,8 @@ async function teleportNewPlayersToLocation(online_users) {
             user_steam_id = user_first_join_results.user_steam_id;
             
             try {
-            await sendNewPlayerLoginMessagesToDiscord(player_ipv4_addresses, user_steam_id, discord_scum_game_first_time_logins_chat);
+                myEmitter.emit('newUserJoinedServer', user_steam_id);
+                await sendNewPlayerLoginMessagesToDiscord(player_ipv4_addresses, user_steam_id, discord_scum_game_first_time_logins_chat);
             } catch (error) {
                 console.error(`An error has occurred sending the new player login messages to discord: ${error}`);
             }
@@ -1125,9 +1126,11 @@ client_instance.on('ready', () => {
     const discord_scum_game_login_messages_chat = client_instance.channels.cache.get(discord_channel_id_for_logins);
     const discord_scum_game_bot_online_chat = client_instance.channels.cache.get(discord_channel_id_for_bot_online);
     const discord_scum_game_first_time_logins_chat = client_instance.channels.cache.get(discord_channel_id_for_first_time_logins);
+    const discord_server_info_chat = client_instance.channels.cache.get(discord_channel_id_for_server_info);
 
     /**
-     * A 60-second interval that reads all contents from the in-game SCUM server chat and uses the discord API EmbedBuilder to write a nicely-formatted chat message
+     * A 60t    Wilson bot has been activated and is ready to use
+     * -second interval that reads all contents from the in-game SCUM server chat and uses the discord API EmbedBuilder to write a nicely-formatted chat message
      * into discord. This allows administrators to monitor the in-game SCUM chat remotely. Each time we enter this interval with the SCUM in-game chat logs, we will copy those
      * logs to another array, and compare that array to the next iteration of chat logs. 
      *  We use a callback function because the Node.js package 'exec' is asynchronous, but this callback function is synchronous
@@ -1182,9 +1185,13 @@ client_instance.on('ready', () => {
 	const button_row = new ActionRowBuilder()
 		.addComponents(server_info_button);
 
-    discord_scum_game_server_info_chat.send({
+    discord_server_info_chat.send({
         content: "Click the button below to get server information",
         components: [button_row]
+    });
+    
+    myEmitter.on('newUserJoinedServer', (steam_id) => {
+        sendNewPlayerLoginMessagesToDiscord(player_ipv4_addresses, steam_id, discord_scum_game_first_time_logins_chat)
     });
 
     /**
