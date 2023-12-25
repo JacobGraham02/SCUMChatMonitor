@@ -93,7 +93,7 @@ router.post('/recompile', (request, response) => {
             return response.status(500).send(`Error recompiling executable: ${stderr}`);
         }
         const alert_information = `The application has been successfully recompiled`;
-        response.render('admin/index', { data: request.user, alert_info: alert_information });
+        response.render('admin/index', { user: request.user, alert_info: alert_information });
     });
 });
 

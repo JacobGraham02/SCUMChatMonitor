@@ -96,6 +96,10 @@ body {
     max-width: 90%;
 }
 
+#create_commands_file_form input {
+    width: 100%;
+}
+
 #new_command_section_advanced {
     width: 100%;
 }
@@ -191,7 +195,8 @@ body {
 }
 
 #command_description {
-    width: 95%;
+    width: 100%;
+    height: fit-content;
 }
 
 #add_command_description_container {
@@ -553,8 +558,14 @@ fieldset {
 }
 
 #login_fields_form {
-    width: 50%;
-    height: 50%;
+    width: 70%;
+    height: 100%;
+}
+
+#login_fields_form input {
+    width: 100%;
+    min-height: 15%;
+    height: fit-content;
 }
 
 #commands_file_javascript_textarea {

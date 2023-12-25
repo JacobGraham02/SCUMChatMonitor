@@ -9,7 +9,7 @@ block header
 	header#header.header
 		+menu(data)
 
-block content
+block content(user)
 	main#command_new_page
 		div#create_command_page_heading_container
 			h1#create_command_page_header_h1 Create a new command and register it with the bot
@@ -21,19 +21,19 @@ block content
 
 				fieldset#command_item_name 
 					article#add_command_name_container(class='input_for_easy_command_creation')
-						label(class="new_command_label",for='command_name') Command name 
-						input#command_name(class="new_command_input_field",type='text',name='command_name', placeholder='Write here...')
+						label(class="new_command_label",for='command_name') Command name. Maximum length of 50 letters and/or numbers. 
+						input#command_name(class="new_command_input_field",type='text',name='command_name', placeholder='Write here...', maxlength='50')
 
 				fieldset#command_item_description
 					article#add_command_description_container(class='input_for_easy_command_creation')
-						label(class="new_command_label",for='command_description') Command description 
-						textarea#command_description(class="new_command_input_field",type='text',name='command_description', placeholder='Write here...')
+						label(class="new_command_label",for='command_description') Command description. Maximum length of 1000 letters and/or numbers.
+						textarea#command_description(class="new_command_input_field",type='text',name='command_description', placeholder='Write here...', maxlength='1000')
 
 				fieldset#dropdown_menu_for_spawn_item 
 					article#add_item_fields_container(class='input_for_easy_command_creation')
 						div.individual_add_item_label_and_input
-							label(class="new_command_label",for='item_input') Choose item(s)
-							input.item_input(class="new_command_input_field",type='text', name='item_input', list='items_list', placeholder='Type to search...')
+							label(class="new_command_label",for='item_input') Choose item. Maximum length of 100 letters and/or numbers.
+							input.item_input(class="new_command_input_field",type='text', name='item_input', list='items_list', placeholder='Type to search...', maxlength='100')
 							input#hidden_command_id_input(type='hidden',name='item_input_value')
 						datalist#items_list 
 					article#add_another_item_button_container
@@ -41,8 +41,8 @@ block content
 
 				fieldset#add_command_cost 
 					article#add_command_cost_fields_container(class='input_for_easy_command_creation')
-						label(class="new_command_label",for='command_cost_input') Command cost
-						input#command_cost_input(class="new_command_input_field", type='text', name='command_cost_input', placeholder='Command cost...')
+						label(class="new_command_label",for='command_cost_input') Command cost. Maximum length of 6 numbers. 
+						input#command_cost_input(class="new_command_input_field", type='number', name='command_cost_input', placeholder='Command cost...', maxlength='6')
 
 				fieldset#edit_command_form_field_buttons
 					article#save_command_changes

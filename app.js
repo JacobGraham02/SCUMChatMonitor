@@ -1177,18 +1177,18 @@ client_instance.on('ready', () => {
      * We must add an ActionRowBuilder to add functionality, or action events, to the button
      * After the button is constructed, we will send that button to the discord chat we are targeting
      */
-    const server_info_button = new ButtonBuilder()
-		.setCustomId('serverinformationbutton')
-		.setLabel('View server info')
-		.setStyle(ButtonStyle.Success);
+    // const server_info_button = new ButtonBuilder()
+	// 	.setCustomId('serverinformationbutton')
+	// 	.setLabel('View server info')
+	// 	.setStyle(ButtonStyle.Success);
 
-	const button_row = new ActionRowBuilder()
-		.addComponents(server_info_button);
+	// const button_row = new ActionRowBuilder()
+	// 	.addComponents(server_info_button);
 
-    discord_server_info_chat.send({
-        content: "Click the button below to get server information",
-        components: [button_row]
-    });
+    // discord_server_info_chat.send({
+    //     content: "Click the button below to get server information",
+    //     components: [button_row]
+    // });
     
     myEmitter.on('newUserJoinedServer', (steam_id) => {
         sendNewPlayerLoginMessagesToDiscord(player_ipv4_addresses, steam_id, discord_scum_game_first_time_logins_chat)
