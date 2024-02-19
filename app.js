@@ -334,12 +334,12 @@ async function establishFtpConnectionToGportal() {
     gportal_log_file_ftp_client.removeAllListeners();
     gportal_log_file_ftp_client.addListener('close', () => {
         gportal_ftp_connection_issue = false;
-        establishFtpConnectionToGportal();
+        setTimeout(establishFtpConnectionToGportal, 5000);
     });
     await new Promise((resolve, reject) => {
         gportal_log_file_ftp_client.on('ready', () => {
             gportal_ftp_connection_issue = true;
-            resolve;
+            resolve();
         });
         gportal_log_file_ftp_client.on('error', (error) => {
             reject(new Error(`FTP connection error: ${error.message}`))
@@ -1449,7 +1449,7 @@ async function handleIngameSCUMChatMessages() {
      * Fetch the data from the resolved promise returned by readAndFormatGportalFtpServerChatLog. This contains all of the chat messages said on the server. 
      *console.log('Ftp server chat log is: ' + ftp_server_chat_log);
     */
-    const ftp_server_chat_log = await readAndFormatGportalFtpServerChatLog();
+    const ftp_server_chat_log = readAndFormatGportalFtpServerChatLog();
 
     /**
      * If the chat log returns a falsy value, immediately return
