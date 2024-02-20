@@ -323,29 +323,82 @@ async function determinePlayerLoginSessionMoney(logs) {
     }
 }
 
+/*
+These variables are used when attempting to connect to the GPortal FTP server. The general strategy used is to have increasing increments of time waited each
+time the FTP connection is severed. The first connection attempt is 5 seconds. Any subsequent connection attempts will have an increase in 5 seconds added onto
+the total connection attempt wait time. 
+1 try = 5 seconds
+2 tries = 10 seconds
+3 tries = 15 seconds
+...
+x tries = x * 5 seconds
+
+retryCount is used to indicate how many times the ftp connection has attempted to reconnect
+maxRetries is used to indicate the maximum number of retry attempts that will be performed before the connection attempts to GPortal are halted 
+retryDelay is used to indicate how many milliseconds to wait before attempting to establish a new connection
+*/
+let retryCount = 0;
+const maxRetries = 5; // Maximum number of retry attempts
+const retryDelay = 5000; // Initial delay between retries in milliseconds
+
 /**
- * Uses the npm package 'ftp' to create an FTPClient and establish a connection with the FTP server on GPortal. 
- * Each time a connection is closed, an attempt is made to reestablish a connection with GPortal.
- * A variable 'gportal_ftp_connection_issue' is set to true or false depending on if a connection to the GPortal FTP server can be made
- * 
+ * These variables are used when attempting to connect to the GPortal FTP server. The general strategy used is to have increasing increments of time waited each
+time the FTP connection is severed. The first connection attempt is 5 seconds. Any subsequent connection attempts will have an increase in 5 seconds added onto
+the total connection attempt wait time. 
+1 try = 5 seconds
+2 tries = 10 seconds
+3 tries = 15 seconds
+...
+x tries = x * 5 seconds
+
+retryCount is used to indicate how many times the ftp connection has attempted to reconnect
+maxRetries is used to indicate the maximum number of retry attempts that will be performed before the connection attempts to GPortal are halted 
+retryDelay is used to indicate how many milliseconds to wait before attempting to establish a new connection
+ * @returns nothing if an FTP connection cannot be made to GPortal within 5 attempts
  */
 async function establishFtpConnectionToGportal() {
+    /*
+    Recursive calls to establish a new FTP connection to GPortal is halted
+    */
+    if (retryCount >= maxRetries) {
+        console.error('Maximum retry attempts reached. Aborting connection to GPORTAL FTP server.');
+        return; 
+    }
+
     gportal_log_file_ftp_client = new FTPClient();
     gportal_log_file_ftp_client.removeAllListeners();
+    
     gportal_log_file_ftp_client.addListener('close', () => {
-        gportal_ftp_connection_issue = false;
-        setTimeout(establishFtpConnectionToGportal, 5000);
+        console.log('FTP connection closed. Attempting to reconnect...');
+        retryConnection();
     });
+
     await new Promise((resolve, reject) => {
         gportal_log_file_ftp_client.on('ready', () => {
+            console.log('FTP connection successfully established.');
             gportal_ftp_connection_issue = true;
+            retryCount = 0; 
             resolve();
         });
         gportal_log_file_ftp_client.on('error', (error) => {
-            reject(new Error(`FTP connection error: ${error.message}`))
+            console.error(`FTP connection error: ${error.message}`);
+            reject(error); 
         });
         gportal_log_file_ftp_client.connect(gportal_ftp_config);
+    }).catch(error => {
+        console.log('An error occurred, attempting to retry connection...');
+        retryConnection();
     });
+}
+
+/**
+ * Attempts to reconnect to the GPortal FTP server when the connection is severed. Used in conjunction with the @establishFtpConnectionToGportal function
+ */
+function retryConnection() {
+    retryCount++;
+    const delay = retryDelay * retryCount; 
+    console.log(`Retrying connection in ${delay / 1000} seconds...`);
+    setTimeout(establishFtpConnectionToGportal, delay);
 }
 
 /**
@@ -1449,7 +1502,7 @@ async function handleIngameSCUMChatMessages() {
      * Fetch the data from the resolved promise returned by readAndFormatGportalFtpServerChatLog. This contains all of the chat messages said on the server. 
      *console.log('Ftp server chat log is: ' + ftp_server_chat_log);
     */
-    const ftp_server_chat_log = readAndFormatGportalFtpServerChatLog();
+    const ftp_server_chat_log = await readAndFormatGportalFtpServerChatLog();
 
     /**
      * If the chat log returns a falsy value, immediately return
