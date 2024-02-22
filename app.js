@@ -357,36 +357,32 @@ retryDelay is used to indicate how many milliseconds to wait before attempting t
  * @returns nothing if an FTP connection cannot be made to GPortal within 5 attempts
  */
 async function establishFtpConnectionToGportal() {
-    /*
-    Recursive calls to establish a new FTP connection to GPortal is halted
-    */
-    if (retryCount >= maxRetries) {
-        console.error('Maximum retry attempts reached. Aborting connection to GPORTAL FTP server.');
-        return; 
-    }
-
     gportal_log_file_ftp_client = new FTPClient();
     gportal_log_file_ftp_client.removeAllListeners();
     
     gportal_log_file_ftp_client.addListener('close', () => {
         console.log('FTP connection closed. Attempting to reconnect...');
+        message_logger.logError(`FTP connection closed. Attempting to reconnect...`);
         retryConnection();
     });
 
     await new Promise((resolve, reject) => {
         gportal_log_file_ftp_client.on('ready', () => {
             console.log('FTP connection successfully established.');
+            message_logger.logError(`FTP connection successfully established.`);
             gportal_ftp_connection_issue = true;
             retryCount = 0; 
             resolve();
         });
         gportal_log_file_ftp_client.on('error', (error) => {
             console.error(`FTP connection error: ${error.message}`);
+            message_logger.logError(`FTP connection error: ${error.message}`);
             reject(error); 
         });
         gportal_log_file_ftp_client.connect(gportal_ftp_config);
     }).catch(error => {
         console.log('An error occurred, attempting to retry connection...');
+        message_logger.logError(`Retrying connection in ${delay / 1000} seconds...`);
         retryConnection();
     });
 }
@@ -397,7 +393,7 @@ async function establishFtpConnectionToGportal() {
 function retryConnection() {
     retryCount++;
     const delay = retryDelay * retryCount; 
-    console.log(`Retrying connection in ${delay / 1000} seconds...`);
+    message_logger.logError(`Retrying connection in ${delay / 1000} seconds...`);
     setTimeout(establishFtpConnectionToGportal, delay);
 }
 
