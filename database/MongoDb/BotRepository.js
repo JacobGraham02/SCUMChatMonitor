@@ -15,7 +15,7 @@ module.exports = class BotRepository {
         }
     }
 
-    async createBot(bot_information) {
+    async createBot(bot_information, discord_server_data_id, ftp_server_data_id, bot_packages) {
         const database_connection = await database_connection_manager.getConnection();
         try {
             const bot_collection = database_connection.collection('bot');
@@ -24,13 +24,86 @@ module.exports = class BotRepository {
                 bot_username: bot_information.bot_username,
                 bot_password: bot_information.bot_password,
                 bot_email: bot_information.bot_email,
-                bot_id: bot_information.bot_id
+                bot_id: bot_information.bot_id,
+                discord_data_id: discord_server_data_id,
+                ftp_data_id: ftp_server_data_id,
+                bot_packages: bot_packages.packages
             };
 
             await bot_collection.updateOne(
                 { bot_id: bot_information.bot_id },
                 { $setOnInsert: new_bot_document },
                 { upsert: true}
+            );
+        } finally {
+            await this.releaseConnectionSafely(database_connection);
+        }
+    }
+
+    async createBotDiscordData(bot_id, discord_server_data) {
+        const database_connection = await database_connection_manager.getConnection();
+        try {
+            const bot_collection = database_connection.collection('bot');
+
+            const new_discord_data_document = {
+                bot_id: bot_id,
+                scum_ingame_chat_channel_id: discord_server_data.scum_ingame_chat_channel_id,
+                scum_ingame_logins_channel_id: discord_server_data.scum_ingame_logins_channel_id,
+                scum_ingame_admin_command_usage_channel_id: discord_server_data.scum_ingame_admin_command_usage_channel,
+                scum_new_player_joins_channel_id: discord_server_data.scum_new_player_joins_channel_id,
+                scum_server_info_channel_id: discord_server_data.scum_server_info_channel_id
+            };
+
+            await bot_collection.updateOne(
+                { bot_id: bot_id },
+                { $setOnInsert: new_discord_data_document },
+                { upsert: true }
+            );
+        } finally {
+            await this.releaseConnectionSafely(database_connection);
+        }
+    }
+    
+    async createBotFtpServerData(bot_id, ftp_server_data) {
+        const database_connection = await database_connection_manager.getConnection();
+        try {
+            const bot_collection = database_connection.collection('bot');
+
+            const new_ftp_server_data_document = {
+                bot_id: bot_id,
+                ftp_server_ip: ftp_server_data.server_hostname,
+                ftp_server_port: ftp_server_data.ftp_server_port,
+                ftp_server_username: ftp_server_data.ftp_server_username,
+                ftp_server_password: ftp_server_data.ftp_server_password
+            };
+
+            await bot_collection.updateOne(
+                { bot_id: bot_id },
+                { $setOnInsert: new_ftp_server_data_document },
+                { upsert: true }
+            );
+        } finally {
+            await this.releaseConnectionSafely(database_connection);
+        }
+    }
+
+    async createBotItemPackage(bot_id, package) {
+        const database_connection = await database_connection_manager.getConnection();
+        try {
+            const bot_collection = database_connection.collection('bot');
+
+            const new_bot_item_package_document = {
+                bot_id: bot_id,
+                package_name: package.package_name,
+                package_description: package.package_description,
+                package_cost: package.package_cost,
+                package_items: package.package_items
+            };
+
+            await bot_collection.updateOne(
+                { bot_id: bot_id },
+                { $setOnInsert: new_bot_item_package_document },
+                { upsert: true }
             );
         } finally {
             await this.releaseConnectionSafely(database_connection);
