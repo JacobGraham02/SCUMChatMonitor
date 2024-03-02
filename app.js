@@ -1184,22 +1184,22 @@ client_instance.on('ready', () => {
      * logs to another array, and compare that array to the next iteration of chat logs. 
      *  We use a callback function because the Node.js package 'exec' is asynchronous, but this callback function is synchronous
      */
-    setInterval(() => {
-        if (typeof player_chat_messages_sent_inside_scum === 'undefined') {            
-            message_logger.logError(`The FTP file for player chat messages could not be fetched`);
-            return;
-        }
-        sendPlayerMessagesToDiscord(player_chat_messages_sent_inside_scum, discord_scum_game_ingame_messages_chat);
-    }, gportal_ftp_server_log_interval_seconds["20"]);
+    // setInterval(() => {
+    //     if (typeof player_chat_messages_sent_inside_scum === 'undefined') {            
+    //         message_logger.logError(`The FTP file for player chat messages could not be fetched`);
+    //         return;
+    //     }
+    //     sendPlayerMessagesToDiscord(player_chat_messages_sent_inside_scum, discord_scum_game_ingame_messages_chat);
+    // }, gportal_ftp_server_log_interval_seconds["20"]);
 
 
-    setInterval(() => {
-        if (typeof player_ftp_log_login_messages === 'undefined') {
-            message_logger.logError(`The FTP file for player log login messages could not be fetched.`);
-            return;
-        }
-        sendPlayerLoginMessagesToDiscord(player_ftp_log_login_messages, discord_scum_game_login_messages_chat);
-    }, gportal_ftp_server_log_interval_seconds["20"]);
+    // setInterval(() => {
+    //     if (typeof player_ftp_log_login_messages === 'undefined') {
+    //         message_logger.logError(`The FTP file for player log login messages could not be fetched.`);
+    //         return;
+    //     }
+    //     sendPlayerLoginMessagesToDiscord(player_ftp_log_login_messages, discord_scum_game_login_messages_chat);
+    // }, gportal_ftp_server_log_interval_seconds["20"]);
 
     /**
      * A 60 second interval which returns a callback function from a class which checks to see if the bot is connected to the SCUM game server.
@@ -1207,9 +1207,9 @@ client_instance.on('ready', () => {
      * and therefore can access all of the computer resources. 
      * We use a callback function because the Node.js package 'exec' is asynchronous, but this callback function is synchronous
      */
-    setInterval(() => {
-        checkTcpConnectionToServer(discord_scum_game_bot_online_chat);
-    }, gportal_ftp_server_log_interval_seconds["300"]);
+    // setInterval(() => {
+    //     checkTcpConnectionToServer(discord_scum_game_bot_online_chat);
+    // }, gportal_ftp_server_log_interval_seconds["300"]);
 
     /**
      * A 10 second interval which returns a callback function from a class which checks to see if the bot can ping the game server, indicating that the game server is currently online
@@ -1217,9 +1217,9 @@ client_instance.on('ready', () => {
      * and therefore can access all of the computer resources
      * We use a callback function because the Node.js package 'exec' is asynchronous, but this callback function is synchronous
      */
-    setInterval(() => {
-        checkIfGameServerOnline();
-    }, gportal_ftp_server_log_interval_seconds["60"]);
+    // setInterval(() => {
+    //     checkIfGameServerOnline();
+    // }, gportal_ftp_server_log_interval_seconds["60"]);
 
     /**
      * Use the Discord API ButtonBuilder to build a button that will return a JSON API response from the Battlemetrics API to indicate the current status of the server

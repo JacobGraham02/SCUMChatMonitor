@@ -10,6 +10,9 @@ module.exports = class BotRepository {
             const bot_collection = database_connection.collection('bot');
             const bot = await bot_collection.findOne({ bot_uuid: bot_uuid });
             return bot;
+        } catch (error) {
+            console.error(`There was an error when attempting to fetch all bot data given a UUID. Please inform the server administrator of this error: ${error}`);
+            throw error;
         } finally {
             await this.releaseConnectionSafely(database_connection);
         }
@@ -35,6 +38,9 @@ module.exports = class BotRepository {
                 { $setOnInsert: new_bot_document },
                 { upsert: true}
             );
+        } catch (error) {
+            console.error(`There was an error when attempting to create a Disord bot document in the database. Please inform the server administrator of this error: ${error}`);
+            throw error;
         } finally {
             await this.releaseConnectionSafely(database_connection);
         }
@@ -59,6 +65,9 @@ module.exports = class BotRepository {
                 { $setOnInsert: new_discord_data_document },
                 { upsert: true }
             );
+        } catch (error) {
+            console.error(`There was an error when attempting to insert Discord channel id(s) into the bot. Please inform the server administrator of this error: ${error}`);
+            throw error;
         } finally {
             await this.releaseConnectionSafely(database_connection);
         }
@@ -82,22 +91,25 @@ module.exports = class BotRepository {
                 { $setOnInsert: new_ftp_server_data_document },
                 { upsert: true }
             );
+        } catch (error) {
+            console.error(`There was an error when attempting to insert FTP server data into the discord bot. Please contact the server administrator and inform them of this error: ${error}`);
+            throw error;
         } finally {
             await this.releaseConnectionSafely(database_connection);
         }
     }
 
-    async createBotItemPackage(bot_id, package) {
+    async createBotItemPackage(bot_id, bot_package) {
         const database_connection = await database_connection_manager.getConnection();
         try {
             const bot_collection = database_connection.collection('bot');
 
             const new_bot_item_package_document = {
                 bot_id: bot_id,
-                package_name: package.package_name,
-                package_description: package.package_description,
-                package_cost: package.package_cost,
-                package_items: package.package_items
+                package_name: bot_package.package_name,
+                package_description: bot_package.package_description,
+                package_cost: bot_package.package_cost,
+                package_items: bot_package.package_items
             };
 
             await bot_collection.updateOne(
@@ -105,6 +117,9 @@ module.exports = class BotRepository {
                 { $setOnInsert: new_bot_item_package_document },
                 { upsert: true }
             );
+        } catch (error) {
+            console.error(`There was an error when attempting to create a new bot item package. Please inform the server administrator of this error: ${error}`);
+            throw error;
         } finally {
             await this.releaseConnectionSafely(database_connection);
         }
@@ -116,6 +131,7 @@ module.exports = class BotRepository {
                 await database_connection_manager.releaseConnection(database_connection);
             } catch (error) {
                 console.error('An error has occurred during the execution of releaseConnectionSafely function: ', error);
+                throw error;
             }
         }
     }

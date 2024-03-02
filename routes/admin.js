@@ -3,6 +3,8 @@ var router = express.Router();
 const fs = require('fs');
 var path = require('path');
 const { exec } = require('child_process');
+const BotRepository = require('../database/MongoDb/BotRepository');
+const DiscordBotRepository = new BotRepository();
 
 function isLoggedIn(request, response, next) {
     if (request.isAuthenticated()) {
@@ -76,6 +78,30 @@ router.get('/commands/:file', (request, response) => {
         }
         response.render('admin/command', { data: request.user, file_name: javascript_file_name });
     });
+});
+
+router.get('/discordchannelids', (request, response) => {
+    response.render('admin/discord_channel_ids', {
+        title: `Discord channel ids`,
+        user: request.user
+    });
+});
+
+router.post('/setdiscordchannelids', (request, response) => {
+    const discord_server_channel_ids_object = {
+        discord_change_log_channel_id: request.body.discord_channel_id_for_change_log_input,
+        discord_ingame_chat_channel_id: request.body.discord_channel_id_for_scum_chat_input,
+        discord_logins_chat_channel_id: request.body.discord_channel_id_for_scum_logins_input,
+        discord_new_player_chat_channel_id: request.body.discord_channel_id_for_scum_new_player_joins,
+        discord_battlemetrics_info_channel_id: request.body.discord_channel_id_for_battlemetrics_info,
+        discord_server_info_button_channel_id: request.body.discord_channel_id_for_server_info_button
+    };
+    try {
+        DiscordBotRepository.createBotDiscordData(1, discord_server_channel_ids_object);
+    } catch (error) {
+        console.error(`There was an error when attempting to update discord channel ids in the bot database document: ${error}`);
+        throw error;
+    }
 });
 
 router.post('/recompile', (request, response) => {
