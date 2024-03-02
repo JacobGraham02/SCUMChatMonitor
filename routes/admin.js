@@ -87,14 +87,36 @@ router.get('/discordchannelids', (request, response) => {
     });
 });
 
+router.get('/ftpserverdata', (request, response) => {
+    response.render('admin/ftp_server_data', {
+        title: `FTP server data`,
+        user: request.user
+    });
+});
+
+router.post('/setftpserverdata', (request, response) => {
+    const ftp_server_data_object = {
+        ftp_server_hostname: request.body.ftp_server_hostname_input,
+        ftp_server_port: request.body.ftp_server_port_input,
+        ftp_server_username: request.body.ftp_server_username_input,
+        ftp_server_password: request.body.ftp_server_password_input
+    }
+    try {
+        DiscordBotRepository.createBotFtpServerData(1, ftp_server_data_object);
+    } catch (error) {
+        console.error(`There was an error when attempting to update the ftp server data in the bot database document ${error}`);
+        throw error;
+    }
+});
+
 router.post('/setdiscordchannelids', (request, response) => {
     const discord_server_channel_ids_object = {
-        discord_change_log_channel_id: request.body.discord_channel_id_for_change_log_input,
-        discord_ingame_chat_channel_id: request.body.discord_channel_id_for_scum_chat_input,
-        discord_logins_chat_channel_id: request.body.discord_channel_id_for_scum_logins_input,
-        discord_new_player_chat_channel_id: request.body.discord_channel_id_for_scum_new_player_joins,
-        discord_battlemetrics_info_channel_id: request.body.discord_channel_id_for_battlemetrics_info,
-        discord_server_info_button_channel_id: request.body.discord_channel_id_for_server_info_button
+        discord_change_log_channel_id: request.body.bot_change_log_channel_id_input,
+        discord_ingame_chat_channel_id: request.body.bot_ingame_chat_log_channel_id_input,
+        discord_logins_chat_channel_id: request.body.bot_ingame_logins_channel_id_input,
+        discord_new_player_chat_channel_id: request.body.bot_ingame_new_player_joined_id_input,
+        discord_battlemetrics_info_channel_id: request.body.battlemetrics_server_id_input,
+        discord_server_info_button_channel_id: request.body.bot_server_info_channel_id_input
     };
     try {
         DiscordBotRepository.createBotDiscordData(1, discord_server_channel_ids_object);
