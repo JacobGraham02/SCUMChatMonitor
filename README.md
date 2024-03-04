@@ -7,6 +7,7 @@
     <ol>
      <li><a href="#about-the-project">About the project</a></li>
      <li><a href="#purpose-of-project">Project purpose</a></li>
+     <li><a href="#todo-list">Todo list</a></li>
      <li><a href="#built-with">Built with</a></li>
      <li><a href="#contributing">Contributing</a></li>
      <li><a href="#contact">Contact me</a></li>
@@ -31,6 +32,12 @@
   <h2 id="purpose-of-project">Project purpose</h2>
   <p>As mentioned in the 'About the project' section, the purpose of this bot is to provide players with a more interactive and enjoyable experience while playing on my SCUM server, removing users from needing other third-party software like Discord in order to experience 100% of what my server has to offer.</p>
   <p align="right">(<a href="#readme-top">back to top</a>)</p>
+</section>
+
+<section>
+  <h2 id="todo-list">To do list</h2>
+  <p>Make database tables in the MongoDB database that will store bot data for a specific player</p>
+  <p>Write database classes in the main Node.js application that allow you to access the created tables</p>
 </section>
 
 <section>

@@ -32,7 +32,7 @@ module.exports = class DatabaseConnectionManager {
             if (change.operationType === 'update' && 'user_welcome_pack_uses' in change.updateDescription.updatedFields) {
                 const connection = await this.getConnection();
                 const filter = { _id: change.documentKey._id };
-                const updated_welcome_pack_cost_document = { $inc: { user_welcome_pack_cost: 5000 } };
+                const updated_welcome_pack_cost_document = { $inc: { user_welcome_pack_cost: 100 } };
                 await connection.collection(this.database_collection).updateOne(filter, updated_welcome_pack_cost_document);
                 this.releaseConnection(connection);
             }

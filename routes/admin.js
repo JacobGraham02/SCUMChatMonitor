@@ -3,6 +3,8 @@ var router = express.Router();
 const fs = require('fs');
 var path = require('path');
 const { exec } = require('child_process');
+const BotRepository = require('../database/MongoDb/BotRepository');
+const DiscordBotRepository = new BotRepository();
 
 function isLoggedIn(request, response, next) {
     if (request.isAuthenticated()) {
@@ -76,6 +78,52 @@ router.get('/commands/:file', (request, response) => {
         }
         response.render('admin/command', { data: request.user, file_name: javascript_file_name });
     });
+});
+
+router.get('/discordchannelids', (request, response) => {
+    response.render('admin/discord_channel_ids', {
+        title: `Discord channel ids`,
+        user: request.user
+    });
+});
+
+router.get('/ftpserverdata', (request, response) => {
+    response.render('admin/ftp_server_data', {
+        title: `FTP server data`,
+        user: request.user
+    });
+});
+
+router.post('/setftpserverdata', (request, response) => {
+    const ftp_server_data_object = {
+        ftp_server_hostname: request.body.ftp_server_hostname_input,
+        ftp_server_port: request.body.ftp_server_port_input,
+        ftp_server_username: request.body.ftp_server_username_input,
+        ftp_server_password: request.body.ftp_server_password_input
+    }
+    try {
+        DiscordBotRepository.createBotFtpServerData(1, ftp_server_data_object);
+    } catch (error) {
+        console.error(`There was an error when attempting to update the ftp server data in the bot database document ${error}`);
+        throw error;
+    }
+});
+
+router.post('/setdiscordchannelids', (request, response) => {
+    const discord_server_channel_ids_object = {
+        discord_change_log_channel_id: request.body.bot_change_log_channel_id_input,
+        discord_ingame_chat_channel_id: request.body.bot_ingame_chat_log_channel_id_input,
+        discord_logins_chat_channel_id: request.body.bot_ingame_logins_channel_id_input,
+        discord_new_player_chat_channel_id: request.body.bot_ingame_new_player_joined_id_input,
+        discord_battlemetrics_info_channel_id: request.body.battlemetrics_server_id_input,
+        discord_server_info_button_channel_id: request.body.bot_server_info_channel_id_input
+    };
+    try {
+        DiscordBotRepository.createBotDiscordData(1, discord_server_channel_ids_object);
+    } catch (error) {
+        console.error(`There was an error when attempting to update discord channel ids in the bot database document: ${error}`);
+        throw error;
+    }
 });
 
 router.post('/recompile', (request, response) => {

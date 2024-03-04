@@ -323,29 +323,78 @@ async function determinePlayerLoginSessionMoney(logs) {
     }
 }
 
+/*
+These variables are used when attempting to connect to the GPortal FTP server. The general strategy used is to have increasing increments of time waited each
+time the FTP connection is severed. The first connection attempt is 5 seconds. Any subsequent connection attempts will have an increase in 5 seconds added onto
+the total connection attempt wait time. 
+1 try = 5 seconds
+2 tries = 10 seconds
+3 tries = 15 seconds
+...
+x tries = x * 5 seconds
+
+retryCount is used to indicate how many times the ftp connection has attempted to reconnect
+maxRetries is used to indicate the maximum number of retry attempts that will be performed before the connection attempts to GPortal are halted 
+retryDelay is used to indicate how many milliseconds to wait before attempting to establish a new connection
+*/
+let retryCount = 0;
+const maxRetries = 5; // Maximum number of retry attempts
+const retryDelay = 5000; // Initial delay between retries in milliseconds
+
 /**
- * Uses the npm package 'ftp' to create an FTPClient and establish a connection with the FTP server on GPortal. 
- * Each time a connection is closed, an attempt is made to reestablish a connection with GPortal.
- * A variable 'gportal_ftp_connection_issue' is set to true or false depending on if a connection to the GPortal FTP server can be made
- * 
+ * These variables are used when attempting to connect to the GPortal FTP server. The general strategy used is to have increasing increments of time waited each
+time the FTP connection is severed. The first connection attempt is 5 seconds. Any subsequent connection attempts will have an increase in 5 seconds added onto
+the total connection attempt wait time. 
+1 try = 5 seconds
+2 tries = 10 seconds
+3 tries = 15 seconds
+...
+x tries = x * 5 seconds
+
+retryCount is used to indicate how many times the ftp connection has attempted to reconnect
+maxRetries is used to indicate the maximum number of retry attempts that will be performed before the connection attempts to GPortal are halted 
+retryDelay is used to indicate how many milliseconds to wait before attempting to establish a new connection
+ * @returns nothing if an FTP connection cannot be made to GPortal within 5 attempts
  */
 async function establishFtpConnectionToGportal() {
     gportal_log_file_ftp_client = new FTPClient();
     gportal_log_file_ftp_client.removeAllListeners();
+    
     gportal_log_file_ftp_client.addListener('close', () => {
-        gportal_ftp_connection_issue = false;
-        establishFtpConnectionToGportal();
+        console.log('FTP connection closed. Attempting to reconnect...');
+        message_logger.logError(`FTP connection closed. Attempting to reconnect...`);
+        retryConnection();
     });
+
     await new Promise((resolve, reject) => {
         gportal_log_file_ftp_client.on('ready', () => {
+            console.log('FTP connection successfully established.');
+            message_logger.logError(`FTP connection successfully established.`);
             gportal_ftp_connection_issue = true;
-            resolve;
+            retryCount = 0; 
+            resolve();
         });
         gportal_log_file_ftp_client.on('error', (error) => {
-            reject(new Error(`FTP connection error: ${error.message}`))
+            console.error(`FTP connection error: ${error.message}`);
+            message_logger.logError(`FTP connection error: ${error.message}`);
+            reject(error); 
         });
         gportal_log_file_ftp_client.connect(gportal_ftp_config);
+    }).catch(error => {
+        console.log('An error occurred, attempting to retry connection...');
+        message_logger.logError(`Retrying connection in ${delay / 1000} seconds...`);
+        retryConnection();
     });
+}
+
+/**
+ * Attempts to reconnect to the GPortal FTP server when the connection is severed. Used in conjunction with the @establishFtpConnectionToGportal function
+ */
+function retryConnection() {
+    retryCount++;
+    const delay = retryDelay * retryCount; 
+    message_logger.logError(`Retrying connection in ${delay / 1000} seconds...`);
+    setTimeout(establishFtpConnectionToGportal, delay);
 }
 
 /**
@@ -1135,22 +1184,22 @@ client_instance.on('ready', () => {
      * logs to another array, and compare that array to the next iteration of chat logs. 
      *  We use a callback function because the Node.js package 'exec' is asynchronous, but this callback function is synchronous
      */
-    setInterval(() => {
-        if (typeof player_chat_messages_sent_inside_scum === 'undefined') {            
-            message_logger.logError(`The FTP file for player chat messages could not be fetched`);
-            return;
-        }
-        sendPlayerMessagesToDiscord(player_chat_messages_sent_inside_scum, discord_scum_game_ingame_messages_chat);
-    }, gportal_ftp_server_log_interval_seconds["20"]);
+    // setInterval(() => {
+    //     if (typeof player_chat_messages_sent_inside_scum === 'undefined') {            
+    //         message_logger.logError(`The FTP file for player chat messages could not be fetched`);
+    //         return;
+    //     }
+    //     sendPlayerMessagesToDiscord(player_chat_messages_sent_inside_scum, discord_scum_game_ingame_messages_chat);
+    // }, gportal_ftp_server_log_interval_seconds["20"]);
 
 
-    setInterval(() => {
-        if (typeof player_ftp_log_login_messages === 'undefined') {
-            message_logger.logError(`The FTP file for player log login messages could not be fetched.`);
-            return;
-        }
-        sendPlayerLoginMessagesToDiscord(player_ftp_log_login_messages, discord_scum_game_login_messages_chat);
-    }, gportal_ftp_server_log_interval_seconds["20"]);
+    // setInterval(() => {
+    //     if (typeof player_ftp_log_login_messages === 'undefined') {
+    //         message_logger.logError(`The FTP file for player log login messages could not be fetched.`);
+    //         return;
+    //     }
+    //     sendPlayerLoginMessagesToDiscord(player_ftp_log_login_messages, discord_scum_game_login_messages_chat);
+    // }, gportal_ftp_server_log_interval_seconds["20"]);
 
     /**
      * A 60 second interval which returns a callback function from a class which checks to see if the bot is connected to the SCUM game server.
@@ -1158,9 +1207,9 @@ client_instance.on('ready', () => {
      * and therefore can access all of the computer resources. 
      * We use a callback function because the Node.js package 'exec' is asynchronous, but this callback function is synchronous
      */
-    setInterval(() => {
-        checkTcpConnectionToServer(discord_scum_game_bot_online_chat);
-    }, gportal_ftp_server_log_interval_seconds["300"]);
+    // setInterval(() => {
+    //     checkTcpConnectionToServer(discord_scum_game_bot_online_chat);
+    // }, gportal_ftp_server_log_interval_seconds["300"]);
 
     /**
      * A 10 second interval which returns a callback function from a class which checks to see if the bot can ping the game server, indicating that the game server is currently online
@@ -1168,9 +1217,9 @@ client_instance.on('ready', () => {
      * and therefore can access all of the computer resources
      * We use a callback function because the Node.js package 'exec' is asynchronous, but this callback function is synchronous
      */
-    setInterval(() => {
-        checkIfGameServerOnline();
-    }, gportal_ftp_server_log_interval_seconds["60"]);
+    // setInterval(() => {
+    //     checkIfGameServerOnline();
+    // }, gportal_ftp_server_log_interval_seconds["60"]);
 
     /**
      * Use the Discord API ButtonBuilder to build a button that will return a JSON API response from the Battlemetrics API to indicate the current status of the server

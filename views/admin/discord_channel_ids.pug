@@ -1,0 +1,59 @@
+extends layout
+
+
+block variables
+	- var page_title = 'Discord channel id editor'
+
+include menu
+
+block header
+	header#header.header
+		+menu(user)
+
+block content(user)
+	main#discord_channel_id_edit_page
+		h1#discord_channel_id_editor_heading
+			| Change the Discord channel ids that your bot uses to send data to your Discord server
+			span#span_discord_channel_id_screen_name
+				| #{file_name}
+		form#discord_channel_ids_form(method='POST', action='/admin/setdiscordchannels/')
+			section#new_discord_channel_ids_section
+				fieldset#fieldset_for_discord_channel_id_page_disclaimer
+					h1.heading_for_adding_items On this page, you must specify the channel id for the specified text channels on Discord
+
+				fieldset#bot_change_log_channel_id_fieldset 
+					article#bot_change_log_channel_id_article(class='article_for_change_log_channel_id')
+						label(class="discord_channel_id_label",for='bot_change_log_channel_id_input') Discord channel id (e.g. 123456789012345678)
+						input#discord_channel_id_for_change_log_input(class="discord_channel_id_input",type='text',name='bot_change_log_channel_id_input', placeholder='Will be a number')
+
+				fieldset#bot_ingame_chat_channel_id_fieldset
+					article#bot_ingame_chat_channel_id_article(class='article_for_ingame_chat_logins_log_channel_id')
+						label(class="discord_channel_id_label",for='bot_ingame_chat_log_channel_id_input') Discord channel id for scum server player chat (e.g. 123456789012345678)
+						input#discord_channel_id_for_scum_chat_input(class="discord_channel_id_input",type='text',name='bot_ingame_chat_log_channel_id_input', placeholder='Will be a number')
+
+				fieldset#bot_ingame_logins_channel_id_fieldset
+					article#bot_ingame_logins_channel_id_article(class='article_for_player_logins_log_channel_id')
+						label(class="discord_channel_id_label",for='bot_ingame_logins_channel_id_input') Discord channel id for scum server player logins (e.g. 123456789012345678)
+						input#discord_channel_id_for_scum_logins_input(class="discord_channel_id_input",type='text',name='bot_ingame_logins_channel_id_input', placeholder='Will be a number')
+
+				fieldset#bot_ingame_new_player_joins_fieldset
+					article#bot_ingame_new_player_joins_id_article(class='article_for_new_player_logins_log_channel_id')
+						label(class="discord_channel_id_label",for='bot_ingame_new_player_joined_id_input') Discord channel id for scum server new player joins (e.g. 123456789012345678)
+						input#discord_channel_id_for_scum_new_player_joins(class="discord_channel_id_input",type='text',name='bot_ingame_new_player_joined_id_input', placeholder='Will be a number')
+
+				fieldset#battlemetrics_scum_server_id_fieldset
+					article#battlemetrics_server_id_article(class='article_for_new_player_logins_log_channel_id')
+						label(class="discord_channel_id_label",for='battlemetrics_server_id_input') Battlemetrics server id (e.g. 123456789012345678)
+						input#discord_channel_id_for_battlemetrics_info(class="discord_channel_id_input",type='text',name='battlemetrics_server_id_input', placeholder='Will be a number')
+
+				fieldset#bot_server_info_button_channel_id_fieldset
+					article#battlemetrics_server_info_button_channel_id_article(class='article_for_server_info_button_log_channel_id') 
+						label(class="discord_channel_id_label",for='discord_channel_id_for_server_info_button') Discord channel id for scum server info button (e.g. 123456789012345678)
+						input#discord_channel_id_for_server_info_button(class="discord_channel_id_input",type='text',name='bot_server_info_channel_id_input', placeholder='Will be a number')
+
+			section#discord_channel_ids_form_field_buttons
+				fieldset#save_command_changes
+					button#save_changes_to_discord_channel_ids_button(type='submit') Save
+
+				fieldset#cancel_command_changes
+					button#cancel_changes_to_discord_channel_ids_button(type='button') Cancel
