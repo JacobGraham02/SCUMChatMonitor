@@ -1,13 +1,18 @@
-mixin modal(data)
-  div#myModal.modal.fade(tabindex='-1', role='dialog', aria-labelledby='myModalLabel', aria-hidden='true')
-    .modal-dialog(role='document')
-      .modal-content
-        .modal-header
-          h5.modal-title#myModalLabel Modal Title
-          button.close(type='button', data-dismiss='modal', aria-label='Close')
-            span(aria-hidden='true') &times;
-        .modal-body
-          p Modal body text goes here.
-        .modal-footer
-          button.btn.btn-secondary(type='button', data-dismiss='modal') Close
-          button.btn.btn-primary(type='button') Save changes
+// Button trigger modal
+html
+  head
+  body
+    button.btn.btn-primary(type='button', data-toggle='modal', data-target='#exampleModal')
+      | Launch demo modal
+    // Modal
+    #userInformationModal.modal.fade(tabindex='-1', role='dialog', aria-labelledby='exampleModalLabel', aria-hidden='true')
+      .modal-dialog(role='document')
+        .modal-content
+          .modal-header
+            h5#userInformationModal.modal-title Modal title
+            button.close(type='button', data-dismiss='modal', aria-label='Close')
+              span(aria-hidden='true') &times;
+          .modal-body
+            | ...
+          .modal-footer
+            button.btn.btn-primary(type='button', data-dismiss='modal') Ok
