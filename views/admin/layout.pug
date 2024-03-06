@@ -1,10 +1,9 @@
 include footer
 include menu
-include modal 
 
 block variables
 doctype html
-html
+html(lang="en")
   head
     title= page_title
     meta(name='viewport' content='width=device-width, initial-scale=1')
@@ -24,13 +23,12 @@ html
     integrity='sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl', crossorigin='anonymous' defer)
   body
     block header
-        header#header.header
-            +menu(user)
+      header#header.header
+        +menu(user)
 
     block content(user)
-        main#main
-            +modal
+      main#main
 
     block footer
-        footer#footer
-            +footer
+      footer#footer
+        +footer
