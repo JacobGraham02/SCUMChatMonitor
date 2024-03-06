@@ -109,20 +109,21 @@ router.post('/setftpserverdata', (request, response) => {
     }
 });
 
-router.post('/setdiscordchannelids', (request, response) => {
+router.post('/setdiscordchannelids', async (request, response) => {
     const discord_server_channel_ids_object = {
         discord_change_log_channel_id: request.body.bot_change_log_channel_id_input,
         discord_ingame_chat_channel_id: request.body.bot_ingame_chat_log_channel_id_input,
         discord_logins_chat_channel_id: request.body.bot_ingame_logins_channel_id_input,
         discord_new_player_chat_channel_id: request.body.bot_ingame_new_player_joined_id_input,
-        discord_battlemetrics_info_channel_id: request.body.battlemetrics_server_id_input,
+        discord_battlemetrics_server_id: request.body.battlemetrics_server_id_input,
         discord_server_info_button_channel_id: request.body.bot_server_info_channel_id_input
     };
     try {
-        DiscordBotRepository.createBotDiscordData(1, discord_server_channel_ids_object);
+        await DiscordBotRepository.createBotDiscordData(1, discord_server_channel_ids_object);
+        response.render('admin/index', { user: request.user, modal_info: "Test", show_modal: true});
     } catch (error) {
         console.error(`There was an error when attempting to update discord channel ids in the bot database document: ${error}`);
-        throw error;
+        response.status(500).send(`An error occurred on the server when attempting to update the Discord chat channel ids. Please try submitting this form again or contact the site administrator if you believe this is an error: ${error}`);
     }
 });
 

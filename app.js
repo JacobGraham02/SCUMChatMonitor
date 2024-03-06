@@ -865,13 +865,14 @@ function stopFileProcessingIntervalChatLog() {
  * Inserts a document into the mongodb collection 'Administrators'. These users are the only ones who can access the bot web interface.
  * The admin username is passed in plain text (Effective July 09, 2023) and will be hashed at a later date. 
  * The admin password is both hashed and salted.
- * @param {any} admin_user_username A string representation of the data submitted on the login form
- * @param {any} admin_user_password A string representation of the data submitted on the login form
+ * @param {string} admin_user_username A string representation of the data submitted on the login form
+ * @param {string} admin_user_password A string representation of the data submitted on the login form
+ * @param {UUID} admin_bot_token A UUID that represents the bot that the user is associated with
  */
-function insertAdminUserIntoDatabase(admin_user_username, admin_user_password) {
+function insertAdminUserIntoDatabase(admin_user_username, admin_user_password, admin_bot_token) {
     const hashed_admin_user_password = hashAndValidatePassword.hashPassword(admin_user_password);
 
-    user_repository.createAdminUser(admin_user_username, hashed_admin_user_password);
+    user_repository.createAdminUser(admin_user_username, hashed_admin_user_password, admin_bot_token);
 }
 /**
  * Reads all of the documents from a specified collection in mongodb. 
