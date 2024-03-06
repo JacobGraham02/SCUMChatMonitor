@@ -16,7 +16,7 @@ block content(user)
 			| Change the Discord channel ids that your bot uses to send data to your Discord server
 			span#span_discord_channel_id_screen_name
 				| #{file_name}
-		form#discord_channel_ids_form(method='POST', action='/admin/setdiscordchannels/')
+		form#discord_channel_ids_form(method='POST', action='/admin/setdiscordchannelids')
 			section#new_discord_channel_ids_section
 				fieldset#fieldset_for_discord_channel_id_page_disclaimer
 					h1.heading_for_adding_items On this page, you must specify the channel id for the specified text channels on Discord

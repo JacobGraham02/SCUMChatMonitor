@@ -53,11 +53,11 @@ module.exports = class BotRepository {
 
             const new_discord_data_document = {
                 bot_id: bot_id,
-                scum_ingame_chat_channel_id: discord_server_data.scum_ingame_chat_channel_id,
-                scum_ingame_logins_channel_id: discord_server_data.scum_ingame_logins_channel_id,
-                scum_ingame_admin_command_usage_channel_id: discord_server_data.scum_ingame_admin_command_usage_channel,
-                scum_new_player_joins_channel_id: discord_server_data.scum_new_player_joins_channel_id,
-                scum_server_info_channel_id: discord_server_data.scum_server_info_channel_id
+                scum_ingame_chat_channel_id: discord_server_data.discord_ingame_chat_channel_id,
+                scum_ingame_logins_channel_id: discord_server_data.discord_logins_chat_channel_id,
+                scum_new_player_joins_channel_id: discord_server_data.discord_new_player_chat_channel_id,
+                scum_battlemetrics_server_id: discord_server_data.discord_battlemetrics_server_id,
+                scum_server_info_channel_id: discord_server_data.discord_server_info_button_channel_id
             };
 
             await bot_collection.updateOne(
