@@ -49,7 +49,7 @@ module.exports = class BotRepository {
     async createBotDiscordData(bot_id, discord_server_data) {
         const database_connection = await database_connection_manager.getConnection();
         try {
-            const bot_collection = database_connection.collection('bot');
+            const bot_collection = database_connection.collection('bot_discord_data');
 
             const new_discord_data_document = {
                 bot_id: bot_id,
@@ -76,7 +76,7 @@ module.exports = class BotRepository {
     async createBotFtpServerData(bot_id, ftp_server_data) {
         const database_connection = await database_connection_manager.getConnection();
         try {
-            const bot_collection = database_connection.collection('bot');
+            const bot_collection = database_connection.collection('bot_ftp_server_data');
 
             const new_ftp_server_data_document = {
                 bot_id: bot_id,
@@ -102,7 +102,7 @@ module.exports = class BotRepository {
     async createBotItemPackage(bot_id, bot_package) {
         const database_connection = await database_connection_manager.getConnection();
         try {
-            const bot_collection = database_connection.collection('bot');
+            const bot_collection = database_connection.collection('bot_packages');
 
             const new_bot_item_package_document = {
                 bot_id: bot_id,

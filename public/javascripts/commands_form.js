@@ -985,7 +985,7 @@ function generateAdditionalInputFields() {
     inner_parent_section.className = "individual_add_item_label_and_input";
     new_input_label.className ="new_command_label";
     new_input_label.htmlFor = 'item_input'
-    new_input_label.textContent = "Choose item(s)";
+    new_input_label.textContent = "Choose package item";
     new_input.type = 'text';
     new_input.name = 'item_input';
     new_input.className = 'new_command_input_field';

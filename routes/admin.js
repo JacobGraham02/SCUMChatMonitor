@@ -15,7 +15,12 @@ function isLoggedIn(request, response, next) {
 }
 
 router.get('/login-success', isLoggedIn, function(request, response) {
-    response.render('admin/index', { user: request.user });
+    try {
+        response.render('admin/index', { user: request.user });
+    } catch (error) {
+        console.error(`There was an error when attempting to load the admin index file after logging in. Please inform the server administrator of this error or try again: ${error}`);
+        response.status(500).json({ error: `There was an Internal Server Error when attempting to load the admin index file after logging in. Please inform the server administrator of this error or try again: ${error}` });
+    }
 });
 
 router.get(['/commands', '/'], isLoggedIn, function (request, response) {
@@ -24,6 +29,7 @@ router.get(['/commands', '/'], isLoggedIn, function (request, response) {
         
         if (error) {
             console.error(error);
+            response.status(500).json({ error: `There was an Internal Service Error when attempting to read the directory: ${error}` });
             return;
         };
 
@@ -51,20 +57,30 @@ router.get(['/commands', '/'], isLoggedIn, function (request, response) {
         // Slice the 'files' array to get the files for the current page
         const command_files_in_range = files.slice(start_range_number - 1, end_range_number);
 
-        response.render('admin/command_list', {
-            title: `Admin dashboard`,
-            message: `You have successfully logged in`,
-            command_files: command_files_in_range,
-            current_page_of_commands: current_page_number,
-            total_command_files: files.length,
-            page_numbers: page_numbers, // Include this new variable
-            user: request.user
-        });
+        try {
+            response.render('admin/command_list', {
+                title: `Admin dashboard`,
+                message: `You have successfully logged in`,
+                command_files: command_files_in_range,
+                current_page_of_commands: current_page_number,
+                total_command_files: files.length,
+                page_numbers: page_numbers, // Include this new variable
+                user: request.user
+            });
+        } catch (error) {
+            console.error(`There was an error when attempting to load the page that shows you a paginated list of available commands for the bot. Please inform the server administrator of this error or try again: ${error}`);
+            response.status(500).json({ error: `There was an Internal Service Error when attempting to render the page: ${error}` });
+        }
     });
 });
 
 router.get('/commands/new', isLoggedIn, (request, response) => {
-    response.render('admin/new_command', { title: 'Create new command', data:request.user });
+    try {
+        response.render('admin/new_command', { title: 'Create new command', data:request.user });
+    } catch (error) {
+        console.error(`There was an error when attempting to open the page which allows you to create a new command. Please inform the server administrator of this error or try again: ${error}`);
+        response.status(500).json({ error: `There was an Internal Service Error when attempting to open the page which allows you to create a new command. Please inform the server administrator of this error or try again: ${error}` });
+    }
 });
 
 router.get('/commands/:file', (request, response) => {
@@ -74,27 +90,44 @@ router.get('/commands/:file', (request, response) => {
     fs.readFile(path.join(parent_directory_from_routes, '/commands', javascript_file_name), 'utf-8', function (error, command_code) {
         if (error) {
             console.error(error);
+            response.status(500).json({ error: `There was an Internal Server Error when attempting to read the command file. Please inform the server administrator of this error or try again: ${error}` });
             return;
         }
-        response.render('admin/command', { data: request.user, file_name: javascript_file_name });
+        try {
+            response.render('admin/command', { data: request.user, file_name: javascript_file_name, command: command_code });
+        } catch (error) {
+            console.error(`There was an error when attempting to enter 'edit' mode for this command. Please inform the server administrator of this error or try again: ${error}`);
+            response.status(500).json({ error: `There was an Internal Server Error when attempting to enter 'edit' mode for this command. Please inform the server administrator of this error or try again: ${error}` });
+        }
     });
 });
 
 router.get('/discordchannelids', (request, response) => {
-    response.render('admin/discord_channel_ids', {
-        title: `Discord channel ids`,
-        user: request.user
-    });
+    try {
+        response.render('admin/discord_channel_ids', { title: `Discord channel ids`, user: request.user });
+    } catch (error) {
+        console.error(`There was an error when attempting to retrieve the page that allows you to change the Discord channel data. Please inform the server administrator of this error: ${error}`);
+        response.status(500).json({ error: `There was an Internal Server Error when attempting to retrieve the page that allows you to change the Discord channel data. Please inform the server administrator of this error: ${error}` });
+    }
 });
 
 router.get('/ftpserverdata', (request, response) => {
-    response.render('admin/ftp_server_data', {
-        title: `FTP server data`,
+    try {
+        response.render('admin/ftp_server_data', { title: `FTP server data`, user: request.user });
+    } catch (error) {
+        console.error(`There was an error when attempting to retrieve the page that allows you to change the FTP server data. Please inform the server administrator of this error: ${error}`);
+        response.status(500).json({ error: `There was an Internal Server Error when attempting to retrieve the page that allows you to change the FTP server data. Please inform the server administrator of this error: ${error}` });
+    }
+});
+
+router.get('/newcommand', (request, response) => {
+    response.render('admin/new_command', {
+        title: `New package`,
         user: request.user
     });
 });
 
-router.post('/setftpserverdata', (request, response) => {
+router.post('/setftpserverdata', async (request, response) => {
     const ftp_server_data_object = {
         ftp_server_hostname: request.body.ftp_server_hostname_input,
         ftp_server_port: request.body.ftp_server_port_input,
@@ -102,10 +135,10 @@ router.post('/setftpserverdata', (request, response) => {
         ftp_server_password: request.body.ftp_server_password_input
     }
     try {
-        DiscordBotRepository.createBotFtpServerData(1, ftp_server_data_object);
+        await DiscordBotRepository.createBotFtpServerData(1, ftp_server_data_object);
+        response.render('admin/ftp_server_data', { user: request.user, info_message: `You have successfully created new FTP server credentials`, show_alert: true });
     } catch (error) {
-        console.error(`There was an error when attempting to update the ftp server data in the bot database document ${error}`);
-        throw error;
+        response.render('admin/error', { user: request.user, info_message: `There was an error when attempting to update the ftp server data in the bot database document ${error}`});
     }
 });
 
@@ -120,10 +153,10 @@ router.post('/setdiscordchannelids', async (request, response) => {
     };
     try {
         await DiscordBotRepository.createBotDiscordData(1, discord_server_channel_ids_object);
-        response.render('admin/index', { user: request.user, modal_info: "Test", show_modal: true});
+        response.render('admin/index', { user: request.user, alert_info: `Successfully changed the Discord channel ids associated with the bot`, show_modal: true });
     } catch (error) {
         console.error(`There was an error when attempting to update discord channel ids in the bot database document: ${error}`);
-        response.status(500).send(`An error occurred on the server when attempting to update the Discord chat channel ids. Please try submitting this form again or contact the site administrator if you believe this is an error: ${error}`);
+        response.status(500).json({ error: `An Internal Server Error occurred when attempting to update the Discord chat channel ids. Please try submitting this form again or contact the site administrator if you believe this is an error: ${error}` });
     }
 });
 
@@ -135,14 +168,18 @@ router.post('/recompile', (request, response) => {
     exec(build_command, (error, stdout, stderr) => {
         if (error) {
             console.error(`Error: ${error}`);
-            return response.status(500).send(`Error recompiling executable: ${error}`);
+            return response.status(500).json({ error: `Error recompiling executable: ${error}` });
         }
         if (stderr) {
             console.error(`Stderr: ${stderr}`);
-            return response.status(500).send(`Error recompiling executable: ${stderr}`);
+            return response.status(500).json({ error: `Error recompiling executable: ${stderr}` });
         }
-        const alert_information = `The application has been successfully recompiled`;
-        response.render('admin/index', { user: request.user, alert_info: alert_information });
+        try {
+            response.render('admin/index', { user: request.user, alert_info: `The application has been successfully recompiled. Please restart the application by double clicking on the .exe file`});
+        } catch (error) {
+            console.error(`There was an error when attempting to go to the administrator landing page after recompiling the .exe file. Please inform the server administrator of this error: ${error}`);
+            response.status(500).json({ error: `There was an Internal Server Error when attempting to go to the administrator landing page after recompiling the .exe file. Please inform the server administrator of this error: ${error}` });
+        }
     });
 });
 
@@ -152,8 +189,19 @@ router.delete('/commands/delete/:file', (request, response) => {
     const parent_directory_from_routes = path.resolve(__dirname, '..');
     const full_path = path.join(parent_directory_from_routes, '/commands', javascript_file_path);
 
-    fs.unlinkSync(full_path);
-    response.status(200).send(`File ${full_path} was successfully deleted`);
+    fs.unlink(full_path, (error) => {
+        if (error) {
+            console.error(`Error deleting file: ${error}`);
+            return response.status(500).json({ error: `Error deleting file: ${error}` });
+        }
+
+        try {
+            response.status(200).json({ message: `File ${full_path} was successfully deleted` });
+        } catch (error) {
+            console.error(`There was an error when attempting to delete your selected file. Please inform the server administrator of this error or try again: ${error}`);
+            response.status(500).json({ error: `There was an Internal Server Error when attempting to delete your selected file. Please inform the server administrator of this error or try again: ${error}` });
+        }
+    });
 });
 
 router.post('/commands/new', isLoggedIn, (request, response, next) => {
@@ -205,8 +253,64 @@ module.exports = function (user_account) {
     // Write the content to the command file
     const parent_directory_from_routes = path.resolve(__dirname, '..');
     const file_path = path.join(parent_directory_from_routes, '/commands', new_command_name + '.js');
-    fs.writeFileSync(file_path, command_content, 'utf-8');
-    response.redirect('/admin/index');
+
+    try {
+        fs.writeFileSync(file_path, command_content, 'utf-8');
+        response.json({ message: 'Command file created successfully' });
+    } catch (error) {
+        console.error(`An error occurred when attempting to write the command file: ${error}`);
+        response.status(500).json({ error: `An error occurred when attempting to write the command file: ${error}` });
+    }
+});
+
+router.post('/botcommand/new', isLoggedIn, async (request, response, next) => {
+    const new_command_name = request.body.command_name;
+    const new_command_description = request.body.command_description;
+    const command_cost = request.body.command_cost_input;
+    let command_items = request.body.item_input_value;
+
+    if (!Array.isArray(command_items)) {
+        command_items = [command_items];
+    }
+    
+    new_bot_package = {
+        package_name: new_command_name,
+        package_description: new_command_description,
+        package_cost: command_cost,
+        package_items: command_items
+    }
+
+    try {
+        await DiscordBotRepository.createBotItemPackage(1, new_bot_package);
+        response.render('admin/new_command', { data: request.user, page_title:`Create new command`, info_message: `You have successfully created a new item package`, show_alert: true });
+    } catch (error) {
+        response.render('admin/error', { user: request.user, page_title:`Error`, info_message: `An error has occurred! Please inform the server administrator of this error or try creating another command: ${error}`});
+    }
+});
+
+router.post('/botcommand/new', isLoggedIn, async (request, response, next) => {
+    const new_command_name = request.body.command_name;
+    const new_command_description = request.body.command_description;
+    const command_cost = request.body.command_cost_input;
+    let command_items = request.body.item_input_value;
+
+    if (!Array.isArray(command_items)) {
+        command_items = [command_items];
+    }
+    
+    new_bot_package = {
+        package_name: new_command_name,
+        package_description: new_command_description,
+        package_cost: command_cost,
+        package_items: command_items
+    }
+
+    try {
+        await DiscordBotRepository.createBotItemPackage(1, new_bot_package);
+        response.render('admin/new_command', { data: request.user, page_title:`Create new command`, info_message: `You have successfully created a new item package`, show_alert: true });
+    } catch (error) {
+        response.render('admin/error', { user: request.user, page_title:`Error`, info_message: `An error has occurred! Please inform the server administrator of this error or try creating another command: ${error}`});
+    }
 });
 
 router.post('/commands/:filename', function (request, response) {
@@ -224,9 +328,13 @@ router.post('/commands/:filename', function (request, response) {
     const updated_file_content = file_content.replace(/command_data:\s*'([\s\S]*?)',/, `command_data: '${form_command_data}',`)
         .replace(/authorization_role_name:\s*\[(.*?)\],/, `authorization_role_name: [${form_authorized_roles}],`);
 
-    fs.writeFileSync(file_path, updated_file_content, 'utf-8');
-
-    response.redirect('/admin/');
+    try {
+        fs.writeFileSync(file_path, updated_file_content, 'utf-8');
+        response.json({ message: 'File updated successfully' });
+    } catch (error) {
+        console.error(`An error occurred when attempting to update the file: ${error}`);
+        response.status(500).json({ error: `An error occurred when attempting to update the file: ${error}` });
+    }
 });
 
 module.exports = router;
