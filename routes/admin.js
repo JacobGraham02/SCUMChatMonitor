@@ -94,7 +94,14 @@ router.get('/ftpserverdata', (request, response) => {
     });
 });
 
-router.post('/setftpserverdata', (request, response) => {
+router.get('/newcommand', (request, response) => {
+    response.render('admin/new_command', {
+        title: `New package`,
+        user: request.user
+    });
+});
+
+router.post('/setftpserverdata', async (request, response) => {
     const ftp_server_data_object = {
         ftp_server_hostname: request.body.ftp_server_hostname_input,
         ftp_server_port: request.body.ftp_server_port_input,
@@ -102,10 +109,10 @@ router.post('/setftpserverdata', (request, response) => {
         ftp_server_password: request.body.ftp_server_password_input
     }
     try {
-        DiscordBotRepository.createBotFtpServerData(1, ftp_server_data_object);
+        await DiscordBotRepository.createBotFtpServerData(1, ftp_server_data_object);
+        response.render('admin/ftp_server_data', { user: request.user, info_message: `You have successfully created new FTP server credentials`, show_alert: true });
     } catch (error) {
-        console.error(`There was an error when attempting to update the ftp server data in the bot database document ${error}`);
-        throw error;
+        response.render('admin/error', { user: request.user, info_message: `There was an error when attempting to update the ftp server data in the bot database document ${error}`});
     }
 });
 
@@ -207,6 +214,31 @@ module.exports = function (user_account) {
     const file_path = path.join(parent_directory_from_routes, '/commands', new_command_name + '.js');
     fs.writeFileSync(file_path, command_content, 'utf-8');
     response.redirect('/admin/index');
+});
+
+router.post('/botcommand/new', isLoggedIn, async (request, response, next) => {
+    const new_command_name = request.body.command_name;
+    const new_command_description = request.body.command_description;
+    const command_cost = request.body.command_cost_input;
+    let command_items = request.body.item_input_value;
+
+    if (!Array.isArray(command_items)) {
+        command_items = [command_items];
+    }
+    
+    new_bot_package = {
+        package_name: new_command_name,
+        package_description: new_command_description,
+        package_cost: command_cost,
+        package_items: command_items
+    }
+
+    try {
+        await DiscordBotRepository.createBotItemPackage(1, new_bot_package);
+        response.render('admin/new_command', { data: request.user, page_title:`Create new command`, info_message: `You have successfully created a new item package`, show_alert: true });
+    } catch (error) {
+        response.render('admin/error', { user: request.user, page_title:`Error`, info_message: `An error has occurred! Please inform the server administrator of this error or try creating another command: ${error}`});
+    }
 });
 
 router.post('/commands/:filename', function (request, response) {
