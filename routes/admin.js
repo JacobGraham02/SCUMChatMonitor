@@ -153,10 +153,24 @@ router.post('/setdiscordchannelids', async (request, response) => {
     };
     try {
         await DiscordBotRepository.createBotDiscordData(1, discord_server_channel_ids_object);
-        response.render('admin/index', { user: request.user, alert_info: `Successfully changed the Discord channel ids associated with the bot`, show_modal: true });
+        response.render('admin/index', { user: request.user, alert_info: `Successfully changed the Discord channel ids associated with the bot`, show_alert: true });
     } catch (error) {
         console.error(`There was an error when attempting to update discord channel ids in the bot database document: ${error}`);
         response.status(500).json({ error: `An Internal Server Error occurred when attempting to update the Discord chat channel ids. Please try submitting this form again or contact the site administrator if you believe this is an error: ${error}` });
+    }
+});
+
+router.post('/setgameserverdata', async (request, response) => {
+    const game_server_data = {
+        game_server_hostname_input: request.body.game_server_hostname_input,
+        game_server_port_input: request.body.game_server_port_input
+    }
+    try {
+        await DiscordBotRepository.createBotDiscordData(1, game_server_data);
+        response.render('admin/index', { user: request.user, alert_info: `Successfully changed the game server IP address and port number`, show_alert: true})
+    } catch (error) {
+        console.error(`There was an error when attempting to update the game server IP address and port number: ${error}`);
+        response.status(500).json({ error: `An Internal Server Error occurred when attempting to update the game server IP address and port number. Please try submitting this form again or contact the site administrator if you believe this is an error: ${error}`});
     }
 });
 

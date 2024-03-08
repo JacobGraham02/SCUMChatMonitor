@@ -1,0 +1,40 @@
+extends layout
+
+
+block variables
+	- var page_title = 'FTP data editor'
+
+include menu
+
+block header
+	header#header.header
+		+menu(user)
+
+block content(user)
+	main#game_server_data_edit_page
+		h1#game_server_data_edit_page_heading 
+			| Change the FTP data that allows the bot to interact with your SCUM server
+			span#span_game_server_data_screen_name
+				| #{file_name}
+		form#game_server_data_form(method='POST', action='/admin/setgameserverdata/')
+			section#game_server_data_section
+				fieldset#fieldset_for_ftp_data_page_disclaimer
+					h1.heading_for_game_server_data On this page, you must specify the game server details for your server provider
+
+				fieldset#game_server_hostname_fieldset 
+					article#game_server_hostname_article(class='article_for_game_server_hostname')
+						label(class='game_server_data_label', for='game_server_hostname_input') Game server IP address (Must be an IPv4 address of the format: x.x.x.x where x is between 0 and 255)
+						input#game_server_hostname_input(class="game_server_data_input", type="text", name="game_server_hostname_input", placeholder="192.168.122.56")
+
+                fieldset#game_server_port_fieldset 
+					article#game_server_port_article(class='article_for_game_server_port')
+						label(class='game_server_data_label', for='game_server_port_input') (Port number will be between 49152 and 65535)
+						input#game_server_hostname_input(class="game_server_data_input", type="text", name="game_server_port_input", placeholder="52000")
+
+
+			section#game_server_data_form_field_buttons
+				fieldset#save_game_server_data_changes
+					button#save_changes_to_ftp_server_data_button(type='submit') Save
+
+				fieldset#cancel_game_server_data_changes
+					button#cancel_changes_to_ftp_server_data_button(type='button') Cancel

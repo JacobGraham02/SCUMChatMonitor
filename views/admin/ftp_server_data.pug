@@ -19,11 +19,11 @@ block content(user)
 		form#ftp_server_data_form(method='POST', action='/admin/setftpserverdata/')
 			section#new_ftp_server_data_section
 				fieldset#fieldset_for_ftp_data_page_disclaimer
-					h1.heading_for_adding_items On this page, you must specify the FTP server details for your server provider
+					h1.heading_for_ftp_server_data On this page, you must specify the FTP server details for your server provider
 
 				fieldset#ftp_server_hostname_fieldset 
 					article#ftp_server_hostname_article(class='article_for_ftp_server_hostname')
-						label(class="ftp_server_data_label",for='ftp_server_hostname_input') FTP server hostname (Must be an IPv4 address of the format: x.x.x.x where x is between 0 and 255)
+						label(class="ftp_server_data_label",for='ftp_server_hostname_input') FTP server IP address (Must be an IPv4 address of the format: x.x.x.x where x is between 0 and 255)
 						input#ftp_server_hostname_input(class="ftp_server_data_input",type='text',name='ftp_server_hostname_input', placeholder='192.168.122.56')
 
 				fieldset#ftp_server_port_fieldset
