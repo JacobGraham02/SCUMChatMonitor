@@ -148,10 +148,10 @@ router.post('/setgameserverdata', async (request, response) => {
     }
     try {
         await DiscordBotRepository.createBotDiscordData(1, game_server_data);
-        response.render('admin/game_server', { user: request.user, alert_info: `Successfully changed the game server IP address and port number`, show_alert: true})
+        response.render('admin/game_server_data', { user: request.user, alert_info: `Successfully changed the game server IP address and port number`, show_alert: true})
     } catch (error) {
         console.error(`There was an error when attempting to update the game server IP address and port number: ${error}`);
-        response.render('admin/game_server', { user: request.user, alert_info: `An Internal Server Error occurred when attempting to update the game server IP address and port number. Please try submitting this form again or contact the site administrator if you believe this is an error: ${error}`, show_alert: true})
+        response.render('admin/game_server_data', { user: request.user, alert_info: `An Internal Server Error occurred when attempting to update the game server IP address and port number. Please try submitting this form again or contact the site administrator if you believe this is an error: ${error}`, show_alert: true})
     }
 });
 
