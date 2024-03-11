@@ -10,11 +10,11 @@ block header
 	header#header.header
 		+menu(user)
 
-block content
+block content(user)
 	main#command_edit_page
-			span#span_command_file_edit_screen_name
-				Edit #{command.package_name}
-		form#commands_file_javascript_form(method='POST', action='/admin/commands/' + file_name, enctype='application/x-www-form-urlencoded')
+		span#span_command_file_edit_screen_name
+				Edit #{package.package_name}
+		form#command_editor_form(method='POST', action='/admin/commands/' + file_name, enctype='application/x-www-form-urlencoded')
 			section#new_command_section_easy
 				fieldset#fieldset_for_form_heading 
 					h1.heading_for_adding_items Edit your bot command
@@ -22,17 +22,17 @@ block content
 				fieldset#command_item_name(class="edit_command_fieldset")
 					article#add_command_name_container(class="edit_command_fieldset_article")
 						label(class="new_command_label",for='command_name') Package name
-						input#command_name(class="package_item_input",type='text',name='package_name_input', placeholder='Write here...') ${command.package_name}
+						input#command_name(class="package_item_input",type='text',name='package_name_input', placeholder='Write here...', value=package.package_name) 
 
 				fieldset#command_item_description(class="edit_command_fieldset")
 					article#add_command_description_container(class="edit_command_fieldset_article")
 						label(class="new_command_label",for='command_description') Package description 
-						textarea#command_description(class="package_item_input",type='text',name='package_description_input', placeholder='Write here...') ${command.package_description}
+						textarea#command_description(class="package_item_input",type='text',name='package_description_input', placeholder='Write here...', value=package.package_items[0]) 
 
 				fieldset#add_command_cost(class="edit_command_fieldset")
 					article#add_command_cost_fields_container(class="edit_command_fieldset_article")
 						label(class="new_command_label",for='command_cost_input') Package cost
-						input#command_cost_input(class="package_item_input", type='text', name='package_cost_input', placeholder='Command cost...')
+						input#command_cost_input(class="package_item_input", type='text', name='package_cost_input', placeholder='Command cost...', value=package.package_cost) 
 
 			section#edit_command_form_field_buttons
 				fieldset#save_command_changes

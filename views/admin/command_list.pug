@@ -20,7 +20,7 @@ block content(user)
 				-for (let i = (current_page_number - 1) * commands_per_page; i < Math.min(current_page_number * commands_per_page, commands.length); i++) {
 					li.bot_command_list_item_edit_li 
 						div.bot_item_edit
-							a.bot_command_list_item_edit(href=`/admin/commands/${commands[i].package_name}`)= commands[i]
+							a.bot_command_list_item_edit(href=`/admin/command/${encodeURIComponent(commands[i].package_name)}`)= commands[i].package_name
 						div.bot_item_delete
 							a.bot_command_list_item_delete(href=``) Delete this command
 				-}
@@ -28,7 +28,7 @@ block content(user)
 			ul.pagination_list
 				for page in page_numbers 
 					li.pagination_page_item(class=current_page_of_commands === page ? 'active': '')
-						a.pagination_page_link(href=`/admin/commands?range=${(page-1) * commands_per_page + 1}&${page * commands_per_page}`) #{page}
+						a.pagination_page_link(href=`commands?range=${(page-1) * commands_per_page + 1}&${page * commands_per_page}`) #{page}
 				
 
 	script(src='/javascripts/admin_index_page.js')

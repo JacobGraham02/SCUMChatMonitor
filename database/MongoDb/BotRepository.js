@@ -155,13 +155,30 @@ module.exports = class BotRepository {
         const database_connection = await database_connection_manager.getConnection();
         
         try {
-            const bot_packages_collection = database_connection.collection('bot_package');
+            const bot_packages_collection = database_connection.collection('bot_packages');
 
             const bot_packages = await bot_packages_collection.find({ bot_id: bot_id }).toArray();
             
             return bot_packages;
         } catch (error) {
             console.error(`There was an error when attempting to retrieve all of the bot packages. Please inform the server administrator of this error: ${error}`);
+            throw error;
+        } finally {
+            await this.releaseConnectionSafely(database_connection);
+        }
+    }
+
+    async getBotPackageFromName(bot_package_name) {
+        const database_connection = await database_connection_manager.getConnection();
+
+        try {
+            const bot_packages_collection = database_connection.collection('bot_packages');
+
+            const bot_packages = await bot_packages_collection.findOne({ package_name: bot_package_name });
+
+            return bot_packages;
+        } catch (error) {
+            console.error(`There was an error when attempting to retrieve the bot package by name. Please inform the server administrator of this error: ${error}`);
             throw error;
         } finally {
             await this.releaseConnectionSafely(database_connection);

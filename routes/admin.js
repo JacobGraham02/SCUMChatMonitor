@@ -23,6 +23,19 @@ router.get('/newcommand', isLoggedIn, function(request, response) {
     }
 });
 
+router.get('/command/:commandname', isLoggedIn, async (request, response) => {
+    const package_name = request.params.commandname;
+    try {
+        const package_data = await botRepository.getBotPackageFromName(package_name); 
+
+        response.render('admin/command', { user: request.user, package: package_data });
+    } catch (error) {
+        console.error(`Error fetching command data: ${error}`);
+        response.render('admin/command', { user: request.user, info_message: `There was an internal server error when attempting to load the admin command file after logging in. Please inform the server administrator of this error or try again: ${error}`, show_alert: true});
+    }
+});
+
+
 router.get('/login-success', isLoggedIn, function(request, response) {
     try {
         response.render('admin/index', { user: request.user });
@@ -80,6 +93,11 @@ router.get(['/commands', '/'], isLoggedIn, async (request, response) => {
 
     // Map the current page's packages to their package names to be displayed as command files.
     const commands = current_page_packages;
+
+    console.log(`Commands is ${commands}`);
+    console.log(`Current page of commands is: ${current_page_number}`);
+    console.log(`Total command files is: ${bot_packages.length}`);
+    console.log(`Page numbers is: ${page_numbers}`);
 
     response.render('admin/command_list', {
         title: 'Admin Dashboard', 
@@ -198,9 +216,9 @@ router.post('/botcommand/new', isLoggedIn, async (request, response, next) => {
 
     try {
         await botRepository.createBotItemPackage(1, new_bot_package);
-        response.render('admin/newcommand', { user: request.user, page_title:`Create new command`, info_message: `You have successfully created a new item package`, show_alert: true });
+        response.render('admin/botcommand/new', { user: request.user, page_title:`Create new command`, info_message: `You have successfully created a new item package`, show_alert: true });
     } catch (error) {
-        response.render('admin/newcommand', { user: request.user, page_title:`Error`, info_message: `An error has occurred! Please inform the server administrator of this error or try creating another command: ${error}`, show_alert: true});
+        response.render('admin/botcommand/new', { user: request.user, page_title:`Error`, info_message: `An error has occurred! Please inform the server administrator of this error or try creating another command: ${error}`, show_alert: true});
     }
 });
 
