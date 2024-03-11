@@ -14,6 +14,15 @@ function isLoggedIn(request, response, next) {
     }
 }
 
+router.get('/newcommand', isLoggedIn, function(request, response) {
+    try {
+        response.render('admin/new_command', { user: request.user, title: `New bot package` });
+    } catch (error) {
+        console.error(`There was an error when attempting to load the admin new command page. Please inform the server administrator of this error or try again: ${error}`);
+        response.render('admin/new_command', { user: request.user, info_message: `There was an Internal Server Error when attempting to load the admin index file after logging in. Please inform the server administrator of this error or try again: ${error}`, show_alert: true });
+    }
+});
+
 router.get('/login-success', isLoggedIn, function(request, response) {
     try {
         response.render('admin/index', { user: request.user });
@@ -34,6 +43,9 @@ router.get(['/commands', '/'], isLoggedIn, async (request, response) => {
         response.status(500).json({ error: `There was an internal service error when attempting to read all the command data from MongoDB: ${error}`});
     }
 
+    const commands_per_page = 10;
+
+    const range = request.query.range || '1&10';
     /*
     Destructure the above query range string to retrieve the numbers. In this instance, we would get numbers 1 and 10
     */
@@ -67,11 +79,11 @@ router.get(['/commands', '/'], isLoggedIn, async (request, response) => {
     const current_page_packages = bot_packages.slice(start_range_number - 1, end_range_number);
 
     // Map the current page's packages to their package names to be displayed as command files.
-    const command_files = current_page_packages;
+    const commands = current_page_packages;
 
     response.render('admin/command_list', {
         title: 'Admin Dashboard', 
-        command_files, 
+        commands, 
         current_page_of_commands: current_page_number, 
         total_command_files: bot_packages.length, 
         page_numbers,
@@ -95,13 +107,6 @@ router.get('/ftpserverdata', (request, response) => {
         console.error(`There was an error when attempting to retrieve the page that allows you to change the FTP server data. Please inform the server administrator of this error: ${error}`);
         response.render('admin/ftp_server_data', { user: request.user, info_message: `There was an Internal Server Error when attempting to retrieve the page that allows you to change the FTP server data. Please inform the server administrator of this error: ${error}`, show_alert: true });
     }
-});
-
-router.get('/newcommand', (request, response) => {
-    response.render('admin/new_command', {
-        title: `New package`,
-        user: request.user
-    });
 });
 
 router.post('/setftpserverdata', async (request, response) => {
@@ -193,9 +198,9 @@ router.post('/botcommand/new', isLoggedIn, async (request, response, next) => {
 
     try {
         await botRepository.createBotItemPackage(1, new_bot_package);
-        response.render('admin/new_command', { data: request.user, page_title:`Create new command`, info_message: `You have successfully created a new item package`, show_alert: true });
+        response.render('admin/newcommand', { user: request.user, page_title:`Create new command`, info_message: `You have successfully created a new item package`, show_alert: true });
     } catch (error) {
-        response.render('admin/new_command', { user: request.user, page_title:`Error`, info_message: `An error has occurred! Please inform the server administrator of this error or try creating another command: ${error}`, show_alert: true});
+        response.render('admin/newcommand', { user: request.user, page_title:`Error`, info_message: `An error has occurred! Please inform the server administrator of this error or try creating another command: ${error}`, show_alert: true});
     }
 });
 

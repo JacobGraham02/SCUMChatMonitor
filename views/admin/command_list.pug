@@ -14,7 +14,7 @@ block content(user)
 	main#commands_page_main
 		h1#list_of_commands List of Commands
 		aside#create_new_command_link_container
-			a#create_new_command_link_anchor(href='/admin/commands/new') Create new command
+			a#create_new_command_link_anchor(href='/admin/newcommand') Create new command
 		article#bot_command_list_container_article
 			ul#bot_command_list
 				-for (let i = (current_page_number - 1) * commands_per_page; i < Math.min(current_page_number * commands_per_page, commands.length); i++) {
