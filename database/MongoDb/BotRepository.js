@@ -150,6 +150,92 @@ module.exports = class BotRepository {
             await this.releaseConnectionSafely(database_connection);
         }
     }
+
+    async getBotFtpServerData(bot_id) {
+        const database_connection = await database_connection_manager.getConnection();
+        
+        try {
+            const bot_packages_collection = database_connection.collection('bot_package');
+
+            const bot_packages = await bot_packages_collection.find({ bot_id: bot_id }).toArray();
+            
+            return bot_packages;
+        } catch (error) {
+            console.error(`There was an error when attempting to retrieve all of the bot packages. Please inform the server administrator of this error: ${error}`);
+            throw error;
+        } finally {
+            await this.releaseConnectionSafely(database_connection);
+        }
+    }
+
+    async getBotConfigurationValues(bot_id) {
+        const database_connection = await database_connection_manager.getConnection();
+
+        try {
+            const bot_ftp_server_collection = database_connection.collection('bot_ftp_server_data');
+
+            const bot_ftp_server_data = await bot_ftp_server_collection.findOne({ bot_id: bot_id });
+
+            return bot_ftp_server_data;
+        } catch (error) {
+            console.error(`There was an error when attempting to retrieve the bot ftp server data. Please inform the server administrator of this error: ${error}`);
+            throw error;
+        } finally {
+            this.releaseConnectionSafely(database_connection);
+        }
+    }
+
+    async getBotGameServerData(bot_id) {
+        const database_connection = await database_connection_manager.getConnection();
+
+        try {
+            const bot_game_server_collection = database_connection.collection('bot_game_server_data');
+
+            const bot_game_server_data = await bot_game_server_collection.findOne({ bot_id: bot_id });
+
+            return bot_game_server_data;
+        } catch (error) {
+            console.error(`There was an error when attempting to retrieve the bot game server data. Please inform the server administrator of this error: ${error}`);
+            throw error;
+        } finally {
+            this.releaseConnectionSafely(database_connection);
+        }
+    }
+
+    async getBotDiscordServerData(bot_id) {
+        const database_connection = await database_connection_manager.getConnection();
+
+        try {
+            const bot_discord_data_collection = database_connection.collection('bot_discord_data');
+
+            const bot_discord_server_data = await bot_discord_data_collection.findOne({ bot_id: bot_id });
+
+            return bot_discord_server_data;
+        } catch (error) {
+            console.error(`There was an error when attempting to retrieve the bot discord server data. Please inform the server administrator of this error: ${error}`);
+            throw error;
+        } finally {
+            this.releaseConnectionSafely(database_connection);
+        }
+    }
+
+    async getBotData(bot_id) {
+        const database_connection = await database_connection_manager.getConnection();
+
+        try {
+            const bot_collection = database_connection.collection('bot');
+
+            const bot_data = await bot_collection.findOne({ bot_id: bot_id });
+
+            return bot_data;
+        } catch (error) {
+            console.error(`There was an error when attempting to retrieve the bot data. Please inform the server administrator of this error: ${error}`);
+            throw error;
+        } finally {
+            this.releaseConnectionSafely(database_connection);
+        }
+    }
+    
     
     async releaseConnectionSafely(database_connection) {
         if (database_connection) {
