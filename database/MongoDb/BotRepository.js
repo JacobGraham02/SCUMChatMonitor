@@ -151,7 +151,7 @@ module.exports = class BotRepository {
         }
     }
 
-    async getBotFtpServerData(bot_id) {
+    async getBotItemPackageData(bot_id) {
         const database_connection = await database_connection_manager.getConnection();
         
         try {

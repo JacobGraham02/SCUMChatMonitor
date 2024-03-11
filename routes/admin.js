@@ -4,7 +4,7 @@ const fs = require('fs');
 var path = require('path');
 const { exec } = require('child_process');
 const BotRepository = require('../database/MongoDb/BotRepository');
-const DiscordBotRepository = new BotRepository();
+const botRepository = new BotRepository();
 
 function isLoggedIn(request, response, next) {
     if (request.isAuthenticated()) {
@@ -23,64 +23,60 @@ router.get('/login-success', isLoggedIn, function(request, response) {
     }
 });
 
-router.get(['/commands', '/'], isLoggedIn, function (request, response) {
-    const parent_directory_from_routes_folder = path.resolve(__dirname, '..');
-    fs.readdir(path.join(parent_directory_from_routes_folder, '/commands'), (error, files) => {
-        
-        if (error) {
-            console.error(error);
-            response.status(500).json({ error: `There was an Internal Service Error when attempting to read the directory: ${error}` });
-            return;
-        };
-
-        const command_buttons_per_page = 10;
-        // Assuming 'range' is your query parameter in the format 'start&end'
-        const range = request.query.range || '1&10';
-        const [start_range_number, end_range_number] = range.split('&').map(Number);
-
-        // Calculate the current page number based on the starting range
-        const current_page_number = Math.ceil(start_range_number / command_buttons_per_page);
-
-        // Calculate the total number of pages
-        const total_number_of_pages = Math.ceil(files.length / command_buttons_per_page);
-
-        // Calculate the dynamic range of page numbers for pagination
-        const visible_pages = 3; // Adjust the number of visible pages in the pagination
-        let start_page = Math.max(1, current_page_number - Math.floor(visible_pages / 2));
-        let end_page = Math.min(total_number_of_pages, start_page + visible_pages - 1);
-        start_page = Math.max(1, end_page - visible_pages + 1); // Adjust start page if end page is at the limit
-
-        const page_numbers = Array.from(
-            { length: (end_page - start_page) + 1 }, 
-            (_, i) => start_page + i);
-
-        // Slice the 'files' array to get the files for the current page
-        const command_files_in_range = files.slice(start_range_number - 1, end_range_number);
-
-        try {
-            response.render('admin/command_list', {
-                title: `Admin dashboard`,
-                message: `You have successfully logged in`,
-                command_files: command_files_in_range,
-                current_page_of_commands: current_page_number,
-                total_command_files: files.length,
-                page_numbers: page_numbers, // Include this new variable
-                user: request.user
-            });
-        } catch (error) {
-            console.error(`There was an error when attempting to load the page that shows you a paginated list of available commands for the bot. Please inform the server administrator of this error or try again: ${error}`);
-            response.status(500).json({ error: `There was an Internal Service Error when attempting to render the page: ${error}` });
-        }
-    });
-});
-
-router.get('/commands/new', isLoggedIn, (request, response) => {
+router.get(['/commands', '/'], isLoggedIn, async (request, response) => {
+    const bot_id = 1; 
+    let bot_packages;
+    
     try {
-        response.render('admin/new_command', { title: 'Create new command', data:request.user });
+        bot_packages = await botRepository.getBotItemPackageData(bot_id);
     } catch (error) {
-        console.error(`There was an error when attempting to open the page which allows you to create a new command. Please inform the server administrator of this error or try again: ${error}`);
-        response.render('admin/new_command', { user: request.user, info_message: `There was an Internal Service Error when attempting to open the page which allows you to create a new command. Please inform the server administrator of this error or try again: ${error}`, show_alert: true});
+        console.error(`There was an internal service error when attempting to read all the command data from MongoDB: ${error}`);
+        response.status(500).json({ error: `There was an internal service error when attempting to read all the command data from MongoDB: ${error}`});
     }
+
+    /*
+    Destructure the above query range string to retrieve the numbers. In this instance, we would get numbers 1 and 10
+    */
+    // Split the 'range' query parameter by '&' and convert both parts to numbers
+    // This will determine the range of commands to display on the current page
+    const [start_range_number, end_range_number] = range.split('&').map(Number);
+
+    // Calculate the current page number based on the start range and the number of commands per page
+    const current_page_number = Math.ceil(start_range_number / commands_per_page);
+
+    // Calculate the total number of pages needed to display all bot packages
+    const total_number_of_pages = Math.ceil(bot_packages.length / commands_per_page);
+
+    // Set the number of pages to be visible in the pagination at any given time
+    const visible_pages = 3;
+
+    // Calculate the starting page number for pagination. Ensures it doesn't go below 1.
+    let start_page = Math.max(1, current_page_number - Math.floor(visible_pages / 2));
+
+    // Calculate the ending page number for pagination. Ensures it doesn't go beyond the total number of pages.
+    let end_page = Math.min(total_number_of_pages, start_page + visible_pages - 1);
+
+    // Adjust the start page based on the end page to ensure the correct number of visible pages are shown.
+    // This is particularly important when navigating to the last few pages.
+    start_page = Math.max(1, end_page - visible_pages + 1); 
+
+    // Generate the list of page numbers to be displayed in the pagination based on the start and end pages calculated.
+    const page_numbers = Array.from({ length: (end_page - start_page) + 1 }, (_, i) => i + start_page);
+
+    // Slice the bot_packages array to only include the packages for the current page based on the range selected.
+    const current_page_packages = bot_packages.slice(start_range_number - 1, end_range_number);
+
+    // Map the current page's packages to their package names to be displayed as command files.
+    const command_files = current_page_packages;
+
+    response.render('admin/command_list', {
+        title: 'Admin Dashboard', 
+        command_files, 
+        current_page_of_commands: current_page_number, 
+        total_command_files: bot_packages.length, 
+        page_numbers,
+        user: request.user 
+    });
 });
 
 router.get('/discordchannelids', (request, response) => {
@@ -116,7 +112,7 @@ router.post('/setftpserverdata', async (request, response) => {
         ftp_server_password: request.body.ftp_server_password_input
     }
     try {
-        await DiscordBotRepository.createBotFtpServerData(1, ftp_server_data_object);
+        await botRepository.createBotFtpServerData(1, ftp_server_data_object);
         response.render('admin/ftp_server_data', { user: request.user, info_message: `You have successfully created new FTP server credentials`, show_alert: true });
     } catch (error) {
         response.render('admin/ftp_server_data', { user: request.user, info_message: `There was an error when attempting to update the ftp server data in the bot database document ${error}`});
@@ -133,7 +129,7 @@ router.post('/setdiscordchannelids', async (request, response) => {
         discord_server_info_button_channel_id: request.body.bot_server_info_channel_id_input
     };
     try {
-        await DiscordBotRepository.createBotDiscordData(1, discord_server_channel_ids_object);
+        await botRepository.createBotDiscordData(1, discord_server_channel_ids_object);
         response.render('admin/index', { user: request.user, alert_info: `Successfully changed the Discord channel ids associated with the bot`, show_alert: true });
     } catch (error) {
         console.error(`There was an error when attempting to update discord channel ids in the bot database document: ${error}`);
@@ -147,7 +143,7 @@ router.post('/setgameserverdata', async (request, response) => {
         game_server_port_input: request.body.game_server_port_input
     }
     try {
-        await DiscordBotRepository.createBotDiscordData(1, game_server_data);
+        await botRepository.createBotDiscordData(1, game_server_data);
         response.render('admin/game_server_data', { user: request.user, alert_info: `Successfully changed the game server IP address and port number`, show_alert: true})
     } catch (error) {
         console.error(`There was an error when attempting to update the game server IP address and port number: ${error}`);
@@ -196,7 +192,7 @@ router.post('/botcommand/new', isLoggedIn, async (request, response, next) => {
     }
 
     try {
-        await DiscordBotRepository.createBotItemPackage(1, new_bot_package);
+        await botRepository.createBotItemPackage(1, new_bot_package);
         response.render('admin/new_command', { data: request.user, page_title:`Create new command`, info_message: `You have successfully created a new item package`, show_alert: true });
     } catch (error) {
         response.render('admin/new_command', { user: request.user, page_title:`Error`, info_message: `An error has occurred! Please inform the server administrator of this error or try creating another command: ${error}`, show_alert: true});

@@ -2,9 +2,9 @@ extends layout
 
 block variables
 	- var page_title= title 
-	- var command_buttons_per_page = 10
+	- var commands_per_page = 10
 	- var current_page_number = 1
-	- var total_number_of_pages = Math.ceil(total_command_files / command_buttons_per_page) // Returns smallest integer greater than or equal to (command_files.length / command_buttons_per_page)
+	- var total_number_of_pages = Math.ceil(total_command_files / commands_per_page) // Returns smallest integer greater than or equal to (command_files.length / commands_per_page)
 
 block content(user)
 	article#message_dialog 
@@ -17,10 +17,10 @@ block content(user)
 			a#create_new_command_link_anchor(href='/admin/commands/new') Create new command
 		article#bot_command_list_container_article
 			ul#bot_command_list
-				-for (let i = (current_page_number - 1) * command_buttons_per_page; i < Math.min(current_page_number * command_buttons_per_page, command_files.length); i++) {
+				-for (let i = (current_page_number - 1) * commands_per_page; i < Math.min(current_page_number * commands_per_page, commands.length); i++) {
 					li.bot_command_list_item_edit_li 
 						div.bot_item_edit
-							a.bot_command_list_item_edit(href=`/admin/commands/${command_files[i]}`)= command_files[i]
+							a.bot_command_list_item_edit(href=`/admin/commands/${commands[i].package_name}`)= commands[i]
 						div.bot_item_delete
 							a.bot_command_list_item_delete(href=``) Delete this command
 				-}
@@ -28,7 +28,7 @@ block content(user)
 			ul.pagination_list
 				for page in page_numbers 
 					li.pagination_page_item(class=current_page_of_commands === page ? 'active': '')
-						a.pagination_page_link(href=`/admin/commands?range=${(page-1) * command_buttons_per_page + 1}&${page * command_buttons_per_page}`) #{page}
+						a.pagination_page_link(href=`/admin/commands?range=${(page-1) * commands_per_page + 1}&${page * commands_per_page}`) #{page}
 				
 
 	script(src='/javascripts/admin_index_page.js')
