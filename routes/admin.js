@@ -47,15 +47,15 @@ router.get('/login-success', isLoggedIn, function(request, response) {
 
 router.get(['/commands', '/'], isLoggedIn, async (request, response) => {
     const bot_id = 1; 
-    let bot_packages;
+    let bot_package;
     
     try {
-        bot_packages = await botRepository.getBotItemPackageData(bot_id);
+        bot_package = await botRepository.getBotItemPackageData(bot_id);
     } catch (error) {
         console.error(`There was an internal service error when attempting to read all the command data from MongoDB: ${error}`);
         response.status(500).json({ error: `There was an internal service error when attempting to read all the command data from MongoDB: ${error}`});
     }
-
+    
     const commands_per_page = 10;
 
     const range = request.query.range || '1&10';
@@ -70,7 +70,7 @@ router.get(['/commands', '/'], isLoggedIn, async (request, response) => {
     const current_page_number = Math.ceil(start_range_number / commands_per_page);
 
     // Calculate the total number of pages needed to display all bot packages
-    const total_number_of_pages = Math.ceil(bot_packages.length / commands_per_page);
+    const total_number_of_pages = Math.ceil(bot_package.length / commands_per_page);
 
     // Set the number of pages to be visible in the pagination at any given time
     const visible_pages = 3;
@@ -89,21 +89,16 @@ router.get(['/commands', '/'], isLoggedIn, async (request, response) => {
     const page_numbers = Array.from({ length: (end_page - start_page) + 1 }, (_, i) => i + start_page);
 
     // Slice the bot_packages array to only include the packages for the current page based on the range selected.
-    const current_page_packages = bot_packages.slice(start_range_number - 1, end_range_number);
+    const current_page_packages = bot_package.slice(start_range_number - 1, end_range_number);
 
     // Map the current page's packages to their package names to be displayed as command files.
     const commands = current_page_packages;
-
-    console.log(`Commands is ${commands}`);
-    console.log(`Current page of commands is: ${current_page_number}`);
-    console.log(`Total command files is: ${bot_packages.length}`);
-    console.log(`Page numbers is: ${page_numbers}`);
 
     response.render('admin/command_list', {
         title: 'Admin Dashboard', 
         commands, 
         current_page_of_commands: current_page_number, 
-        total_command_files: bot_packages.length, 
+        total_command_files: bot_package.length, 
         page_numbers,
         user: request.user 
     });
