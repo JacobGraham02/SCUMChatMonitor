@@ -8,49 +8,37 @@ include menu
 
 block header
 	header#header.header
-		+menu(data)
+		+menu(user)
 
-block content
+block content(user)
 	main#command_edit_page
-		h1#file_editor_heading 
-			| Edit
-			span#span_command_file_edit_screen_name
-				| #{file_name}
-		form#commands_file_javascript_form(method='POST', action='/admin/commands/' + file_name, enctype='application/x-www-form-urlencoded')
+		span#span_command_file_edit_screen_name
+				Edit #{package.package_name}
+		form#command_editor_form(method='POST', action='/admin/commands/' + file_name, enctype='application/x-www-form-urlencoded')
 			section#new_command_section_easy
 				fieldset#fieldset_for_form_heading 
-					h1.heading_for_adding_items This section allows you to use dropdown menus and other input boxes to create a command for the bot
+					h1.heading_for_adding_items Edit your bot command
 
-				fieldset#command_item_name 
-					article#add_command_name_container(class='input_for_easy_command_creation')
-						label(class="new_command_label",for='command_name') Command name 
-						input#command_name(class="new_command_input_field",type='text',name='command_name', placeholder='Write here...')
+				fieldset#command_item_name(class="edit_command_fieldset")
+					article#add_command_name_container(class="edit_command_fieldset_article")
+						label(class="new_command_label",for='command_name') Package name
+						input#command_name(class="package_item_input",type='text',name='package_name_input', placeholder='Write here...', value=package.package_name) 
 
-				fieldset#command_item_description
-					article#add_command_description_container(class='input_for_easy_command_creation')
-						label(class="new_command_label",for='command_description') Command description 
-						textarea#command_description(class="new_command_input_field",type='text',name='command_description', placeholder='Write here...')
+				fieldset#command_item_description(class="edit_command_fieldset")
+					article#add_command_description_container(class="edit_command_fieldset_article")
+						label(class="new_command_label",for='command_description') Package description 
+						textarea#command_description(class="package_item_input",type='text',name='package_description_input', placeholder='Write here...', value=package.package_items[0]) 
 
-				fieldset#dropdown_menu_for_spawn_item 
-					article#add_item_fields_container(class='input_for_easy_command_creation')
-						div.individual_add_item_label_and_input
-							label(class="new_command_label",for='item_input') Choose item(s)
-							input.item_input(class="new_command_input_field",type='text', name='item_input', list='items_list', placeholder='Type to search...')
-							input#hidden_command_id_input(type='hidden',name='item_input_value')
-						datalist#items_list 
-					article#add_another_item_button_container
-						button#add_item_button(type='button') Add another item
-
-				fieldset#add_command_cost 
-					article#add_command_cost_fields_container(class='input_for_easy_command_creation')
-						label(class="new_command_label",for='command_cost_input') Command cost
-						input#command_cost_input(class="new_command_input_field", type='text', name='command_cost_input', placeholder='Command cost...')
+				fieldset#add_command_cost(class="edit_command_fieldset")
+					article#add_command_cost_fields_container(class="edit_command_fieldset_article")
+						label(class="new_command_label",for='command_cost_input') Package cost
+						input#command_cost_input(class="package_item_input", type='text', name='package_cost_input', placeholder='Command cost...', value=package.package_cost) 
 
 			section#edit_command_form_field_buttons
 				fieldset#save_command_changes
-					button#save_changes_to_command_button(type='submit') Save changes
+					button#save_changes_to_command_button(type='submit') Save package changes
 
 				fieldset#cancel_command_changes
-					button#cancel_changes_to_command_button(type='button') Cancel changes
+					button#cancel_changes_to_command_button(type='button') Cancel packages changes
 		
 		script(src='/javascripts/commands_form.js')

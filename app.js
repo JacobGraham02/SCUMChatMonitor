@@ -25,6 +25,7 @@ const ServerInfoCommand = require('./api/battlemetrics/ServerInfoCommand');
 const CheckTcpConnection = require('./utils/CheckTcpConnection');
 const hashAndValidatePassword = require('./modules/hashAndValidatePassword');
 const UserRepository = require('./database/MongoDb/UserRepository');
+const BotRepository = require('./database/MongoDb/BotRepository');
 var indexRouter = require('./routes/index');
 var adminRouter = require('./routes/admin');
 var apiExecutableRecompilation = require('./api/recompile/recompile-executable');
@@ -47,6 +48,7 @@ const client_instance = new Client({
 const discord_chat_channel_bot_commands = '1125874103757328494';
 
 const user_repository = new UserRepository();
+const bot_repository = new BotRepository();
 /**
  * The following regex string is for steam ids associated with a steam name specifically for the login log file. 
  * They are saved as a 17-digit number (e.g. 12345678912345678)
@@ -567,7 +569,7 @@ async function teleportNewPlayersToLocation(online_users) {
             await sleep(60000);
 
             try {
-                await runCommand(`#Teleport -129023.125 -91330.055 36830.551 ${user_steam_id}`);
+                await enqueueCommand(`#Teleport -129023.125 -91330.055 36830.551 ${user_steam_id}`);
             } catch (error) {
                 console.error(`An error has occurred when attempting to teleport the player to the spawn location area: ${error}`);
             }
@@ -759,7 +761,7 @@ async function reinitializeBotOnServer() {
     await sleep(5000);
     message_logger.logMessage(`Wilson bot has been activated and is ready to use`);
     await sleep(5000);
-    await runCommand('Wilson bot has been activated and is ready to use');
+    await enqueueCommand('Wilson bot has been activated and is ready to use');
 }
 
 /**
@@ -822,7 +824,7 @@ async function checkLocalServerTime() {
         };
 
         if (server_restart_messages[current_minute]) {
-            await runCommand(`#Announce ${server_restart_messages[current_minute]}`);
+            await enqueueCommand(`#Announce ${server_restart_messages[current_minute]}`);
         }
     }
 }
@@ -1218,9 +1220,9 @@ client_instance.on('ready', () => {
      * and therefore can access all of the computer resources
      * We use a callback function because the Node.js package 'exec' is asynchronous, but this callback function is synchronous
      */
-    // setInterval(() => {
-    //     checkIfGameServerOnline();
-    // }, gportal_ftp_server_log_interval_seconds["60"]);
+    setInterval(() => {
+        checkIfGameServerOnline();
+    }, gportal_ftp_server_log_interval_seconds["60"]);
 
     /**
      * Use the Discord API ButtonBuilder to build a button that will return a JSON API response from the Battlemetrics API to indicate the current status of the server
@@ -1462,22 +1464,21 @@ async function runCommand(command) {
     if (!scumProcess) {
         return;
     }  
-    await sleep(1000);
+    await sleep(2000);
     copyToClipboard(command);
-    await sleep(1000);
+    await sleep(2000);
     pressCharacterKeyT();
-    await sleep(1000);
+    await sleep(2000);
     pressBackspaceKey();
-    await sleep(1000);
+    await sleep(2000);
     pasteFromClipboard();
-    await sleep(1000);
+    await sleep(2000);
     pressEnterKey();
-    await sleep(1000);
+    await sleep(2000);
 }
 
 async function enqueueCommand(user_chat_message_object) {
-    user_command_queue.enqueue(user_chat_message_object);
-    await processQueue();
+    await processQueue(user_chat_message_object);
 }
 
 process.on('uncaughtException', (error) => {
@@ -1515,7 +1516,10 @@ async function handleIngameSCUMChatMessages() {
         await enqueueCommand(ftp_server_chat_log[i]);
     }
 }
-async function processQueue() {
+
+async function processQueue(user_chat_object) {
+    user_command_queue.enqueue(user_chat_object);
+
     while (user_command_queue.size() > 0) { 
         /**
          * After a command has finished execution in the queue, shift the values one spot to remove the command which has been executed. Extract the command 
@@ -1523,39 +1527,36 @@ async function processQueue() {
          */
         const user_chat_message_object = user_command_queue.dequeue();
         
+        /*
+        user_chat_message_object is a key value pair. If the value for that key is undefined, continue to the next element. 
+        */
         if (user_chat_message_object.value === undefined) { 
+            await runCommand(user_chat_object);
             continue;
         }
 
+        /*
+        The key value pair object 'user_chat_message_object' holds the command that the user used as the value. We must fetch the value by referencing the first
+        element in the value property. The value property starts with a ' character, so we take a substring of the value starting after the first character. 
+        Next, we have to take the key associated with the command used, which is the user's steam id
+        */
         const command_to_execute = user_chat_message_object.value[0].substring(1);
         const command_to_execute_player_steam_id = user_chat_message_object.key[0];
 
-        /**
-         * If a command that matches a command inside of the queue cannot be found, skip over the command and continue onto the next command
-         */
-        if (!client_instance.commands.get(command_to_execute)) {
-            continue;
-        }
         /**
          * Fetch the user from the database with an id that corresponds with the one associated with the executed command. After, fetch all of properties and data from the user and command
          * that is relevant
          */
         const user_account = await user_repository.findUserById(command_to_execute_player_steam_id);
         const user_account_balance = user_account.user_money;
-        const function_property_data = client_instance.commands.get(command_to_execute)(user_account);
-        const client_command_data = function_property_data.command_data;
-        const client_command_data_cost = function_property_data.command_cost;
 
-        if (typeof function_property_data.replaceCommandUserSteamName === 'function') {
-            console.log('command file has replaceCommandUserSteamName');
-            function_property_data.replaceCommandUserSteamName();
-        }
-        
-        if (typeof function_property_data.replaceCommandItemSpawnLocation === 'function') {
-            console.log('command file has replaceCommandItemSpawnLocation');
-            function_property_data.replaceCommandItemSpawnLocation();
-        } 
-        
+        /*
+        By using a string representation of the command to execute, we will fetch the command from the MongoDB database. If the command executed in game is '/test', 
+        a document with the name 'test' will be searched for in MongoDB. MongoDB returns the bot_item_package as an object instead of an array of objects. 
+        */
+        const bot_item_package = await bot_repository.getBotPackageFromName(command_to_execute.toString());
+        const bot_package_items = bot_item_package.package_items;
+        const bot_item_package_cost = bot_item_package.package_cost;
 
         /**
          * Remove the weird (0-9{1,4}) value which is appended onto each username in the GPortal chat log. 
@@ -1574,28 +1575,29 @@ async function processQueue() {
                  await enqueueCommand(`${client_ingame_chat_name} you do not have enough money to use your welcome pack again. Use the command /balance to check your balance`);
                  continue;
              } else {
-                 const user_account_for_welcome_pack = await user_repository.findUserById(command_to_execute_player_steam_id);
                  await user_repository.updateUserWelcomePackUsesByOne(user_account.user_steam_id);
-                 await user_repository.updateUserAccountBalance(command_to_execute_player_steam_id, -user_account_for_welcome_pack.user_welcome_pack_cost);
+                 await user_repository.updateUserAccountBalance(command_to_execute_player_steam_id, -welcome_pack_cost);
              }
         }
 
-        if (user_account_balance < function_property_data.command_cost) {
+        if (user_account_balance < bot_item_package.package_cost) {
             await enqueueCommand(`${client_ingame_chat_name}, you do not have enough money to use this package. Use the command /balance to check your balance.`);
             continue;
         }
         /**
          * If the cost to execute the command does not equal undefined, subtract the balance of the package from the user's balance 
          */
-        if (!(client_command_data_cost === undefined)) {
-            await user_repository.updateUserAccountBalance(command_to_execute_player_steam_id, -client_command_data_cost);
+        if (typeof bot_item_package_cost !== 'Number') {
+            parseInt(bot_item_package_cost, 10);
         }
-
+        if (typeof bot_item_package_cost === 'Number' && bot_item_package_cost) {
+            await user_repository.updateUserAccountBalance(command_to_execute_player_steam_id, -bot_item_package_cost);
+        }
         /**
          * Open the chat menu by pressing the 'T' key. If the chat is already open, press the 'Backspace key to get rid of the hanging 'T' character
          */
-        for (let i = 0; i < client_command_data.length; i++) {
-            await runCommand(client_command_data[i]);
+        for (let i = 0; i < bot_package_items.length; ++i) {
+            await runCommand(bot_package_items[i]);
         } 
     }
 }
