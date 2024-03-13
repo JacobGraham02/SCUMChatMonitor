@@ -998,30 +998,6 @@ app.use(function (err, req, res, next) {
     res.render('error');
 });
 
-/**
- * Read all of the '*.js' files from the 'commands' directory and store them in command_files_list for use later
- */
-const commands_path = path.join(__dirname, 'commands');
-const command_files_list = fs.readdirSync(commands_path).filter(file => file.endsWith('.js'));
-
-/**
- * Define 2 properties on the client_instance object, which will both be empty collections. 
- */
-client_instance.commands = new Collection();
-client_instance.discord_commands = new Collection();
-
-/**
- * Using the command_files_list we populated earlier, we have to dynamically import each of the functions and extract the object returned from those functions.
- * After we have retrieved the functions and objects, we put the imported functions into client_instance.commands, and the function objects into client_instance.discord_commands
- */
-for (const command_file of command_files_list) {
-    const command_file_path = path.join(commands_path, command_file);
-    const command = require(command_file_path);
-    const command_object = command('test');
-    client_instance.commands.set(command_object.data.name, command);
-    client_instance.discord_commands.set(command_object.data.name, command_object);
-}
-
 function sendPlayerMessagesToDiscord(discord_scum_game_chat_messages, discord_channel) {
     if (discord_scum_game_chat_messages === undefined) {
         message_logger.logError(`The scum in game chat messages could not be fetched and are undefined`);
@@ -1269,6 +1245,30 @@ function arraysEqual(arrayOne, arrayTwo) {
     }
     return true;
 }
+
+async function loadCommandFilesIntoCollection() {
+    client_instance.commands = new Collection();
+    client_instance.discord_commands = new Collection();
+
+    const commands_folder_path = path.join(__dirname, "../commands/discordcommands");
+    const filtered_commands_files = fs
+        .readdirSync(commands_folder_path)
+        .filter((file) => file !== "deploy-commands.js" && file.endsWith(".js"));
+
+    for (const command_file of filtered_commands_files) {
+        const command_file_path = path.join(commands_folder_path, command_file);
+        try {
+            const commandModule = await import(command_file_path); // Dynamic import for ES Module
+            const command_object = commandModule.default(); // Assuming default export is a function that returns the command object
+            client_instance.commands.set(command_object.data.name, commandModule);
+            client_instance.discord_commands.set(command_object.data.name, command_object);
+        } catch (error) {
+            console.error(`There was an error when attempting to import the file ${command_file}: ${error}`);
+            throw error;
+        }
+    }
+}
+
 
 /**
 * When the discord API triggers the interactionCreate event, an asynchronous function is executed with the interaction passed in as a parameter value. 
