@@ -1,16 +1,26 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-module.exports = function (user_account) {
-    const object = {
+
+export default function() {
+    const generate_help_message_object = {
         data: new SlashCommandBuilder()
             .setName('help')
-            .setDescription('Gives you help'),
-        command_data: [`The /welcomepack command gives you a welcomepack`, `The /discord command gives you our Discord server link`, `Join the Discord at https://discord.gg/4BYPXWSFkv to view more commands`],
+            .setDescription(`Use this command to list all available bot commands`),
         authorization_role_name: [],
-        command_cost: 500,
 
         async execute(interaction) {
+            const command_list = [
+                "**Admin-specific commands:**",
+                "**1. change-bot-username: Allows you to change the username of the bot**",
+                "**Regular user commands:**",
+                "**1. help: Shows a list of commands available to you for use with the bot**"
+            ];
 
+            try {
+                await interaction.reply({content:`**Available commands:**\n${command_list.join('\n')}`, ephemeral: true});
+            } catch (error) {
+                await interaction.reply({content:`There was an error when attempting to list all available commands. Please try again or inform the server administrator of the following error: ${error}`});
+            }
         }
     }
-    return object;
+    return generate_help_message_object;
 }

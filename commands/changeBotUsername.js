@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from 'discord.js'
+const { SlashCommandBuilder } = require('@discordjs/builders');
 
 export default function() {
     const change_bot_username_object = {
