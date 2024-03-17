@@ -818,7 +818,7 @@ async function checkLocalServerTime() {
     const currentDateTime = new Date();
     const current_hour = currentDateTime.getHours(); 
 
-    if (current_hour === 5) {
+    if (current_hour === 5 || current_hour === 18) {
         const current_minute = currentDateTime.getMinutes();
         const server_restart_messages = {
             40: 'Server restart in 20 minutes',
@@ -1468,17 +1468,17 @@ async function runCommand(command) {
     if (!scumProcess) {
         return;
     }  
-    await sleep(2000);
+    await sleep(500);
     copyToClipboard(command);
-    await sleep(2000);
+    await sleep(500);
     pressCharacterKeyT();
-    await sleep(2000);
+    await sleep(500);
     pressBackspaceKey();
-    await sleep(2000);
+    await sleep(500);
     pasteFromClipboard();
-    await sleep(2000);
+    await sleep(500);
     pressEnterKey();
-    await sleep(2000);
+    await sleep(500);
 }
 
 async function enqueueCommand(user_chat_message_object) {
@@ -1563,7 +1563,7 @@ async function processQueueIfNotProcessing(user_chat_object) {
         element in the value property. The value property starts with a ' character, so we take a substring of the value starting after the first character. 
         Next, we have to take the key associated with the command used, which is the user's steam id
         */
-        const command_to_execute = user_chat_message_object.value[0].substring(1);
+        const command_name = user_chat_message_object.value[0].substring(1);
         const command_to_execute_player_steam_id = user_chat_message_object.key[0];
 
         /**
@@ -1577,7 +1577,7 @@ async function processQueueIfNotProcessing(user_chat_object) {
         By using a string representation of the command to execute, we will fetch the command from the MongoDB database. If the command executed in game is '/test', 
         a document with the name 'test' will be searched for in MongoDB. MongoDB returns the bot_item_package as an object instead of an array of objects. 
         */
-        const bot_item_package = await bot_repository.getBotPackageFromName(command_to_execute.toString());
+        const bot_item_package = await bot_repository.getBotPackageFromName(command_name.toString());
         const bot_package_items = bot_item_package.package_items;
         const bot_item_package_cost = bot_item_package.package_cost;
 
@@ -1592,7 +1592,7 @@ async function processQueueIfNotProcessing(user_chat_object) {
          * in cost by 5000 after each execution. In the database class, there is a trigger defined for the user_welcome_pack_cost field that increments by 5000 each time it detects
          * an increment by 1 for the field 'user_welcome_pack_uses'. Each time this command is executed, we update the user welcome pack uses by one. 
          */
-        if (command_to_execute === 'welcomepack') {
+        if (command_name === 'welcomepack') {
             const welcome_pack_cost = user_account.user_welcome_pack_cost;
              if (user_account_balance < welcome_pack_cost) {
                  await enqueueCommand(`${client_ingame_chat_name} you do not have enough money to use your welcome pack again. Use the command /balance to check your balance`);
