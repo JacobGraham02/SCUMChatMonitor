@@ -26,12 +26,14 @@ const CheckTcpConnection = require('./utils/CheckTcpConnection');
 const hashAndValidatePassword = require('./modules/hashAndValidatePassword');
 const UserRepository = require('./database/MongoDb/UserRepository');
 const BotRepository = require('./database/MongoDb/BotRepository');
+const Mutex = require('async-mutex').Mutex;
 var indexRouter = require('./routes/index');
 var adminRouter = require('./routes/admin');
 var apiExecutableRecompilation = require('./api/recompile/recompile-executable');
 const PlayerInfoCommand = require('./api/ipapi/PlayerInfoCommand');
 const SteamUserInfoCommand = require('./api/steam/SteamUserInfoCommand');
 const recompileExecutable = require('./api/recompile/recompile-executable');
+const { E_CANCELED } = require('async-mutex');
 const discord_bot_token = process.env.discord_wilson_bot_token;
 
 const client_instance = new Client({
@@ -89,6 +91,8 @@ const chat_log_messages_regex = /(?<=Global: |Local: |Admin: |Squad: )\/[^\n]*[^
 const gportal_ftp_server_target_directory = 'SCUM\\Saved\\SaveFiles\\Logs\\';
 const gportal_ftp_server_filename_prefix_login = 'login_';
 const gportal_ftp_server_filename_prefix_chat = 'chat_';
+
+const mutex = new Mutex();
 
 /**
  * GPortal FTP server credentials with a timeout time of 60 seconds in case the server is busy or slow. 
@@ -1478,7 +1482,8 @@ async function runCommand(command) {
 }
 
 async function enqueueCommand(user_chat_message_object) {
-    await processQueue(user_chat_message_object);
+    user_command_queue.enqueue(user_chat_message_object);
+    await setProcessQueueMutex();
 }
 
 process.on('uncaughtException', (error) => {
@@ -1517,9 +1522,27 @@ async function handleIngameSCUMChatMessages() {
     }
 }
 
-async function processQueue(user_chat_object) {
-    user_command_queue.enqueue(user_chat_object);
+async function setProcessQueueMutex() {
+    mutex
+        .runExclusive(async () => {
+            await processQueueIfNotProcessing();
+        })
+        .then(() => {
 
+        })
+        .catch((error) => {
+            if (e === E_CANCELED) {
+                mutex.cancel();
+            } else {
+                console.error(`An error has occurred during execution of the mutex: ${error}`);
+            }
+        })
+        .finally(() => {
+            mutex.release();
+        })
+}
+
+async function processQueueIfNotProcessing(user_chat_object) {
     while (user_command_queue.size() > 0) { 
         /**
          * After a command has finished execution in the queue, shift the values one spot to remove the command which has been executed. Extract the command 
@@ -1587,11 +1610,10 @@ async function processQueue(user_chat_object) {
         /**
          * If the cost to execute the command does not equal undefined, subtract the balance of the package from the user's balance 
          */
-        if (typeof bot_item_package_cost !== 'Number') {
+        if ((typeof bot_item_package_cost !== 'Number' && bot_item_package_cost)) {
             parseInt(bot_item_package_cost, 10);
-        }
-        if (typeof bot_item_package_cost === 'Number' && bot_item_package_cost) {
             await user_repository.updateUserAccountBalance(command_to_execute_player_steam_id, -bot_item_package_cost);
+
         }
         /**
          * Open the chat menu by pressing the 'T' key. If the chat is already open, press the 'Backspace key to get rid of the hanging 'T' character
