@@ -1200,9 +1200,9 @@ client_instance.on('ready', () => {
      * and therefore can access all of the computer resources
      * We use a callback function because the Node.js package 'exec' is asynchronous, but this callback function is synchronous
      */
-    setInterval(() => {
-        checkIfGameServerOnline();
-    }, gportal_ftp_server_log_interval_seconds["60"]);
+    // setInterval(() => {
+    //     checkIfGameServerOnline();
+    // }, gportal_ftp_server_log_interval_seconds["60"]);
 
     /**
      * Use the Discord API ButtonBuilder to build a button that will return a JSON API response from the Battlemetrics API to indicate the current status of the server
