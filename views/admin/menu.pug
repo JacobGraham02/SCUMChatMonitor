@@ -28,3 +28,16 @@ mixin menu(user)
      div#recompile_executable_button_container
       form#global_site_navigation_recompile_application_executable(action='/admin/recompile', method='POST')
        button#recompile_executable_button(type="submit") Recompile executable
+
+  script.
+    document.addEventListener('DOMContentLoaded', function() {
+      const menuBtn = document.querySelector('#menu-btn'); // Adjusted to use ID
+      menuBtn.addEventListener('change', function() {
+          if (this.checked) {
+              document.body.style.overflow = 'hidden';
+          } else {
+              document.body.style.overflow = 'auto';
+          }
+      });
+    });
+
