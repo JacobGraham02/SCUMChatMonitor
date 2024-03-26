@@ -21,11 +21,11 @@ block content(user)
                 fieldset#ftp_server_hostname_fieldset.ftp_server_data_fieldset
                     article#ftp_server_hostname_article(class='article_for_ftp_server_data')
                         label(class="ftp_server_data_label",for='ftp_server_hostname_input') FTP server IPv4 address (Must be an IPv4 address of the format: x.x.x.x where x is between 0 and 255)
-                        input#ftp_server_hostname_input(
+                        input.validate-input#ftp_server_hostname_input(
                             class="ftp_server_data_input",
                             type='text',
                             name='ftp_server_hostname_input', 
-                            pattern="^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$",
+                            pattern="^(25[0-5]|2[0-4]\\d|1\\d{2}|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d{2}|[1-9]?\\d)){3}$",                           
                             placeholder='192.168.122.56',
                             required,
                             title="Please enter an IP address that follows the rule defined above")
@@ -33,12 +33,12 @@ block content(user)
 
                 fieldset#ftp_server_port_fieldset.ftp_server_data_fieldset
                     article#bot_ingame_chat_channel_id_article(class='article_for_ftp_server_data')
-                        label(class="ftp_server_data_label",for='ftp_server_port_input') FTP server port number (Port number will be between 49152 and 65535)
-                        input#ftp_server_port_input(
+                        label(class="ftp_server_data_label",for='ftp_server_port_input') FTP server port number (Port number will be between 1024 and 65535)
+                        input.validate-input#ftp_server_port_input(
                             class="ftp_server_data_input",
-                            type='number',
+                            type='text',
                             min='0',
-                            pattern="^(102[4-9]|10[3-9]\d|1[1-9]\d{2}|[2-9]\d{3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$",
+                            pattern="^(102[4-9]|10[3-9]\d|1[1-9]\d{2}|[2-9]\d{3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$",                            
                             title="Please enter an FTP server port number that follows the rule defined above",
                             name='ftp_server_port_input', 
                             required,
@@ -48,7 +48,7 @@ block content(user)
                 fieldset#ftp_server_username_fieldset.ftp_server_data_fieldset
                     article#bot_ingame_logins_channel_id_article(class='article_for_ftp_server_data')
                         label(class="ftp_server_data_label",for='ftp_server_username_input') FTP server username (e.g. JacobG123). This can only be the - or _ character, upper and lowercase letters, and numbers 0 through 9
-                        input#ftp_server_username_input(
+                        input.validate-input#ftp_server_username_input(
                             class="ftp_server_data_input",
                             type='text',
                             title="Please enter an FTP server username that follows the rule defined above",
@@ -61,23 +61,23 @@ block content(user)
                 fieldset#ftp_server_password_fieldset.ftp_server_data_fieldset
                     article#bot_ingame_new_player_joins_id_article(class='article_for_ftp_server_data')
                         label(class="ftp_server_data_label",for='ftp_server_password_input') FTP server password (e.g. aED1PbAfqBTjPWnRF1kKUQgd). Your password must contain at least one number ranging from 0 through 9, contain 1 upper and lower case letter, 1 special character, and be between 8 and 32 characters long. 
-                        input#ftp_server_password_input(
+                        input.validate-input#ftp_server_password_input(
                             class="ftp_server_data_input",
                             type='password',
                             name='ftp_server_password_input', 
                             title="Please enter an FTP server password that follows the rule defined above",
-                            pattern="^(?=.*\d)(?=.*[!@#$%^&*])(?=.*[a-z])(?=.*[A-Z]).{8,}$",
+                            pattern="^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,32}$",                            
                             required,
                             placeholder='aED1PbAfqBTjPWnRF1kKUQgd')
 
                 fieldset#ftp_server_password_confirm_fieldset.ftp_server_data_fieldset
                     article#bot_ingame_new_player_joins_id_article(class='article_for_ftp_server_data')
                         label(class="ftp_server_data_label",for='ftp_server_confirm_password_input') FTP server password (e.g. aED1PbAfqBTjPWnRF1kKUQgd). This password must be the same as the password above
-                        input#ftp_server_confirm_password_input(
+                        input.validate-input#ftp_server_confirm_password_input(
                             class="ftp_server_data_input",
                             type='password',
                             name='ftp_server_confirm_password_input', 
-                            pattern="^(?=.*\d)(?=.*[!@#$%^&*])(?=.*[a-z])(?=.*[A-Z]).{8,}$",
+                            pattern="^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,32}$",
                             required,
                             placeholder='aED1PbAfqBTjPWnRF1kKUQgd')
                         
@@ -85,4 +85,4 @@ block content(user)
                     button#save_changes_to_ftp_server_data_button(class="" type='submit') Save
                     button#cancel_changes_to_ftp_server_data_button(class="" type='button') Cancel
     
-        
+    script(src="/javascripts/ftp_server_data.js")
