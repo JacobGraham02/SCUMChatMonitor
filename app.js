@@ -16,7 +16,7 @@ const { exec } = require('child_process');
 const fs = require('node:fs');
 const FTPClient = require('ftp');
 const MongoStore = require('connect-mongo');
-const { Client, Collection, GatewayIntentBits, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
+const { Client, Collection, GatewayIntentBits, REST, Routes, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
 const { EmbedBuilder } = require('discord.js');
 const myEmitter = require('./utils/EventEmitter');
 const Queue = require('./utils/Queue');
@@ -1356,6 +1356,104 @@ client_instance.on('interactionCreate',  async (interaction) => {
         await interaction.reply({ content: `You do not have permission to execute the command ${command.data.name}. Contact a server administrator if you believe this is an error` });
     }
 });
+
+/**
+ * The guildCreate event is triggered when the Discord bot joins a new server
+ */
+client_instance.on('guildCreate', async (guild) => {
+    
+    const bot_id = client_instance.user.id;
+    const guild_id = guild.id;
+    await registerInitialSetupCommands(bot_id, guild_id);
+    await createBotCategoryAndChannels(guild);
+});
+
+discord_client_instance.on(Events.InteractionCreate, async interaction => {
+    if (interaction.isModalSubmit()) {
+  
+        if (interaction.customId === 'userDataInputModal') {
+            const user_username = interaction.fields.getTextInputValue('usernameInput');
+            const user_email = interaction.fields.getTextInputValue('emailInput');
+            const user_password = hashAndValidatePassword.hashPassword(interaction.fields.getTextInputValue('passwordInput'));
+            const guild_id = interaction.guildId;
+
+        } else if (interaction.customId === `channelIdInputModal`) {
+            const ingame_chat_channel_id = interaction.fields.getTextInputValue(`ingameChatChannelInput`);
+            const logins_chat_channel_id = interaction.fields.getTextInputValue(`loginsChannelInput`);
+            const new_player_joins_channel_id = interaction.fields.getTextInputValue(`newPlayerJoinsChannelInput`);
+            const battlemetrics_data_channel_id = interaction.fields.getTextInputValue(`battlemetricsServerInput`);
+            const server_info_button_channel_id = interaction.fields.getTextInputValue(`serverInfoButtonInput`);
+        }
+  
+      if (interaction.customId === `userDataInputModal`) {
+        await interaction.reply({content: `Your submission for user data was received successfully`, ephemeral: true});
+      } else if (interaction.customId === `channelIdsInputModal`) {
+        await interaction.reply({content: `Your submission for channel ids was received successfully`, ephemeral: true});
+      }
+    }
+  });
+
+async function createBotCategoryAndChannels(guild) {
+    try {
+        const category_creation_response = await guild.channels.create(`Chat monitor bot`, {
+            type: `GUILD_CATEGORY`
+        });
+
+        const channel_names = [
+            "In game messages",
+            "Log ins and log outs",
+            "New player joins",
+            "Server battlemetrics link",
+            "Server info button"
+        ];
+
+        for (const name of channel_names) {
+            await guild.channels.create(name, {
+                type: `GUILD_TEXT`,
+                parent: category_creation_response.id
+            });
+        }
+    } catch (error) {
+        console.error(`There was an error when setting up the bot channels. Please inform the server administrator of this error: ${error}`);
+        throw new Error(`There was an error when setting up the bot channels. Please inform the server administrator of this error: ${error}`);
+    }
+}
+
+async function registerInitialSetupCommands(discord_bot_token, bot_id, guild_id) {
+    const commands_folder_path = path.join(__dirname, "../commands/discordcommands");
+    const filtered_command_files = fs
+        .readdirSync(commands_folder_path)
+        .filter((file) => file !== "deploy-commands.js");
+    client_instance.discord_commands = new Collection();
+
+    const commands = [];
+
+    const initial_bot_Commands = [`setupuser`, `setupchannels`, `registercommands`];
+
+    for (const command_file of filtered_command_files) {
+        const command_file_path = path.join(commands_folder_path, command_file);
+        const command_import = await import(command_file_path);
+        const command_default_object = command_import.default();
+
+        if (initial_bot_Commands.includes(command_default_object.data.name)) {
+            commands.push(command_default_object.data);
+            client_instance.discord_commands.set(command_default_object.data.name, command_default_object);
+        }
+    }
+
+    if (discord_bot_token && bot_id && guild_id) {
+        const rest = new REST({ version: '10' }).setToken(discord_bot_token)
+        
+        rest.put(Routes.applicationGuildCommands(bot_id, guild_id), {
+            body: commands
+        }).then(() => {
+            console.log(`The initial application setup commands were successfully registered for ${bot_id} in the guild ${guild_id}`);
+        }).catch((error) => {
+            console.error(`There was an error when attempting to register the initial application commands for ${bot_id} in the guild ${guild_id}: ${error}`);
+        });
+    }
+}
+
 /**
  * Uses the Windows powershell command 'System.Windows.Forms.Clipboard]::SetText() to copy some text to the system clipboard
  * In the else clause, there is a debug log message if you want to uncomment that for development purposes

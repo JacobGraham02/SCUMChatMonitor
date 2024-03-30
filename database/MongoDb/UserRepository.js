@@ -79,7 +79,7 @@ module.exports = class UserRepository {
         }
     }
 
-    async createBotWebsiteUser(user_username, user_password, discord_guild_id, discord_channel_ids) {
+    async createBotWebsiteUser(user_username, user_email, user_password, discord_guild_id) {
         const database_connection = await database_connection_manager.getConnection();
 
         try {
@@ -88,12 +88,10 @@ module.exports = class UserRepository {
 
             const new_bot_user_document = {
                 bot_user_id: crypto.randomUUID(),
+                bot_user_guild_id: discord_guild_id,
+                bot_user_email: user_email,
                 bot_user_username: user_username,
                 bot_user_password: bot_owner_password,
-                discord_server_id: discord_guild_id,
-                discord_server_admin_log_channel_id: discord_channel_ids.admin_channel_id,
-                discord_chat_log_channel_id: discord_channel_ids.chat_channel_id,
-                discord_login_log_channel_id: discord_channel_ids.log_channel_id
             };
 
             const newBotUserResult = await user_collection.insertOne(new_bot_user_document);
