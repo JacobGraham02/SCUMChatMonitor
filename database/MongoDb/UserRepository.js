@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const DatabaseConnectionManager = require("./DatabaseConnectionManager");
+const { hashPassword } = require('../../modules/hashAndValidatePassword');
 
 const database_connection_manager = new DatabaseConnectionManager();
 
@@ -73,6 +74,61 @@ module.exports = class UserRepository {
         } catch (error) {
             console.error(`Error finding admin by UUID: ${error}`);
             throw new Error(`Error finding admin by UUID: ${error}`);
+        } finally {
+            await this.releaseConnectionSafely(database_connection);
+        }
+    }
+
+    async createBotWebsiteUser(user_username, user_password, discord_guild_id, discord_channel_ids) {
+        const database_connection = await database_connection_manager.getConnection();
+
+        try {
+            const user_collection = database_connection.collection(`BotOwners`);
+            const bot_owner_password = hashPassword(user_password).hash;
+
+            const new_bot_user_document = {
+                bot_user_id: crypto.randomUUID(),
+                bot_user_username: user_username,
+                bot_user_password: bot_owner_password,
+                discord_server_id: discord_guild_id,
+                discord_server_admin_log_channel_id: discord_channel_ids.admin_channel_id,
+                discord_chat_log_channel_id: discord_channel_ids.chat_channel_id,
+                discord_login_log_channel_id: discord_channel_ids.log_channel_id
+            };
+
+            const newBotUserResult = await user_collection.insertOne(new_bot_user_document);
+            return newBotUserResult.insertedId;
+        } catch (error) {
+            console.error(`There was an error when attempting to create a new bot website user: ${error}`);
+            throw new Error(`There was an error when attempting to create a new bot website user: ${error}`);
+        } finally {
+            await this.releaseConnectionSafely(database_connection);
+        }
+    }
+
+    async updateBotWebsiteUserChannelIds(user_id, discord_channel_ids) {
+        const database_connection = await database_connection_manager.getConnection();
+
+        try {
+            const user_collection = database_connection.collection(`BotOwners`);
+
+            const filter = { bot_user_id: user_id }
+
+            const update_bot_user_document = {
+                $set: {
+                    discord_guild_id: discord_guild_id,
+                    discord_server_admin_log_channel_id: discord_channel_ids.admin_channel_id,
+                    discord_chat_log_channel_id: discord_channel_ids.chat_channel_id,
+                    discord_login_log_channel_id: discord_channel_ids.log_channel_id
+                }
+            }
+
+            const updateChannelIdsResult = await user_collection.updateOne(filter, update_bot_user_document);
+
+            return updateChannelIdsResult.matchedCount > 0 ? updateChannelIdsResult.modifiedCount : `No documents were updated with the new Discord channel ids. Please contact the server administrator`;
+        } catch (error) {
+            console.error(`There was an error when attempting to create a new bot website user: ${error}`);
+            throw new Error(`There was an error when attempting to create a new bot website user: ${error}`);
         } finally {
             await this.releaseConnectionSafely(database_connection);
         }
