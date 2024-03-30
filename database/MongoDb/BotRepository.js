@@ -12,7 +12,7 @@ module.exports = class BotRepository {
             return bot;
         } catch (error) {
             console.error(`There was an error when attempting to fetch all bot data given a UUID. Please inform the server administrator of this error: ${error}`);
-            throw error;
+            throw new Error(`There was an error when attempting to fetch all bot data given a UUID. Please inform the server administrator of this error: ${error}`);
         } finally {
             await this.releaseConnectionSafely(database_connection);
         }
@@ -40,7 +40,7 @@ module.exports = class BotRepository {
             );
         } catch (error) {
             console.error(`There was an error when attempting to create a Disord bot document in the database. Please inform the server administrator of this error: ${error}`);
-            throw error;
+            throw new Error(`There was an error when attempting to create a Disord bot document in the database. Please inform the server administrator of this error: ${error}`);
         } finally {
             await this.releaseConnectionSafely(database_connection);
         }
@@ -67,7 +67,7 @@ module.exports = class BotRepository {
             );
         } catch (error) {
             console.error(`There was an error when attempting to insert Discord channel id(s) into the bot. Please inform the server administrator of this error: ${error}`);
-            throw error;
+            throw new Error(`There was an error when attempting to insert Discord channel id(s) into the bot. Please inform the server administrator of this error: ${error}`);
         } finally {
             await this.releaseConnectionSafely(database_connection);
         }
@@ -93,7 +93,7 @@ module.exports = class BotRepository {
             );
         } catch (error) {
             console.error(`There was an error when attempting to insert FTP server data into the discord bot. Please contact the server administrator and inform them of this error: ${error}`);
-            throw error;
+            throw new Error(`There was an error when attempting to insert FTP server data into the discord bot. Please contact the server administrator and inform them of this error: ${error}`);
         } finally {
             await this.releaseConnectionSafely(database_connection);
         }
@@ -118,7 +118,7 @@ module.exports = class BotRepository {
             )
         } catch (error) {
             console.error(`There was an error when attempting to create a new bot game server document. Please inform the server administrator of this error: ${error}`);
-            throw error;
+            throw new Error(`There was an error when attempting to create a new bot game server document. Please inform the server administrator of this error: ${error}`);
         } finally {
             await this.releaseConnectionSafely(database_connection);
         }
@@ -145,7 +145,7 @@ module.exports = class BotRepository {
             );
         } catch (error) {
             console.error(`There was an error when attempting to create a new bot item package. Please inform the server administrator of this error: ${error}`);
-            throw error;
+            throw new Error(`There was an error when attempting to create a new bot item package. Please inform the server administrator of this error: ${error}`);
         } finally {
             await this.releaseConnectionSafely(database_connection);
         }
@@ -162,7 +162,7 @@ module.exports = class BotRepository {
             return bot_packages;
         } catch (error) {
             console.error(`There was an error when attempting to retrieve all of the bot packages. Please inform the server administrator of this error: ${error}`);
-            throw error;
+            throw new Error(`There was an error when attempting to retrieve all of the bot packages. Please inform the server administrator of this error: ${error}`);
         } finally {
             await this.releaseConnectionSafely(database_connection);
         }
@@ -179,7 +179,7 @@ module.exports = class BotRepository {
             return bot_packages;
         } catch (error) {
             console.error(`There was an error when attempting to retrieve the bot package by name. Please inform the server administrator of this error: ${error}`);
-            throw error;
+            throw new Error(`There was an error when attempting to retrieve the bot package by name. Please inform the server administrator of this error: ${error}`);
         } finally {
             await this.releaseConnectionSafely(database_connection);
         }
@@ -196,7 +196,7 @@ module.exports = class BotRepository {
             return bot_ftp_server_data;
         } catch (error) {
             console.error(`There was an error when attempting to retrieve the bot ftp server data. Please inform the server administrator of this error: ${error}`);
-            throw error;
+            throw new Error(`There was an error when attempting to retrieve the bot ftp server data. Please inform the server administrator of this error: ${error}`);
         } finally {
             this.releaseConnectionSafely(database_connection);
         }
@@ -213,7 +213,7 @@ module.exports = class BotRepository {
             return bot_game_server_data;
         } catch (error) {
             console.error(`There was an error when attempting to retrieve the bot game server data. Please inform the server administrator of this error: ${error}`);
-            throw error;
+            throw new Error(`There was an error when attempting to retrieve the bot game server data. Please inform the server administrator of this error: ${error}`);
         } finally {
             this.releaseConnectionSafely(database_connection);
         }
@@ -230,7 +230,7 @@ module.exports = class BotRepository {
             return bot_discord_server_data;
         } catch (error) {
             console.error(`There was an error when attempting to retrieve the bot discord server data. Please inform the server administrator of this error: ${error}`);
-            throw error;
+            throw new Error(`There was an error when attempting to retrieve the bot discord server data. Please inform the server administrator of this error: ${error}`);
         } finally {
             this.releaseConnectionSafely(database_connection);
         }
@@ -247,7 +247,7 @@ module.exports = class BotRepository {
             return bot_data;
         } catch (error) {
             console.error(`There was an error when attempting to retrieve the bot data. Please inform the server administrator of this error: ${error}`);
-            throw error;
+            throw new Error(`There was an error when attempting to retrieve the bot data. Please inform the server administrator of this error: ${error}`);
         } finally {
             this.releaseConnectionSafely(database_connection);
         }
@@ -259,8 +259,8 @@ module.exports = class BotRepository {
             try {
                 await database_connection_manager.releaseConnection(database_connection);
             } catch (error) {
-                console.error('An error has occurred during the execution of releaseConnectionSafely function: ', error);
-                throw error;
+                console.error(`An error has occurred during the execution of releaseConnectionSafely function: ${error}`);
+                throw new Error(`An error has occurred during the execution of releaseConnectionSafely function: ${error}`);
             }
         }
     }
