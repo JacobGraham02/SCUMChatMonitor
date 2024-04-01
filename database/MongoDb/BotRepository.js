@@ -20,27 +20,30 @@ module.exports = class BotRepository {
 
     async createBot(bot_information) {
         const database_connection = await database_connection_manager.getConnection();
-        const bot_password_salt = bot_information.bot_password.substring(0,32);
+        const bot_password_salt = bot_information.bot_password.substring(0, 32);
         const new_bot_document = {
             bot_username: bot_information.bot_username,
             bot_password: bot_information.bot_password,
             bot_salt: bot_password_salt,
             bot_email: bot_information.bot_email,
-            bot_id: bot_information.bot_id,
             guild_id: bot_information.guild_id,
         };
-
+    
+        if (!bot_information.bot_id) {
+            new_bot_document.bot_id = crypto.randomUUID();
+        }
+    
         try {
             const bot_collection = database_connection.collection('bot');
-
+    
             await bot_collection.updateOne(
                 { guild_id: bot_information.guild_id },
                 { $set: new_bot_document },
-                { upsert: true}
+                { upsert: true }
             );
         } catch (error) {
-            console.error(`There was an error when attempting to create a Disord bot document in the database. Please inform the server administrator of this error: ${error}`);
-            throw new Error(`There was an error when attempting to create a Disord bot document in the database. Please inform the server administrator of this error: ${error}`);
+            console.error(`There was an error when attempting to create a Discord bot document in the database. Please inform the server administrator of this error: ${error}`);
+            throw new Error(`There was an error when attempting to create a Discord bot document in the database. Please inform the server administrator of this error: ${error}`);
         } finally {
             await this.releaseConnectionSafely(database_connection);
         }
@@ -194,6 +197,23 @@ module.exports = class BotRepository {
         } catch (error) {
             console.error(`There was an error when attempting to retrieve the bot data by guild id. Please inform the server administrator of this error: ${error}`);
             throw new Error(`There was an error when attempting to retrieve the bot data by guild id. Please inform the server administrator of this error: ${error}`);
+        } finally {
+            await this.releaseConnectionSafely(database_connection);
+        }
+    }
+
+    async getBotDataByEmail(bot_email) {
+        const database_connection = await database_connection_manager.getConnection();
+    
+        try {
+            const bot_collection = database_connection.collection('bot');
+    
+            const bot_data = await bot_collection.findOne({ bot_email: bot_email });
+    
+            return bot_data;
+        } catch (error) {
+            console.error(`There was an error when attempting to retrieve the bot data by email. Please inform the server administrator of this error: ${error}`);
+            throw new Error(`There was an error when attempting to retrieve the bot data by email. Please inform the server administrator of this error: ${error}`);
         } finally {
             await this.releaseConnectionSafely(database_connection);
         }

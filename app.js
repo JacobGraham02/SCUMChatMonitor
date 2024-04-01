@@ -112,7 +112,7 @@ let gportal_log_file_ftp_client = undefined;
  * Name of username and login fields used on the login form 
  */
 const username_and_password_fields = {
-    username_field: 'username',
+    email_field: 'email',
     password_field: 'password'
 };
 
@@ -912,29 +912,60 @@ async function insertSteamUsersIntoDatabase(steam_user_ids_array, steam_user_nam
  * @param {any} password
  * @param {any} done
  */
-const verifyCallback = (username, password, done) => {
-    user_repository.findAdminByUsername(username).then((admin_data_results) => {
-        if (admin_data_results === null) {
-            return done(null, false);
-        }
-        const admin_uuid = admin_data_results.admin_id;
-        const admin_username = admin_data_results.admin_username;
-        const admin_password_hash = admin_data_results.admin_password_hash;
-        const admin_password_salt = admin_data_results.admin_password_salt;
+const verifyCallback = async (email, password, done) => {
+    let bot_user_data = undefined;
+    try {
+        bot_user_data = await bot_repository.getBotDataByEmail(email);
+    } catch (error) {
+        console.error(`An error has occurred when attempting to verify that your log in. Please contact the server administrator with the following error: ${error}`);
+        throw new Error(`An error has occurred when attempting to verify that your log in. Please contact the server administrator with the following error: ${error}`);
+    }
+    if (bot_user_data === null) {
+        return done(null, false);
+    }
+    const bot_user_uuid = bot_user_data.bot_id;
+    const bot_user_email = bot_user_data.bot_email;
+    const bot_user_username = bot_user_data.bot_username;
+    const bot_user_password = bot_user_data.bot_password;
+    const bot_user_salt = bot_user_data.bot_salt;
+    const bot_user_guild_id = bot_user_data.guild_id;
+    const bot_user_ftp_server_ipv4 = bot_user_data.ftp_server_ip;
+    const bot_user_ftp_server_port = bot_user_data.ftp_server_port;
+    const bot_user_ftp_server_username = bot_user_data.ftp_server_username;
+    const bot_user_ftp_server_password = bot_user_data.ftp_server_password;
+    const bot_user_game_server_ipv4 = bot_user_data.game_server_ipv4_address;
+    const bot_user_game_server_port = bot_user_data.game_server_port;
+    const bot_user_ingame_chat_channel_id = bot_user_data.scum_ingame_chat_channel_id;
+    const bot_user_ingame_logins_channel_id = bot_user_data.scum_ingame_logins_channel_id;
+    const bot_user_new_player_joins_channel_id = bot_user_data.scum_new_player_joins_channel_id;
+    const bot_user_battlemetrics_channel_id = bot_user_data.scum_battlemetrics_server_id;
+    const bot_user_server_info_channel_id = bot_user_data.scum_server_info_channel_id;
 
-        const is_valid_administrator_account = hashAndValidatePassword.validatePassword(password, admin_password_hash, admin_password_salt);
+    const valid_user_account = hashAndValidatePassword.validatePassword(password, bot_user_password, bot_user_salt);
 
-        const admin = {
-            uuid: admin_uuid,
-            username: admin_username,
-        };
+    const logged_in_bot_user_data = {
+        uuid: bot_user_uuid,
+        username: bot_user_username,
+        email: bot_user_email,
+        guild_id: bot_user_guild_id,
+        ftp_server_ipv4: bot_user_ftp_server_ipv4,
+        ftp_server_port: bot_user_ftp_server_port,
+        ftp_server_username: bot_user_ftp_server_username,
+        ftp_server_password: bot_user_ftp_server_password,
+        game_server_ipv4: bot_user_game_server_ipv4,
+        game_server_port: bot_user_game_server_port,
+        ingame_chat_channel_id: bot_user_ingame_chat_channel_id,
+        ingame_logins_channel_id: bot_user_ingame_logins_channel_id,
+        new_player_joins_channel_id: bot_user_new_player_joins_channel_id,
+        battlemetrics_channel_id: bot_user_battlemetrics_channel_id,
+        server_info_channel_id: bot_user_server_info_channel_id
+    };
 
-        if (is_valid_administrator_account) {
-            return done(null, admin);
-        } else {
-            return done(null, false);
-        }
-    }).catch((error) => console.error(`An error has occured during the execution of verifyCallback: ${error}`));
+    if (valid_user_account) {
+        return done(null, logged_in_bot_user_data);
+    } else {
+        return done(null, false);
+    }
 }
 
 // view engine setup
