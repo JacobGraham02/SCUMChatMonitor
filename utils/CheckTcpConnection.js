@@ -1,5 +1,5 @@
-const { exec } = require('child_process');
-module.exports = class CheckTcpConnection {
+import { exec } from 'child_process';
+export default class CheckTcpConnection {
 
     constructor(game_server_remote_address, game_server_remote_port, message_logger) {
         this.game_server_address = game_server_remote_address;

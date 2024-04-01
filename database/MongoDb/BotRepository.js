@@ -1,8 +1,8 @@
-const crypto = require('crypto');
-const DatabaseConnectionManager = require('./DatabaseConnectionManager');
+import { randomUUID } from 'crypto';
+import DatabaseConnectionManager from './DatabaseConnectionManager.js';
 const database_connection_manager = new DatabaseConnectionManager();
 
-module.exports = class BotRepository {
+export default class BotRepository {
 
     async findBotByUUID(bot_uuid) {
         const database_connection = await database_connection_manager.getConnection();
@@ -30,7 +30,7 @@ module.exports = class BotRepository {
         };
     
         if (!bot_information.bot_id) {
-            new_bot_document.bot_id = crypto.randomUUID();
+            new_bot_document.bot_id = randomUUID();
         }
     
         try {

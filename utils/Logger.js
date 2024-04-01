@@ -1,7 +1,9 @@
-require('dotenv').config({path:'.env'});
-const fs = require('fs');
+import { config } from 'dotenv';
+config({ path: '.env' });
 
-module.exports = class Logger {
+import fs from 'fs';
+
+export default class Logger {
     constructor() {
         this.log_file_errors_path = process.env.scumbot_error_log_path;
         this.log_file_messages_path = process.env.scumbot_message_log_path;

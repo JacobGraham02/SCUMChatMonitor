@@ -1,10 +1,10 @@
-const crypto = require('crypto');
-const DatabaseConnectionManager = require("./DatabaseConnectionManager");
-const { hashPassword } = require('../../modules/hashAndValidatePassword');
+import { randomUUID } from 'crypto';
+import DatabaseConnectionManager from "./DatabaseConnectionManager.js";
+import { hashPassword } from '../../modules/hashAndValidatePassword.js';
 
 const database_connection_manager = new DatabaseConnectionManager();
 
-module.exports = class UserRepository {
+export default class UserRepository {
 
     async findUserById(user_steam_id) {
         const database_connection = await database_connection_manager.getConnection();
@@ -87,7 +87,7 @@ module.exports = class UserRepository {
             const bot_owner_password = hashPassword(user_password).hash;
 
             const new_bot_user_document = {
-                bot_user_id: crypto.randomUUID(),
+                bot_user_id: randomUUID(),
                 bot_user_guild_id: discord_guild_id,
                 bot_user_email: user_email,
                 bot_user_username: user_username,
@@ -139,7 +139,7 @@ module.exports = class UserRepository {
             const user_collection = database_connection.collection('Administrators');
 
             const new_admin_user_document = {
-                admin_id: crypto.randomUUID(),
+                admin_id: randomUUID(),
                 admin_username: admin_username,
                 admin_password_hash: admin_password.salt + admin_password.hash,
                 admin_password_salt: admin_password.salt,

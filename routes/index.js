@@ -1,7 +1,7 @@
-var express = require('express');
-var router = express.Router();
-const { OAuth2Client } = require('google-auth-library');
-const fs = require('fs');
+import { Router } from 'express';
+var router = Router();
+import { OAuth2Client } from 'google-auth-library';
+import { writeFile } from 'fs';
 
 const oauth2_client = new OAuth2Client(
     process.env.google_cloud_console_client_id,
@@ -39,7 +39,7 @@ router.get('/botcallback', async function(request, response, next) {
 
     oauth2_client.setCredentials(tokens);
 
-    fs.writeFile('gmail-credentials.json', JSON.stringify(tokens), (error) => {
+    writeFile('gmail-credentials.json', JSON.stringify(tokens), (error) => {
         if (error) {
             console.error(error);
         } else {
@@ -62,4 +62,4 @@ router.post('/logout', isLoggedIn, function (request, response, next) {
     });
 });
 
-module.exports = router;
+export default router;

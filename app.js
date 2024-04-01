@@ -1,40 +1,45 @@
-require('dotenv').config({path:'.env'});
+import { config } from 'dotenv';
+config({ path: '.env' });
+
 
 /**
  * Nodejs and express specific dependencies
  */
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
-var session = require('express-session');
-const crypto = require('crypto');
-const passport = require('passport');
-const LocalStrategy = require('passport-local').Strategy;
-const { exec } = require('child_process');
-const fs = require('node:fs');
-const FTPClient = require('ftp');
-const MongoStore = require('connect-mongo');
-const { Client, Collection, GatewayIntentBits, REST, Routes, Events, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
-const { EmbedBuilder } = require('discord.js');
-const myEmitter = require('./utils/EventEmitter');
-const Queue = require('./utils/Queue');
-const Logger = require('./utils/Logger');
-const ServerInfoCommand = require('./api/battlemetrics/ServerInfoCommand');
-const CheckTcpConnection = require('./utils/CheckTcpConnection');
-const hashAndValidatePassword = require('./modules/hashAndValidatePassword');
-const UserRepository = require('./database/MongoDb/UserRepository');
-const BotRepository = require('./database/MongoDb/BotRepository');
-const Mutex = require('async-mutex').Mutex;
-var indexRouter = require('./routes/index');
-var adminRouter = require('./routes/admin');
-var apiExecutableRecompilation = require('./api/recompile/recompile-executable');
-const PlayerInfoCommand = require('./api/ipapi/PlayerInfoCommand');
-const SteamUserInfoCommand = require('./api/steam/SteamUserInfoCommand');
-const recompileExecutable = require('./api/recompile/recompile-executable');
-const { E_CANCELED } = require('async-mutex');
+import createError from 'http-errors';
+import express from 'express';
+import path from 'path';
+import { dirname} from 'path'
+import cookieParser from 'cookie-parser';
+import logger from 'morgan';
+import session from 'express-session';
+import crypto from 'crypto';
+import passport from 'passport';
+import { Strategy as LocalStrategy } from 'passport-local';
+import { exec } from 'child_process';
+import fs from 'fs';
+import FTPClient from 'ftp';
+import MongoStore from 'connect-mongo';
+import { Client, Collection, GatewayIntentBits, REST, Routes, Events } from 'discord.js';
+import { EmbedBuilder } from 'discord.js';
+import myEmitter from './utils/EventEmitter.js'
+import Queue from './utils/Queue.js'
+import Logger from './utils/Logger.js';
+import ServerInfoCommand from './api/battlemetrics/ServerInfoCommand.js';
+import CheckTcpConnection from './utils/CheckTcpConnection.js';
+import { hashPassword, validatePassword } from './modules/hashAndValidatePassword.js';
+import UserRepository from './database/MongoDb/UserRepository.js';
+import BotRepository from './database/MongoDb/BotRepository.js';
+import { Mutex } from 'async-mutex';
+import indexRouter from './routes/index.js';
+import adminRouter from './routes/admin.js';
+import apiExecutableRecompilation from './api/recompile/recompile-executable.js';
+import PlayerInfoCommand from './api/ipapi/PlayerInfoCommand.js';
+import SteamUserInfoCommand from './api/steam/SteamUserInfoCommand.js';
+import { E_CANCELED } from 'async-mutex';
+import { fileURLToPath } from 'url';
+
 const bot_token = process.env.discord_wilson_bot_token;
+const test_guild_id="1224366025764634745";
 
 const client_instance = new Client({
     intents: [GatewayIntentBits.Guilds,
@@ -245,7 +250,7 @@ let user_steam_id = {};
 /**
  * Global boolean variable defining if the bot is having any errors or not
  */
-gportal_ftp_connection_issue = true;
+let gportal_ftp_connection_issue = true;
 
 let check_local_server_time_interval;
 
@@ -941,7 +946,7 @@ const verifyCallback = async (email, password, done) => {
     const bot_user_battlemetrics_channel_id = bot_user_data.scum_battlemetrics_server_id;
     const bot_user_server_info_channel_id = bot_user_data.scum_server_info_channel_id;
 
-    const valid_user_account = hashAndValidatePassword.validatePassword(password, bot_user_password, bot_user_salt);
+    const valid_user_account = validatePassword(password, bot_user_password, bot_user_salt);
 
     const logged_in_bot_user_data = {
         uuid: bot_user_uuid,
@@ -969,6 +974,8 @@ const verifyCallback = async (email, password, done) => {
 }
 
 // view engine setup
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
 
@@ -1392,11 +1399,10 @@ client_instance.on('interactionCreate',  async (interaction) => {
  * The guildCreate event is triggered when the Discord bot joins a new server
  */
 client_instance.on('guildCreate', async (guild) => {
-    
     const bot_id = client_instance.user.id;
     const guild_id = guild.id;
     await registerInitialSetupCommands(bot_id, guild_id);
-    await createBotCategoryAndChannels(guild);
+    // await createBotCategoryAndChannels(guild);
 });
 
 client_instance.on(Events.InteractionCreate, async interaction => {
@@ -1407,7 +1413,7 @@ client_instance.on(Events.InteractionCreate, async interaction => {
         if (interaction.customId === 'userDataInputModal') {
             const user_username = interaction.fields.getTextInputValue('usernameInput');
             const user_email = interaction.fields.getTextInputValue('emailInput');
-            const user_password = hashAndValidatePassword.hashPassword(interaction.fields.getTextInputValue('passwordInput'));
+            const user_password = hashPassword(interaction.fields.getTextInputValue('passwordInput'));
             const guild_id = interaction.guildId;
 
             const bot_information = {
@@ -1521,7 +1527,7 @@ async function createBotCategoryAndChannels(guild) {
 }
 
 async function registerInitialSetupCommands(bot_token, bot_id, guild_id) {
-    const commands_folder_path = path.join(__dirname, "../commands/discordcommands");
+    const commands_folder_path = path.join(__dirname, "./commands/discordcommands");
     const filtered_command_files = fs
         .readdirSync(commands_folder_path)
         .filter((file) => file !== "deploy-commands.js");
@@ -1529,7 +1535,7 @@ async function registerInitialSetupCommands(bot_token, bot_id, guild_id) {
 
     const commands = [];
 
-    const initial_bot_Commands = [`setupuser`, `setupchannels`, `registercommands`];
+    const initial_bot_Commands = [`setupuser`, `setupchannels`, `setupgameserver`, `setupchannels`, `setupftpserver`];
 
     for (const command_file of filtered_command_files) {
         const command_file_path = path.join(commands_folder_path, command_file);
@@ -1685,14 +1691,14 @@ async function enqueueCommand(user_chat_message_object) {
     await setProcessQueueMutex();
 }
 
-process.on('uncaughtException', (error) => {
-    message_logger.logError(error);
-});
+// process.on('uncaughtException', (error) => {
+//     message_logger.logError(error);
+// });
 
 
-process.on('exit', (error) => {
-    message_logger.logError(`Process exited with code: ${error}`);
-});
+// process.on('exit', (error) => {
+//     message_logger.logError(`Process exited with code: ${error}`);
+// });
 
 
 /**
@@ -1852,4 +1858,4 @@ function determineIfUserMessageInCorrectChannel(channel_message_was_sent, discor
     return channel_message_was_sent === discord_bot_channel_id;
 }
 
-module.exports = app;
+export default app;

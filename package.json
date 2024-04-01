@@ -2,7 +2,8 @@
   "name": "scumchatmonitor",
   "version": "0.0.0",
   "description": "SCUMChatMonitor",
-  "main": "app.js",
+  "exports": "./app.js",
+  "type": "module",
   "bin": "app.js",
   "private": true,
   "author": {

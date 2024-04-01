@@ -1,7 +1,7 @@
-const EventEmitter = require('events');
+import EventEmitter from 'events';
 
 class MyEmitter extends EventEmitter{}
 
 const myEmitter = new MyEmitter();
 
-module.exports = myEmitter;
+export default myEmitter;
