@@ -1,4 +1,5 @@
 import { ActionRowBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import BotRepository from '../../database/MongoDb/BotRepository';
 
 const { SlashCommandBuilder, ModalBuilder } = require('@discordjs/builders');
 
@@ -11,6 +12,17 @@ export default function() {
         authorization_role_name: ["Bot administrator"],
 
         async execute(interaction) {
+            const bot_repository = new BotRepository();
+            const guild_id = interaction.guildId;
+            let bot_data = undefined;
+
+            try {
+                bot_data = await bot_repository.getBotDataByGuildId(guild_id);
+            } catch (error) {
+                await interaction.reply({content:`There was an error when attempting to fetch the bot by guild id. Please inform the server administrator of the following error: ${error}.`,ephemeral:true});
+                throw new Error(`There was an error when attempting to fetch the bot by guild id. Please inform the server administrator of the following error: ${error}.`);
+            }
+
             const modal = new ModalBuilder()
                 .setCustomId(`userDataInputModal`)
                 .setTitle(`Enter user data below:`)
@@ -35,6 +47,15 @@ export default function() {
                 .setRequired(true)
                 .setPlaceholder(`kLe8PKz9nHe0Kr6zcAEy7m7b`)
                 .setStyle(TextInputStyle.Short)
+
+            if (bot_data) {
+                if (bot_data.bot_username) {
+                    usernameInput.setValue(bot_data.bot_username);
+                }
+                if (bot_data.bot_email) {
+                    emailInput.setValue(bot_data.bot_email);
+                }
+            } 
 
             const firstActionRow = new ActionRowBuilder().addComponents(usernameInput);
             const secondActionRow = new ActionRowBuilder().addComponents(emailInput);

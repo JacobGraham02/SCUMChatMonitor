@@ -1,4 +1,5 @@
 import { ActionRowBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import BotRepository from '../../database/MongoDb/BotRepository';
 
 const { SlashCommandBuilder, ModalBuilder } = require('@discordjs/builders');
 
@@ -11,6 +12,17 @@ export default function() {
         authorization_role_name: ["Bot administrator"],
 
         async execute(interaction) {
+            const bot_repository = new BotRepository();
+            const guild_id = interaction.guildId;
+            let bot_data = undefined;
+
+            try {
+                bot_data = await bot_repository.getBotDataByGuildId(guild_id);
+            } catch (error) {
+                await interaction.reply({content:`There was an error when attempting to fetch the bot by guild id. Please inform the server administrator of the following error: ${error}.`,ephemeral:true});
+                throw new Error(`There was an error when attempting to fetch the bot by guild id. Please inform the server administrator of the following error: ${error}.`);
+            }
+
             const modal = new ModalBuilder()
                 .setCustomId(`gameServerInputModal`)
                 .setTitle(`Enter game server data below:`)
@@ -28,6 +40,15 @@ export default function() {
                 .setRequired(true)
                 .setPlaceholder(`45000`)
                 .setStyle(TextInputStyle.Short)
+
+            if (bot_data) {
+                if (bot_data.game_server_ipv4_address) {
+                    ipv4AddressInput.setValue(bot_data.game_server_ipv4_address);
+                }
+                if (bot_data.game_server_port) {
+                    portNumberInput.setValue(bot_data.game_server_port);
+                }
+            }
 
             const firstActionRow = new ActionRowBuilder().addComponents(ipv4AddressInput);
             const secondActionRow = new ActionRowBuilder().addComponents(portNumberInput);

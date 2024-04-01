@@ -11,6 +11,17 @@ export default function() {
         authorization_role_name: ["Bot administrator"],
 
         async execute(interaction) {
+            const bot_repository = new BotRepository();
+            const guild_id = interaction.guildId;
+            let bot_data = undefined;
+
+            try {
+                bot_data = await bot_repository.getBotDataByGuildId(guild_id);
+            } catch (error) {
+                await interaction.reply({content:`There was an error when attempting to fetch the bot by guild id. Please inform the server administrator of the following error: ${error}.`,ephemeral:true});
+                throw new Error(`There was an error when attempting to fetch the bot by guild id. Please inform the server administrator of the following error: ${error}.`);
+            }
+
             const modal = new ModalBuilder()
                 .setCustomId(`ftpServerInputModal`)
                 .setTitle(`Enter FTP server data below:`)
@@ -42,6 +53,21 @@ export default function() {
                 .setRequired(true)
                 .setPlaceholder(`R76ReG4UKDw75gZeM8XU`)
                 .setStyle(TextInputStyle.Short)
+
+            if (bot_data) {
+                if (bot_data.ftp_server_ip) {
+                    ipv4AddressInput.setValue(bot_data.ftp_server_ip);
+                }
+                if (bot_data.ftp_server_port) {
+                    portNumberInput.setValue(bot_data.ftp_server_port);
+                }
+                if (bot_data.ftp_server_username) {
+                    usernameInput.setValue(bot_data.ftp_server_username);
+                }
+                if (bot_data.ftp_server_password) {
+                    passwordInput.setValue(bot_data.ftp_server_password);
+                }
+            }
 
             const firstActionRow = new ActionRowBuilder().addComponents(ipv4AddressInput);
             const secondActionRow = new ActionRowBuilder().addComponents(portNumberInput);
