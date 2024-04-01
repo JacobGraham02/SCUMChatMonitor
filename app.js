@@ -16,7 +16,7 @@ const { exec } = require('child_process');
 const fs = require('node:fs');
 const FTPClient = require('ftp');
 const MongoStore = require('connect-mongo');
-const { Client, Collection, GatewayIntentBits, REST, Routes, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
+const { Client, Collection, GatewayIntentBits, REST, Routes, Events, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
 const { EmbedBuilder } = require('discord.js');
 const myEmitter = require('./utils/EventEmitter');
 const Queue = require('./utils/Queue');
@@ -34,7 +34,7 @@ const PlayerInfoCommand = require('./api/ipapi/PlayerInfoCommand');
 const SteamUserInfoCommand = require('./api/steam/SteamUserInfoCommand');
 const recompileExecutable = require('./api/recompile/recompile-executable');
 const { E_CANCELED } = require('async-mutex');
-const discord_bot_token = process.env.discord_wilson_bot_token;
+const bot_token = process.env.discord_wilson_bot_token;
 
 const client_instance = new Client({
     intents: [GatewayIntentBits.Guilds,
@@ -1368,8 +1368,10 @@ client_instance.on('guildCreate', async (guild) => {
     await createBotCategoryAndChannels(guild);
 });
 
-discord_client_instance.on(Events.InteractionCreate, async interaction => {
+client_instance.on(Events.InteractionCreate, async interaction => {
     if (interaction.isModalSubmit()) {
+
+        const guild_id = interaction.guild.id
   
         if (interaction.customId === 'userDataInputModal') {
             const user_username = interaction.fields.getTextInputValue('usernameInput');
@@ -1377,18 +1379,86 @@ discord_client_instance.on(Events.InteractionCreate, async interaction => {
             const user_password = hashAndValidatePassword.hashPassword(interaction.fields.getTextInputValue('passwordInput'));
             const guild_id = interaction.guildId;
 
-        } else if (interaction.customId === `channelIdInputModal`) {
+            const bot_information = {
+                bot_username: user_username,
+                bot_email: user_email,
+                bot_password: user_password,
+                bot_id: bot_token,
+                guild_id: guild_id
+            }
+            try {
+                await bot_repository.createBot(bot_information);            
+            } catch (error) {
+                throw new Error(`There was an error when attempting to create a bot for you. Please inform the server administrator of this error: ${error}`);
+            }
+        } 
+        else if (interaction.customId === `channelIdInputModal`) {
             const ingame_chat_channel_id = interaction.fields.getTextInputValue(`ingameChatChannelInput`);
             const logins_chat_channel_id = interaction.fields.getTextInputValue(`loginsChannelInput`);
             const new_player_joins_channel_id = interaction.fields.getTextInputValue(`newPlayerJoinsChannelInput`);
             const battlemetrics_data_channel_id = interaction.fields.getTextInputValue(`battlemetricsServerInput`);
             const server_info_button_channel_id = interaction.fields.getTextInputValue(`serverInfoButtonInput`);
+
+            const discord_channel_ids = {
+                discord_ingame_chat_channel_id: ingame_chat_channel_id,
+                discord_logins_chat_channel_id: logins_chat_channel_id,
+                discord_new_player_chat_channel_id: new_player_joins_channel_id,
+                discord_batlemetrics_server_id: battlemetrics_data_channel_id,
+                discord_server_info_button_channel_id: server_info_button_channel_id,
+                guild_id: guild_id
+            }
+
+            try {
+                await bot_repository.createBotDiscordData(discord_channel_ids);
+            } catch (error) {
+                throw new Error(`There was an error when attempting to update your bot with Discord channel data. Please inform the server administrator of this error: ${error}`);
+            }
+        } 
+        else if (interaction.customId === `setupgameserver`) {
+            const ipv4_address = interaction.fields.getTextInputValue(`ipv4AddressInput`);
+            const port = interaction.fields.getTextInputValue(`portInput`);
+
+            const game_server_data = {
+                game_server_hostname_input: ipv4_address,
+                game_server_port_input: port,
+                guild_id: guild_id
+            }
+
+            try {
+                await bot_repository.createBotGameServerData(game_server_data);
+            } catch (error) {
+                throw new Error(`There was an error when attempting to update your bot with game server data. Please inform the server administrator of this error: ${error}`);
+            }
+        }
+        else if (interaction.customId === `setupftpserver`) {
+            const ipv4_address = interaction.fields.getTextInputValue(`ipv4AddressInput`);
+            const port = interaction.fields.getTextInputValue(`portNumberInput`);
+            const username = interaction.fields.getTextInputValue(`usernameInput`);
+            const password = interaction.fields.getTextInputValue(`passwordInput`);
+
+            const ftp_server_data = {
+                server_hostname: ipv4_address,
+                server_port: port,
+                server_username: username,
+                server_password: password,
+                guild_id: guild_id
+            }
+
+            try {
+                await bot_repository.createBotFtpServerData(ftp_server_data);
+            } catch (error) {
+                throw new Error(`There was an error when attempting to update your bot with FTP server data. Please inform the server administrator of this error: ${error}`);
+            }
         }
   
       if (interaction.customId === `userDataInputModal`) {
-        await interaction.reply({content: `Your submission for user data was received successfully`, ephemeral: true});
+        await interaction.reply({content: `Your submission for creating new user data with your bot was successful`, ephemeral: true});
       } else if (interaction.customId === `channelIdsInputModal`) {
-        await interaction.reply({content: `Your submission for channel ids was received successfully`, ephemeral: true});
+        await interaction.reply({content: `Your submission for creating new channel ids with your bot was successful`, ephemeral: true});
+      } else if (interaction.customId === `gameServerInputModal`) {
+        await interaction.reply({content: `Your submission for creating new game server data with your bot was successful`, ephemeral: true});
+      } else if (interaction.customid === `ftpServerInputModal`) {
+        await interaction.reply({content: `Your submission for creating new ftp server data with your bot was successful`, ephemeral: true});
       }
     }
   });
@@ -1419,7 +1489,7 @@ async function createBotCategoryAndChannels(guild) {
     }
 }
 
-async function registerInitialSetupCommands(discord_bot_token, bot_id, guild_id) {
+async function registerInitialSetupCommands(bot_token, bot_id, guild_id) {
     const commands_folder_path = path.join(__dirname, "../commands/discordcommands");
     const filtered_command_files = fs
         .readdirSync(commands_folder_path)
@@ -1441,8 +1511,8 @@ async function registerInitialSetupCommands(discord_bot_token, bot_id, guild_id)
         }
     }
 
-    if (discord_bot_token && bot_id && guild_id) {
-        const rest = new REST({ version: '10' }).setToken(discord_bot_token)
+    if (bot_token && bot_id && guild_id) {
+        const rest = new REST({ version: '10' }).setToken(bot_token)
         
         rest.put(Routes.applicationGuildCommands(bot_id, guild_id), {
             body: commands
@@ -1725,7 +1795,7 @@ async function processQueueIfNotProcessing(user_chat_object) {
 /**
  * Bot interacts with the discord API to 'log in' and become ready to start executing commands
  */
-client_instance.login(discord_bot_token);
+client_instance.login(bot_token);
 
 /**
  * When a user executes a bot command in the correct channel, this function will determine if the user is allowed to use the command. 
