@@ -27,6 +27,7 @@ block content(user)
                             name='ftp_server_hostname_input', 
                             pattern="^(25[0-5]|2[0-4]\\d|1\\d{2}|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d{2}|[1-9]?\\d)){3}$",                           
                             placeholder='192.168.122.56',
+                            value= user.ftp_server_ipv4 ? user.ftp_server_ipv4 : "",
                             required,
                             title="Please enter an IP address that follows the rule defined above")
                         #ftp_server_hostname_feedback.invalid-feedback Invalid IP address format
@@ -41,6 +42,7 @@ block content(user)
                             pattern="^(102[4-9]|10[3-9]\d|1[1-9]\d{2}|[2-9]\d{3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$",                            
                             title="Please enter an FTP server port number that follows the rule defined above",
                             name='ftp_server_port_input', 
+                            value= user.ftp_server_port ? user.ftp_server_port : "",
                             required,
                             placeholder='52000')
                         #ftp_server_port_feedback.invalid-feedback Invalid port number format
@@ -54,6 +56,7 @@ block content(user)
                             title="Please enter an FTP server username that follows the rule defined above",
                             pattern="^[a-zA-Z0-9_]*$",
                             name='ftp_server_username_input', 
+                            value= user.ftp_server_username ? user.ftp_server_username : "",
                             required,
                             placeholder='JacobG123')
                         #ftp_server_username_feedback.invalid-feedback Invalid username format
@@ -66,7 +69,8 @@ block content(user)
                             type='password',
                             name='ftp_server_password_input', 
                             title="Please enter an FTP server password that follows the rule defined above",
-                            pattern="^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,32}$",                            
+                            pattern="^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,32}$",      
+                            value= user.ftp_server_password ? user.ftp_server_password : "",                      
                             required,
                             placeholder='aED1PbAfqBTjPWnRF1kKUQgd')
 
@@ -78,6 +82,7 @@ block content(user)
                             type='password',
                             name='ftp_server_confirm_password_input', 
                             pattern="^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,32}$",
+                            value= "",
                             required,
                             placeholder='aED1PbAfqBTjPWnRF1kKUQgd')
                         
