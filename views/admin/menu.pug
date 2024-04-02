@@ -7,10 +7,10 @@ mixin menu(user)
    ul.menu
     li
       div#navbar_welcome_message
-       -if (user.admin_username !== undefined) {
+       -if (user.username !== undefined) {
          a#index_page_home_button(href='/admin/commands' title='A link to go to the website home page')
           img#menu_links_image(src='../../images/WilsonBotMenu.png', alt='The WilsonBot logo')
-         h1#user_administrator_name_heading Welcome, #{user.admin_username}
+         h1#user_administrator_name_heading Welcome, #{user.username}
     li
       a(href='/admin/commands' title='A link to go to the site commands page') Bot commands 
     li
@@ -28,3 +28,16 @@ mixin menu(user)
      div#recompile_executable_button_container
       form#global_site_navigation_recompile_application_executable(action='/admin/recompile', method='POST')
        button#recompile_executable_button(type="submit") Recompile executable
+
+  script.
+    document.addEventListener('DOMContentLoaded', function() {
+      const menuBtn = document.querySelector('#menu-btn'); // Adjusted to use ID
+      menuBtn.addEventListener('change', function() {
+          if (this.checked) {
+              document.body.style.overflow = 'hidden';
+          } else {
+              document.body.style.overflow = 'auto';
+          }
+      });
+    });
+

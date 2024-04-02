@@ -1,38 +1,45 @@
-require('dotenv').config({path:'.env'});
+import { config } from 'dotenv';
+config({ path: '.env' });
+
 
 /**
  * Nodejs and express specific dependencies
  */
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
-var session = require('express-session');
-const crypto = require('crypto');
-const passport = require('passport');
-const LocalStrategy = require('passport-local').Strategy;
-const { exec } = require('child_process');
-const fs = require('node:fs');
-const FTPClient = require('ftp');
-const MongoStore = require('connect-mongo');
-const { Client, Collection, GatewayIntentBits, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
-const { EmbedBuilder } = require('discord.js');
-const myEmitter = require('./utils/EventEmitter');
-const Queue = require('./utils/Queue');
-const Logger = require('./utils/Logger');
-const ServerInfoCommand = require('./api/battlemetrics/ServerInfoCommand');
-const CheckTcpConnection = require('./utils/CheckTcpConnection');
-const hashAndValidatePassword = require('./modules/hashAndValidatePassword');
-const UserRepository = require('./database/MongoDb/UserRepository');
-const BotRepository = require('./database/MongoDb/BotRepository');
-var indexRouter = require('./routes/index');
-var adminRouter = require('./routes/admin');
-var apiExecutableRecompilation = require('./api/recompile/recompile-executable');
-const PlayerInfoCommand = require('./api/ipapi/PlayerInfoCommand');
-const SteamUserInfoCommand = require('./api/steam/SteamUserInfoCommand');
-const recompileExecutable = require('./api/recompile/recompile-executable');
-const discord_bot_token = process.env.discord_wilson_bot_token;
+import createError from 'http-errors';
+import express from 'express';
+import path from 'path';
+import { dirname} from 'path'
+import cookieParser from 'cookie-parser';
+import logger from 'morgan';
+import session from 'express-session';
+import crypto from 'crypto';
+import passport from 'passport';
+import { Strategy as LocalStrategy } from 'passport-local';
+import { exec } from 'child_process';
+import fs from 'fs';
+import FTPClient from 'ftp';
+import MongoStore from 'connect-mongo';
+import { Client, Collection, GatewayIntentBits, REST, Routes, Events, ChannelType } from 'discord.js';
+import { EmbedBuilder } from 'discord.js';
+import myEmitter from './utils/EventEmitter.js'
+import Queue from './utils/Queue.js'
+import Logger from './utils/Logger.js';
+import ServerInfoCommand from './api/battlemetrics/ServerInfoCommand.js';
+import CheckTcpConnection from './utils/CheckTcpConnection.js';
+import { hashPassword, validatePassword } from './modules/hashAndValidatePassword.js';
+import UserRepository from './database/MongoDb/UserRepository.js';
+import BotRepository from './database/MongoDb/BotRepository.js';
+import { Mutex } from 'async-mutex';
+import indexRouter from './routes/index.js';
+import adminRouter from './routes/admin.js';
+import apiExecutableRecompilation from './api/recompile/recompile-executable.js';
+import PlayerInfoCommand from './api/ipapi/PlayerInfoCommand.js';
+import SteamUserInfoCommand from './api/steam/SteamUserInfoCommand.js';
+import { E_CANCELED } from 'async-mutex';
+import { fileURLToPath, pathToFileURL } from 'url';
+
+const bot_token = process.env.discord_wilson_bot_token;
+const test_guild_id="1224366025764634745";
 
 const client_instance = new Client({
     intents: [GatewayIntentBits.Guilds,
@@ -90,6 +97,8 @@ const gportal_ftp_server_target_directory = 'SCUM\\Saved\\SaveFiles\\Logs\\';
 const gportal_ftp_server_filename_prefix_login = 'login_';
 const gportal_ftp_server_filename_prefix_chat = 'chat_';
 
+const mutex = new Mutex();
+
 /**
  * GPortal FTP server credentials with a timeout time of 60 seconds in case the server is busy or slow. 
  */
@@ -108,7 +117,7 @@ let gportal_log_file_ftp_client = undefined;
  * Name of username and login fields used on the login form 
  */
 const username_and_password_fields = {
-    username_field: 'username',
+    email_field: 'email',
     password_field: 'password'
 };
 
@@ -241,7 +250,7 @@ let user_steam_id = {};
 /**
  * Global boolean variable defining if the bot is having any errors or not
  */
-gportal_ftp_connection_issue = true;
+let gportal_ftp_connection_issue = true;
 
 let check_local_server_time_interval;
 
@@ -814,7 +823,7 @@ async function checkLocalServerTime() {
     const currentDateTime = new Date();
     const current_hour = currentDateTime.getHours(); 
 
-    if (current_hour === 5) {
+    if (current_hour === 5 || current_hour === 18) {
         const current_minute = currentDateTime.getMinutes();
         const server_restart_messages = {
             40: 'Server restart in 20 minutes',
@@ -908,32 +917,65 @@ async function insertSteamUsersIntoDatabase(steam_user_ids_array, steam_user_nam
  * @param {any} password
  * @param {any} done
  */
-const verifyCallback = (username, password, done) => {
-    user_repository.findAdminByUsername(username).then((admin_data_results) => {
-        if (admin_data_results === null) {
-            return done(null, false);
-        }
-        const admin_uuid = admin_data_results.admin_id;
-        const admin_username = admin_data_results.admin_username;
-        const admin_password_hash = admin_data_results.admin_password_hash;
-        const admin_password_salt = admin_data_results.admin_password_salt;
+const verifyCallback = async (email, password, done) => {
+    let bot_user_data = undefined;
+    try {
+        bot_user_data = await bot_repository.getBotDataByEmail(email);
+    } catch (error) {
+        console.error(`An error has occurred when attempting to verify that your log in. Please contact the server administrator with the following error: ${error}`);
+        throw new Error(`An error has occurred when attempting to verify that your log in. Please contact the server administrator with the following error: ${error}`);
+    }
+    if (bot_user_data === null) {
+        return done(null, false);
+    }
+    const bot_user_uuid = bot_user_data.bot_id;
+    const bot_user_email = bot_user_data.bot_email;
+    const bot_user_username = bot_user_data.bot_username;
+    const bot_user_password = bot_user_data.bot_password;
+    const bot_user_salt = bot_user_data.bot_salt;
+    const bot_user_guild_id = bot_user_data.guild_id;
+    const bot_user_ftp_server_ipv4 = bot_user_data.ftp_server_ip;
+    const bot_user_ftp_server_port = bot_user_data.ftp_server_port;
+    const bot_user_ftp_server_username = bot_user_data.ftp_server_username;
+    const bot_user_ftp_server_password = bot_user_data.ftp_server_password;
+    const bot_user_game_server_ipv4 = bot_user_data.game_server_ipv4_address;
+    const bot_user_game_server_port = bot_user_data.game_server_port;
+    const bot_user_ingame_chat_channel_id = bot_user_data.scum_ingame_chat_channel_id;
+    const bot_user_ingame_logins_channel_id = bot_user_data.scum_ingame_logins_channel_id;
+    const bot_user_new_player_joins_channel_id = bot_user_data.scum_new_player_joins_channel_id;
+    const bot_user_battlemetrics_channel_id = bot_user_data.scum_battlemetrics_server_id;
+    const bot_user_server_info_channel_id = bot_user_data.scum_server_info_channel_id;
 
-        const is_valid_administrator_account = hashAndValidatePassword.validatePassword(password, admin_password_hash, admin_password_salt);
+    const valid_user_account = validatePassword(password, bot_user_password, bot_user_salt);
 
-        const admin = {
-            uuid: admin_uuid,
-            username: admin_username,
-        };
+    const logged_in_bot_user_data = {
+        uuid: bot_user_uuid,
+        username: bot_user_username,
+        email: bot_user_email,
+        guild_id: bot_user_guild_id,
+        ftp_server_ipv4: bot_user_ftp_server_ipv4,
+        ftp_server_port: bot_user_ftp_server_port,
+        ftp_server_username: bot_user_ftp_server_username,
+        ftp_server_password: bot_user_ftp_server_password,
+        game_server_ipv4: bot_user_game_server_ipv4,
+        game_server_port: bot_user_game_server_port,
+        ingame_chat_channel_id: bot_user_ingame_chat_channel_id,
+        ingame_logins_channel_id: bot_user_ingame_logins_channel_id,
+        new_player_joins_channel_id: bot_user_new_player_joins_channel_id,
+        battlemetrics_channel_id: bot_user_battlemetrics_channel_id,
+        server_info_channel_id: bot_user_server_info_channel_id
+    };
 
-        if (is_valid_administrator_account) {
-            return done(null, admin);
-        } else {
-            return done(null, false);
-        }
-    }).catch((error) => console.error(`An error has occured during the execution of verifyCallback: ${error}`));
+    if (valid_user_account) {
+        return done(null, logged_in_bot_user_data);
+    } else {
+        return done(null, false);
+    }
 }
 
 // view engine setup
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
 
@@ -997,30 +1039,6 @@ app.use(function (err, req, res, next) {
     res.status(err.status || 500);
     res.render('error');
 });
-
-/**
- * Read all of the '*.js' files from the 'commands' directory and store them in command_files_list for use later
- */
-const commands_path = path.join(__dirname, 'commands');
-const command_files_list = fs.readdirSync(commands_path).filter(file => file.endsWith('.js'));
-
-/**
- * Define 2 properties on the client_instance object, which will both be empty collections. 
- */
-client_instance.commands = new Collection();
-client_instance.discord_commands = new Collection();
-
-/**
- * Using the command_files_list we populated earlier, we have to dynamically import each of the functions and extract the object returned from those functions.
- * After we have retrieved the functions and objects, we put the imported functions into client_instance.commands, and the function objects into client_instance.discord_commands
- */
-for (const command_file of command_files_list) {
-    const command_file_path = path.join(commands_path, command_file);
-    const command = require(command_file_path);
-    const command_object = command('test');
-    client_instance.commands.set(command_object.data.name, command);
-    client_instance.discord_commands.set(command_object.data.name, command_object);
-}
 
 function sendPlayerMessagesToDiscord(discord_scum_game_chat_messages, discord_channel) {
     if (discord_scum_game_chat_messages === undefined) {
@@ -1220,9 +1238,9 @@ client_instance.on('ready', () => {
      * and therefore can access all of the computer resources
      * We use a callback function because the Node.js package 'exec' is asynchronous, but this callback function is synchronous
      */
-    setInterval(() => {
-        checkIfGameServerOnline();
-    }, gportal_ftp_server_log_interval_seconds["60"]);
+    // setInterval(() => {
+    //     checkIfGameServerOnline();
+    // }, gportal_ftp_server_log_interval_seconds["60"]);
 
     /**
      * Use the Discord API ButtonBuilder to build a button that will return a JSON API response from the Battlemetrics API to indicate the current status of the server
@@ -1269,6 +1287,30 @@ function arraysEqual(arrayOne, arrayTwo) {
     }
     return true;
 }
+
+async function loadCommandFilesIntoCollection() {
+    client_instance.commands = new Collection();
+    client_instance.discord_commands = new Collection();
+
+    const commands_folder_path = path.join(__dirname, "../commands/discordcommands");
+    const filtered_commands_files = fs
+        .readdirSync(commands_folder_path)
+        .filter((file) => file !== "deploy-commands.js" && file.endsWith(".js"));
+
+    for (const command_file of filtered_commands_files) {
+        const command_file_path = path.join(commands_folder_path, command_file);
+        try {
+            const commandModule = await import(command_file_path); // Dynamic import for ES Module
+            const command_object = commandModule.default(); // Assuming default export is a function that returns the command object
+            client_instance.commands.set(command_object.data.name, commandModule);
+            client_instance.discord_commands.set(command_object.data.name, command_object);
+        } catch (error) {
+            console.error(`There was an error when attempting to import the file ${command_file}: ${error}`);
+            throw error;
+        }
+    }
+}
+
 
 /**
 * When the discord API triggers the interactionCreate event, an asynchronous function is executed with the interaction passed in as a parameter value. 
@@ -1333,25 +1375,202 @@ client_instance.on('interactionCreate',  async (interaction) => {
      * If the user executes a valid command on Discord, but the command was executed in the wrong channel, inform them of that
      * The correct channel is 'bot-commands'
      */
-    if (!(determineIfUserMessageInCorrectChannel(interaction.channel.id, discord_chat_channel_bot_commands))) {
-        await interaction.reply({ content: `You must use bot commands in the SCUM game server to execute them` });
-        return;
-    }
+    // if (!(determineIfUserMessageInCorrectChannel(interaction.channel.id, discord_chat_channel_bot_commands))) {
+    //     await interaction.reply({ content: `You must use bot commands in the SCUM game server to execute them` });
+    //     return;
+    // }
 
     /**
      * If the user has permission to execute a command on discord, attempt to execute that command. If they do not, inform them they do not have permission to use that command
      * In each command file in the 'commands' directory, there is an object property called 'authorization_role_name' that dictates the role a user must have to execute the command
      */
     if (determineIfUserCanUseCommand(interaction.member, command.authorization_role_name)) { 
-        try {
-            await command.execute(interaction);
-        } catch (error) {
-            await interaction.reply({ content: 'There was an error while executing this command! Please try again or contact a server administrator', ephermal: true });
-        }
+        await command.execute(interaction);
+        // try {
+        //     await command.execute(interaction);
+        // } catch (error) {
+        //     await interaction.reply({ content: `There was an error while executing this command! Please try again or contact a server administrator regarding this error: ${error}`, ephermal: true });
+        // }
     } else {
         await interaction.reply({ content: `You do not have permission to execute the command ${command.data.name}. Contact a server administrator if you believe this is an error` });
     }
 });
+
+/**
+ * The guildCreate event is triggered when the Discord bot joins a new server
+ */
+client_instance.on('guildCreate', async (guild) => {
+    const bot_id = client_instance.user.id;
+    const guild_id = guild.id;
+    try {
+        await registerInitialSetupCommands(bot_token, bot_id, guild_id);
+        // await createBotCategoryAndChannels(guild);
+    } catch (error) {
+        throw new Error(error);
+    }
+});
+
+client_instance.on(Events.InteractionCreate, async interaction => {
+    if (interaction.isModalSubmit()) {
+
+        const guild_id = interaction.guild.id
+  
+        if (interaction.customId === 'userDataInputModal') {
+            const user_username = interaction.fields.getTextInputValue('usernameInput');
+            const user_email = interaction.fields.getTextInputValue('emailInput');
+            const user_password = hashPassword(interaction.fields.getTextInputValue('passwordInput'));
+            const guild_id = interaction.guildId;
+
+            const bot_information = {
+                bot_username: user_username,
+                bot_email: user_email,
+                bot_password: user_password,
+                bot_id: bot_token,
+                guild_id: guild_id
+            }
+            try {
+                await bot_repository.createBot(bot_information);            
+            } catch (error) {
+                throw new Error(`There was an error when attempting to create a bot for you. Please inform the server administrator of this error: ${error}`);
+            }
+        } 
+        else if (interaction.customId === `channelIdsInputModal`) {
+            const ingame_chat_channel_id = interaction.fields.getTextInputValue(`ingameChatChannelInput`);
+            const logins_chat_channel_id = interaction.fields.getTextInputValue(`loginsChannelInput`);
+            const new_player_joins_channel_id = interaction.fields.getTextInputValue(`newPlayerJoinsChannelInput`);
+            const battlemetrics_data_channel_id = interaction.fields.getTextInputValue(`battlemetricsServerInput`);
+            const server_info_button_channel_id = interaction.fields.getTextInputValue(`serverInfoButtonInput`);
+
+            const discord_channel_ids = {
+                discord_ingame_chat_channel_id: ingame_chat_channel_id,
+                discord_logins_chat_channel_id: logins_chat_channel_id,
+                discord_new_player_chat_channel_id: new_player_joins_channel_id,
+                discord_batlemetrics_server_id: battlemetrics_data_channel_id,
+                discord_server_info_button_channel_id: server_info_button_channel_id,
+                guild_id: guild_id
+            }
+
+            try {
+                await bot_repository.createBotDiscordData(discord_channel_ids);
+            } catch (error) {
+                throw new Error(`There was an error when attempting to update your bot with Discord channel data. Please inform the server administrator of this error: ${error}`);
+            }
+        } 
+        else if (interaction.customId === `gameServerInputModal`) {
+            const ipv4_address = interaction.fields.getTextInputValue(`ipv4AddressInput`);
+            const port = interaction.fields.getTextInputValue(`portInput`);
+
+            const game_server_data = {
+                game_server_hostname_input: ipv4_address,
+                game_server_port_input: port,
+                guild_id: guild_id
+            }
+
+            try {
+                await bot_repository.createBotGameServerData(game_server_data);
+            } catch (error) {
+                throw new Error(`There was an error when attempting to update your bot with game server data. Please inform the server administrator of this error: ${error}`);
+            }
+        }
+        else if (interaction.customId === `ftpServerInputModal`) {
+            const ipv4_address = interaction.fields.getTextInputValue(`ipv4AddressInput`);
+            const port = interaction.fields.getTextInputValue(`portInput`);
+            const username = interaction.fields.getTextInputValue(`usernameInput`);
+            const password = interaction.fields.getTextInputValue(`passwordInput`);
+
+            const ftp_server_data = {
+                server_hostname: ipv4_address,
+                server_port: port,
+                server_username: username,
+                server_password: password,
+                guild_id: guild_id
+            }
+
+            try {
+                await bot_repository.createBotFtpServerData(ftp_server_data);
+            } catch (error) {
+                throw new Error(`There was an error when attempting to update your bot with FTP server data. Please inform the server administrator of this error: ${error}`);
+            }
+        }
+  
+      if (interaction.customId === `userDataInputModal`) {
+        await interaction.reply({content: `Your submission for creating new user data with your bot was successful`, ephemeral: true});
+      } else if (interaction.customId === `channelIdsInputModal`) {
+        await interaction.reply({content: `Your submission for creating new channel ids with your bot was successful`, ephemeral: true});
+      } else if (interaction.customId === `gameServerInputModal`) {
+        await interaction.reply({content: `Your submission for creating new game server data with your bot was successful`, ephemeral: true});
+      } else if (interaction.customid === `ftpServerInputModal`) {
+        await interaction.reply({content: `Your submission for creating new ftp server data with your bot was successful`, ephemeral: true});
+      }
+    }
+  });
+
+async function createBotCategoryAndChannels(guild) {
+    try {
+        const category_creation_response = await guild.channels.create({
+            name: `Chat monitor bot`,
+            type: ChannelType.GuildCategory
+        });
+
+        const channel_names = [
+            "In game messages",
+            "Log ins and log outs",
+            "New player joins",
+            "Server battlemetrics link",
+            "Server info button"
+        ];
+
+        for (const channel_name of channel_names) {
+            if (channel_name) {
+                await guild.channels.create({
+                    name: `${channel_name}`,
+                    type: ChannelType.GuildText,
+                    parent: category_creation_response.id
+                });
+            }
+        }
+    } catch (error) {
+        console.error(`There was an error when setting up the bot channels. Please inform the server administrator of this error: ${error}`);
+        throw new Error(`There was an error when setting up the bot channels. Please inform the server administrator of this error: ${error}`);
+    }
+}
+
+async function registerInitialSetupCommands(bot_token, bot_id, guild_id) {
+    const commands_folder_path = path.join(__dirname, "./commands/discordcommands");
+    const filtered_command_files = fs
+        .readdirSync(commands_folder_path)
+        .filter((file) => file !== "deploy-commands.js");
+    client_instance.discord_commands = new Collection();
+
+    const commands = [];
+
+    const initial_bot_commands = [`setupuser`, `setupchannels`, `setupgameserver`, `setupchannels`, `setupftpserver`];
+
+    for (const command_file of filtered_command_files) {
+        const command_file_path = path.join(commands_folder_path, command_file);
+        const command_file_url = pathToFileURL(command_file_path).href;
+        const command_import = await import(command_file_url);
+        const command_default_object = command_import.default();
+
+        if (initial_bot_commands.includes(command_default_object.data.name)) {
+            commands.push(command_default_object.data);
+            client_instance.discord_commands.set(command_default_object.data.name, command_default_object);
+        }
+    }
+
+    if (bot_token && bot_id && guild_id) {
+        const rest = new REST({ version: '10' }).setToken(bot_token)
+        
+        rest.put(Routes.applicationGuildCommands(bot_id, guild_id), {
+            body: commands
+        }).then(() => {
+            console.log(`The initial application setup commands were successfully registered for ${bot_id} in the guild ${guild_id}`);
+        }).catch((error) => {
+            console.error(`There was an error when attempting to register the initial application commands for ${bot_id} in the guild ${guild_id}: ${error}`);
+        });
+    }
+}
+
 /**
  * Uses the Windows powershell command 'System.Windows.Forms.Clipboard]::SetText() to copy some text to the system clipboard
  * In the else clause, there is a debug log message if you want to uncomment that for development purposes
@@ -1464,31 +1683,32 @@ async function runCommand(command) {
     if (!scumProcess) {
         return;
     }  
-    await sleep(2000);
+    await sleep(500);
     copyToClipboard(command);
-    await sleep(2000);
+    await sleep(500);
     pressCharacterKeyT();
-    await sleep(2000);
+    await sleep(500);
     pressBackspaceKey();
-    await sleep(2000);
+    await sleep(500);
     pasteFromClipboard();
-    await sleep(2000);
+    await sleep(500);
     pressEnterKey();
-    await sleep(2000);
+    await sleep(500);
 }
 
 async function enqueueCommand(user_chat_message_object) {
-    await processQueue(user_chat_message_object);
+    user_command_queue.enqueue(user_chat_message_object);
+    await setProcessQueueMutex();
 }
 
-process.on('uncaughtException', (error) => {
-    message_logger.logError(error);
-});
+// process.on('uncaughtException', (error) => {
+//     message_logger.logError(error);
+// });
 
 
-process.on('exit', (error) => {
-    message_logger.logError(`Process exited with code: ${error}`);
-});
+// process.on('exit', (error) => {
+//     message_logger.logError(`Process exited with code: ${error}`);
+// });
 
 
 /**
@@ -1517,9 +1737,27 @@ async function handleIngameSCUMChatMessages() {
     }
 }
 
-async function processQueue(user_chat_object) {
-    user_command_queue.enqueue(user_chat_object);
+async function setProcessQueueMutex() {
+    mutex
+        .runExclusive(async () => {
+            await processQueueIfNotProcessing();
+        })
+        .then(() => {
 
+        })
+        .catch((error) => {
+            if (e === E_CANCELED) {
+                mutex.cancel();
+            } else {
+                console.error(`An error has occurred during execution of the mutex: ${error}`);
+            }
+        })
+        .finally(() => {
+            mutex.release();
+        })
+}
+
+async function processQueueIfNotProcessing(user_chat_object) {
     while (user_command_queue.size() > 0) { 
         /**
          * After a command has finished execution in the queue, shift the values one spot to remove the command which has been executed. Extract the command 
@@ -1540,7 +1778,7 @@ async function processQueue(user_chat_object) {
         element in the value property. The value property starts with a ' character, so we take a substring of the value starting after the first character. 
         Next, we have to take the key associated with the command used, which is the user's steam id
         */
-        const command_to_execute = user_chat_message_object.value[0].substring(1);
+        const command_name = user_chat_message_object.value[0].substring(1);
         const command_to_execute_player_steam_id = user_chat_message_object.key[0];
 
         /**
@@ -1554,7 +1792,7 @@ async function processQueue(user_chat_object) {
         By using a string representation of the command to execute, we will fetch the command from the MongoDB database. If the command executed in game is '/test', 
         a document with the name 'test' will be searched for in MongoDB. MongoDB returns the bot_item_package as an object instead of an array of objects. 
         */
-        const bot_item_package = await bot_repository.getBotPackageFromName(command_to_execute.toString());
+        const bot_item_package = await bot_repository.getBotPackageFromName(command_name.toString());
         const bot_package_items = bot_item_package.package_items;
         const bot_item_package_cost = bot_item_package.package_cost;
 
@@ -1569,7 +1807,7 @@ async function processQueue(user_chat_object) {
          * in cost by 5000 after each execution. In the database class, there is a trigger defined for the user_welcome_pack_cost field that increments by 5000 each time it detects
          * an increment by 1 for the field 'user_welcome_pack_uses'. Each time this command is executed, we update the user welcome pack uses by one. 
          */
-        if (command_to_execute === 'welcomepack') {
+        if (command_name === 'welcomepack') {
             const welcome_pack_cost = user_account.user_welcome_pack_cost;
              if (user_account_balance < welcome_pack_cost) {
                  await enqueueCommand(`${client_ingame_chat_name} you do not have enough money to use your welcome pack again. Use the command /balance to check your balance`);
@@ -1587,11 +1825,10 @@ async function processQueue(user_chat_object) {
         /**
          * If the cost to execute the command does not equal undefined, subtract the balance of the package from the user's balance 
          */
-        if (typeof bot_item_package_cost !== 'Number') {
+        if ((typeof bot_item_package_cost !== 'Number' && bot_item_package_cost)) {
             parseInt(bot_item_package_cost, 10);
-        }
-        if (typeof bot_item_package_cost === 'Number' && bot_item_package_cost) {
             await user_repository.updateUserAccountBalance(command_to_execute_player_steam_id, -bot_item_package_cost);
+
         }
         /**
          * Open the chat menu by pressing the 'T' key. If the chat is already open, press the 'Backspace key to get rid of the hanging 'T' character
@@ -1605,7 +1842,7 @@ async function processQueue(user_chat_object) {
 /**
  * Bot interacts with the discord API to 'log in' and become ready to start executing commands
  */
-client_instance.login(discord_bot_token);
+client_instance.login(bot_token);
 
 /**
  * When a user executes a bot command in the correct channel, this function will determine if the user is allowed to use the command. 
@@ -1631,4 +1868,4 @@ function determineIfUserMessageInCorrectChannel(channel_message_was_sent, discor
     return channel_message_was_sent === discord_bot_channel_id;
 }
 
-module.exports = app;
+export default app;

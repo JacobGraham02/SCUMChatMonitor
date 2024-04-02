@@ -1,5 +1,5 @@
 
-module.exports = class PlayerInfoCommand {
+export default class PlayerInfoCommand {
 
     setPlayerIpAddress(ipv4_address) {
         this.player_ip_address = ipv4_address;

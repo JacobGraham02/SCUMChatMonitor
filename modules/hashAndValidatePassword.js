@@ -1,4 +1,4 @@
-const crypto = require('crypto');
+import { pbkdf2Sync, randomBytes } from 'crypto';
 
 /**
  * This function takes a string input for a password and hashes the string while prepending a random salt onto the hashed string.
@@ -7,14 +7,19 @@ const crypto = require('crypto');
  * @param {string} password 
  * @returns Object containing the hash of the password, and a random salt
  */
-const hashPassword = function (password) {
-    const salt = crypto.randomBytes(32).toString('hex');
-    const hash = crypto.pbkdf2Sync(password, salt, 10000, 60, 'sha512').toString('hex');
-    hashed_password = {
-        hash: hash,
-        salt: salt
-    };
+export function hashPassword(password) {
+    const salt = generatePasswordSalt();
+    const hashed_password = pbkdf2Sync(password, salt, 10000, 60, 'sha512').toString('hex');
     return hashed_password;
+}
+
+/**
+ * This function generates a random 32 byte string and converts to hexadecimal format to use as a salt prepended to a hashed password.
+ * @returns 32 byte hexadecimal string
+ */
+export function generatePasswordSalt() {
+    const salt = randomBytes(32).toString('hex');
+    return salt;
 }
 
 /**
@@ -25,11 +30,8 @@ const hashPassword = function (password) {
  * @param {string} password_salt the salt generated that is attached to the original users password hash
  * @returns 
  */
-const validatePassword = function (password, password_hash, password_salt) {
-    const hashed_password = crypto.pbkdf2Sync(password, password_salt, 10000, 60, 'sha512').toString('hex');
+export function validatePassword(password, password_hash, password_salt) {
+    const hashed_password = pbkdf2Sync(password, password_salt, 10000, 60, 'sha512').toString('hex');
     password_hash = password_hash.replace(password_salt, "");
     return password_hash === hashed_password;
 }
-
-exports.hashPassword = hashPassword;
-exports.validatePassword = validatePassword;

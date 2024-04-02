@@ -1,8 +1,8 @@
-const express = require('express');
-const router = express.Router();
-const { exec } = require('child_process')
+import { Router } from 'express';
+const router = Router();
+import { exec } from 'child_process';
 
-module.exports = router.post('/recompile', (request, response) => {
+export default router.post('/recompile', (request, response) => {
     const output_directory = `executable`;
     const application_name = `scumchatmonitor`;
     const build_command = `pkg . --output ${output_directory}/${application_name}`;

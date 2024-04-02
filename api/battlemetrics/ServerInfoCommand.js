@@ -1,4 +1,4 @@
-module.exports = class ServerInfoCommand {
+export default class ServerInfoCommand {
 
     constructor(battlemetrics_server_id) {
         this.battlemetrics_id = battlemetrics_server_id;

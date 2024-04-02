@@ -36,8 +36,11 @@
 
 <section>
   <h2 id="todo-list">To do list</h2>
-  <p>Make database tables in the MongoDB database that will store bot data for a specific player</p>
-  <p>Write database classes in the main Node.js application that allow you to access the created tables</p>
+  <p>Add functions that allow the server administrator to create a bot account for somebody. When a server administrator creates an account for a user, a bot id should be associated with that account</p>
+  <p>Add Discord bot commands that will allow user to modify the bot in Discord</p>
+  <p>Finish styling the following forms: create command form, update command form, main commands form</p>
+  <p>Begin building the landing page for the website that the user can access to get in contact with the bot creator</p>
+
 </section>
 
 <section>

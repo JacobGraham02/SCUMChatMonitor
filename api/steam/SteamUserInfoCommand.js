@@ -1,6 +1,8 @@
-require('dotenv').config({path:'.env'});
+import { config } from 'dotenv';
+config({ path: '.env' });
 
-module.exports = class ServerInfoCommand {
+
+export default class ServerInfoCommand {
 
     constructor(steam_api_key) {
         this.steam_web_api_key = steam_api_key;

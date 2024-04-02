@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Bacasime+Antique&display=swap');
-
 body {
     margin: 0; 
     padding: 0;
@@ -18,9 +16,15 @@ body {
 
 #header {
     background: #efeff5;
-    justify-content: flex-start;
-    align-items: flex-start;
+    /* justify-content: flex-start;
+    align-items: flex-start; */
     grid-area: header;
+}
+
+#footer {
+    background: #efeff5;
+    grid-area: footer;
+    text-align: center;
 }
 
 #menu_container {
@@ -30,6 +34,7 @@ body {
     display: -ms-flexbox;
     display: -webkit-flex;
     background: #efeff5;
+    flex-direction: column;
     flex-flow: column wrap;
     align-items: flex-start;
     grid-area: header;
@@ -48,9 +53,11 @@ body {
 }
 
 #website_menu_username_container {
+    width: 100%;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     align-items: flex-start;
+    justify-content: center;
 }
 
 #navbar_welcome_message {
@@ -324,14 +331,16 @@ body {
     height: 100%;
     width: 100%;
     margin: 0;
+    gap: 5%;
+    font-size: 150%;
     padding: 0;
-    width: auto;
     list-style: none;
     overflow: hidden;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
+    justify-content: flex-start;
     align-items: center;
-    justify-content: space-evenly;
+    text-align: center;
 }
 
 #main_menu_items {
@@ -438,6 +447,7 @@ body {
 }
 
 .header .menu-btn:checked ~ .menu {
+    height: 100vh;
     max-height: 100%;
 }
 
@@ -623,59 +633,80 @@ a {
     width: 100%;
 }
 
-.bot_command_list_item_edit, .bot_command_list_item_delete, #create_new_command_link_anchor {
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: .25rem;
-    box-shadow: rgba(0, 0, 0, 0.02) 0 1px 3px 0;
-    box-sizing: border-box;
-    color: rgba(0, 0, 0, 0.85);
-    cursor: pointer;
-    font-family: system-ui,-apple-system,system-ui,"Helvetica Neue",Helvetica,Arial,sans-serif;
-    font-size: 16px;
-    font-weight: 600;
+#ftp_server_data_edit_page {
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     text-align: center;
-    padding: 2%;
-    line-height: 1.25;
-    width: fit-content;
-    min-height: 3rem;
-    position: relative;
-    text-decoration: none;
-    transition: all 250ms;
-    user-select: none;
-    -webkit-user-select: none;
-    touch-action: manipulation;
 }
 
-.bot_command_list_item_edit:hover,
-.bot_command_list_item_edit:focus,
-.bot_command_list_item_delete:hover,
-.bot_command_list_item_delete:focus,
-#create_new_command_link_anchor:hover,
-#create_new_command_link_anchor:focus,
-button:hover,
-button:focus
-{
-    transition: background 0.25 ease-in-out;
-    color: rgba(0, 0, 0, 0.65);
+#ftp_server_data_form {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 80%;
+    font-size: 80%;
 }
 
-.bot_command_list_item_edit:hover,
-.bot_command_list_item_delete:hover,
-#create_new_command_link_anchor:hover,
-button:hover {
-    background: #efeff5;
-    transform: translateY(-1px);
+.ftp_server_data_fieldset {
+    margin-top: 2%;
+    width: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
-.bot_command_list_item_edit:active,
-.bot_command_list_item_delete:active
-#create_new_command_link_anchor:active
-button:active {
-    background-color: #F0F0F1;
-    border-color: rgba(0, 0, 0, 0.15);
-    box-shadow: rgba(0, 0bot_command_list_item_edit, 0, 0.06) 0 2px 4px;
-    color: rgba(0, 0, 0, 0.65);
-    transform: translateY(0);
+.ftp_data_input {
+    width: inherit;
+    height: inherit;
+    display: inherit;
+    flex-direction: row;
+    justify-content: inherit;
+    align-items: inherit;
+}
+
+/* .togglepassword {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+} */
+
+#ftp_server_data_form_field_buttons {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.ftp_server_data_input {
+    width: 100%;
+    height: 100%;
+}
+.article_for_ftp_server_data {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#new_ftp_server_data_section {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+#ftp_server_data_edit_page {
+    font-size: 125%;
 }
 
 .bot_item_edit {
@@ -770,7 +801,7 @@ button:active {
         height: 80%;
         font-size: 100%;
         clear: none;
-        max-height: none;
+        max-height: 100vh;
         /* Transform the list to top of side section */
         /* background: #efeff5; */
     }
@@ -778,6 +809,15 @@ button:active {
     #login_section #login_password_field input, #login_username_field input {
         height: 10%;
         width: 30%;
+    }
+
+    .ftp_server_data_input {
+        width: 50%;
+        height: 100%;
+    }
+
+    #ftp_server_data_form {
+        font-size: 100%;
     }
 
     #menu_links_image {
@@ -793,19 +833,22 @@ button:active {
         justify-content: center;
         align-items: center;
         width: 100%;
-        height: 75%;
-        margin: 0;
+        height: 80%;
     }
 
     .menu {
         display: flex;
         flex-direction: column;
-        justify-content: space-evenly;
+        height: fit-content;
         align-items: center;
         text-align: center;
+        gap: 5%;
     }
-
+    
     #menu_container {
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
         height: 100%;
     }
 

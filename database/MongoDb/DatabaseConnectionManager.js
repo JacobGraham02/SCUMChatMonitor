@@ -1,8 +1,10 @@
-require('dotenv').config({ path: '../.env' });
-const { MongoClient, ServerApiVersion } = require('mongodb');
-const { createPool } = require('generic-pool');
+import { config } from 'dotenv';
+config({ path: '.env' });
 
-module.exports = class DatabaseConnectionManager {
+import { MongoClient, ServerApiVersion } from 'mongodb';
+import { createPool } from 'generic-pool';
+
+export default class DatabaseConnectionManager {
     database_url = process.env.mongodb_connection_string;
     database_connection_pool_size = 10;
     database_name = process.env.mongodb_database_name;

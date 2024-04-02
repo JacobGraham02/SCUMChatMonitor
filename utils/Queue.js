@@ -7,7 +7,7 @@
  *   isEmpty(): Return if the Queue contains any elements
  *   size(): Return the total number of elements in the Queue
  */
-module.exports = class Queue {
+export default class Queue {
     
     constructor() {
         this.items = [];

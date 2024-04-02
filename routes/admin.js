@@ -1,9 +1,8 @@
-var express = require('express');
-var router = express.Router();
-const fs = require('fs');
-var path = require('path');
-const { exec } = require('child_process');
-const BotRepository = require('../database/MongoDb/BotRepository');
+import { Router } from 'express';
+var router = Router();
+import { join } from 'path';
+import { exec } from 'child_process';
+import BotRepository from '../database/MongoDb/BotRepository.js';
 const botRepository = new BotRepository();
 
 function isLoggedIn(request, response, next) {
@@ -170,9 +169,9 @@ router.post('/setgameserverdata', async (request, response) => {
 });
 
 router.post('/recompile', (request, response) => {
-    const output_directory = path.join(__dirname, '..', 'executable');
+    const output_directory = join(__dirname, '..', 'executable');
     const application_name = 'scumchatmonitor';
-    const build_command = `pkg . --output ${path.join(output_directory, application_name)}`;
+    const build_command = `pkg . --output ${join(output_directory, application_name)}`;
 
     exec(build_command, (error, stdout, stderr) => {
         if (error) {
@@ -217,4 +216,4 @@ router.post('/botcommand/new', isLoggedIn, async (request, response, next) => {
     }
 });
 
-module.exports = router;
+export default router;
