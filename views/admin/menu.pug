@@ -7,10 +7,10 @@ mixin menu(user)
    ul.menu
     li
       div#navbar_welcome_message
-       -if (user.username !== undefined) {
+    -if (user.bot_username) {
          a#index_page_home_button(href='/admin/commands' title='A link to go to the website home page')
           img#menu_links_image(src='../../images/WilsonBotMenu.png', alt='The WilsonBot logo')
-         h1#user_administrator_name_heading Welcome, #{user.username}
+         h1#user_administrator_name_heading Welcome, #{user.bot_username}
     li
       a(href='/admin/commands' title='A link to go to the site commands page') Bot commands 
     li

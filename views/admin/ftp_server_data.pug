@@ -27,7 +27,7 @@ block content(user)
                             name='ftp_server_hostname_input', 
                             pattern="^(25[0-5]|2[0-4]\\d|1\\d{2}|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d{2}|[1-9]?\\d)){3}$",                           
                             placeholder='192.168.122.56',
-                            value= user.ftp_server_ipv4 ? user.ftp_server_ipv4 : "",
+                            value= user.ftp_server_ip ? user.ftp_server_ip : "",
                             required,
                             title="Please enter an IP address that follows the rule defined above")
                         #ftp_server_hostname_feedback.invalid-feedback Invalid IP address format
@@ -76,7 +76,7 @@ block content(user)
 
                 fieldset#ftp_server_password_confirm_fieldset.ftp_server_data_fieldset
                     article#bot_ingame_new_player_joins_id_article(class='article_for_ftp_server_data')
-                        label(class="ftp_server_data_label",for='ftp_server_confirm_password_input') FTP server password (e.g. aED1PbAfqBTjPWnRF1kKUQgd). This password must be the same as the password above
+                        label(class="ftp_server_data_label",for='ftp_server_confirm_password_input') FTP server confirm password (e.g. aED1PbAfqBTjPWnRF1kKUQgd). This password must be the same as the password above
                         input.validate-input#ftp_server_confirm_password_input(
                             class="ftp_server_data_input",
                             type='password',

@@ -217,6 +217,45 @@ export default class BotRepository {
             await this.releaseConnectionSafely(database_connection);
         }
     }
+
+    async updateBotDataByGuildId(guild_id, new_bot_data) {
+        try {
+            const database_connection = await database_connection_manager.getConnection();
+            
+            // Retrieve the existing user document from the database
+            const user_collection = database_connection.collection('users');
+            const existing_user = await user_collection.findOne({ guild_id: guild_id });
+    
+            if (!existing_user) {
+                throw new Error('User not found');
+            }
+    
+            /*
+            The spread operator merges existing user data with the new data provided as an argument to the function
+            */
+            const updated_user = { ...existing_user, ...new_bot_data };
+    
+            /*
+            Iterate over the keys of the merged document and remove any fields with undefined values to avoid clearing existing data in the database
+            */
+            Object.keys(updated_user).forEach(key => {
+                if (updated_user[key] === undefined) {
+                    delete updated_user[key];
+                }
+            });
+    
+            /*
+            updateOne used to update a single user document in the database with the merged and filtered data
+            */
+            await userCollection.updateOne({ guild_id: guild_id }, { $set: updated_user });
+    
+            return updated_user;
+        } catch (error) {
+            throw error;
+        } finally {
+            await this.releaseConnectionSafely(database_connection);
+        }
+    }
     
     async releaseConnectionSafely(database_connection) {
         if (database_connection) {
