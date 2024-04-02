@@ -125,7 +125,7 @@ export default class BotRepository {
 
     async createBotItemPackage(bot_id, bot_package) {
         const database_connection = await database_connection_manager.getConnection();
-
+    
         const new_bot_item_package_document = {
             bot_id: bot_id,
             package_name: bot_package.package_name,
@@ -133,22 +133,22 @@ export default class BotRepository {
             package_cost: bot_package.package_cost,
             package_items: bot_package.package_items
         };
-
+    
         try {
             const bot_collection = database_connection.collection('bot_packages');
-
-            await bot_collection.updateOne(
-                { bot_id: bot_id },
-                { $setOnInsert: new_bot_item_package_document },
-                { upsert: true }
-            );
+    
+            // Use insertOne to add the new bot item package document to the collection
+            await bot_collection.insertOne(new_bot_item_package_document);
+            console.log("New bot item package inserted successfully.");
+    
         } catch (error) {
-            console.error(`There was an error when attempting to create a new bot item package. Please inform the server administrator of this error: ${error}`);
-            throw new Error(`There was an error when attempting to create a new bot item package. Please inform the server administrator of this error: ${error}`);
+            console.error(`There was an error when attempting to create a new bot item package: ${error}`);
+            throw new Error(`There was an error when attempting to create a new bot item package: ${error}`);
         } finally {
             await this.releaseConnectionSafely(database_connection);
         }
     }
+    
 
     async getBotItemPackageData(bot_id) {
         const database_connection = await database_connection_manager.getConnection();

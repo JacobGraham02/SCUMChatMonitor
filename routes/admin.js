@@ -201,7 +201,7 @@ router.post('/botcommand/new', isLoggedIn, async (request, response, next) => {
         command_items = [command_items];
     }
     
-    new_bot_package = {
+    const new_bot_package = {
         package_name: new_command_name,
         package_description: new_command_description,
         package_cost: command_cost,
@@ -209,10 +209,10 @@ router.post('/botcommand/new', isLoggedIn, async (request, response, next) => {
     }
 
     try {
-        await botRepository.createBotItemPackage(1, new_bot_package);
-        response.render('admin/botcommand/new', { user: request.user, page_title:`Create new command`, info_message: `You have successfully created a new item package`, show_alert: true });
+        // await botRepository.createBotItemPackage(1, new_bot_package);
+        response.render('admin/new_command', { user: request.user, page_title:`Create new command`, info_message: `You have successfully created a new item package`, show_alert: true });
     } catch (error) {
-        response.render('admin/botcommand/new', { user: request.user, page_title:`Error`, info_message: `An error has occurred! Please inform the server administrator of this error or try creating another command: ${error}`, show_alert: true});
+        response.render('admin/new_command', { user: request.user, page_title:`Error`, info_message: `An error has occurred! Please inform the server administrator of this error or try creating another command: ${error}`, show_alert: true});
     }
 });
 
