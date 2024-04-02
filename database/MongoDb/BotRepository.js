@@ -20,11 +20,10 @@ export default class BotRepository {
 
     async createBot(bot_information) {
         const database_connection = await database_connection_manager.getConnection();
-        const bot_password_salt = bot_information.bot_password.substring(0, 32);
         const new_bot_document = {
             bot_username: bot_information.bot_username,
-            bot_password: bot_information.bot_password,
-            bot_salt: bot_password_salt,
+            bot_password: bot_information.bot_password_hash,
+            bot_salt: bot_information.bot_password_salt,
             bot_email: bot_information.bot_email,
             guild_id: bot_information.guild_id,
         };

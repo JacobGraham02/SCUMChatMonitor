@@ -113,14 +113,6 @@ const gportal_ftp_config = {
 
 let gportal_log_file_ftp_client = undefined;
 
-/**
- * Name of username and login fields used on the login form 
- */
-const username_and_password_fields = {
-    email_field: 'email',
-    password_field: 'password'
-};
-
 var app = express();
 
 /**
@@ -917,7 +909,7 @@ async function insertSteamUsersIntoDatabase(steam_user_ids_array, steam_user_nam
  * @param {any} password
  * @param {any} done
  */
-const verifyCallback = async (email, password, done) => {
+const verifyCredentialsCallback = async (email, password, done) => {
     let bot_user_data = undefined;
     try {
         bot_user_data = await bot_repository.getBotDataByEmail(email);
@@ -925,7 +917,8 @@ const verifyCallback = async (email, password, done) => {
         console.error(`An error has occurred when attempting to verify that your log in. Please contact the server administrator with the following error: ${error}`);
         throw new Error(`An error has occurred when attempting to verify that your log in. Please contact the server administrator with the following error: ${error}`);
     }
-    if (bot_user_data === null) {
+    if (!bot_user_data) {
+        console.log(`No user with this login exists`);
         return done(null, false);
     }
     const bot_user_uuid = bot_user_data.bot_id;
@@ -1000,22 +993,30 @@ app.get('/login-failure', function (request, response, next) {
     });
 });
 
-const strategy = new LocalStrategy(username_and_password_fields, verifyCallback);
-passport.use(strategy);
+const passportLoginStrategy = new LocalStrategy({
+    usernameField: "email",
+    passwordField: "password"
+}, verifyCredentialsCallback);
 
-passport.serializeUser(function (admin, done) {
-    done(null, admin.uuid);
+// const passportLoginStrategy = new LocalStrategy(email_and_password_fields, verifyCredentialsCallback);
+
+passport.use(passportLoginStrategy);
+
+passport.serializeUser(function (user, done) {
+    done(null, user.guild_id);
 });
 
 /**
  * This is used in conjunction with serializeUser to give passport the ability to attach 
  */
-passport.deserializeUser(function (uuid, done) {
-    user_repository.findAdminByUuid(uuid).then(function (admin_data_results) {
-        done(null, admin_data_results);
-    }).catch(error => {
+passport.deserializeUser(function (guild_id, done) {
+    try {
+        const bot_user = bot_repository.getBotDataByGuildId(guild_id);
+        done(null, bot_user);
+    } catch (error) {
         done(error, null);
-    });
+        throw new Error(`There was an error when attempting to deserialize the user saved in the session`);
+    }
 });
 
 /**
@@ -1418,16 +1419,21 @@ client_instance.on(Events.InteractionCreate, async interaction => {
         if (interaction.customId === 'userDataInputModal') {
             const user_username = interaction.fields.getTextInputValue('usernameInput');
             const user_email = interaction.fields.getTextInputValue('emailInput');
-            const user_password = hashPassword(interaction.fields.getTextInputValue('passwordInput'));
+            const user_password_hash_object = hashPassword(interaction.fields.getTextInputValue('passwordInput'));
             const guild_id = interaction.guildId;
 
             const bot_information = {
                 bot_username: user_username,
                 bot_email: user_email,
-                bot_password: user_password,
+                bot_password_hash: user_password_hash_object.hash,
+                bot_password_salt: user_password_hash_object.salt,
                 bot_id: bot_token,
                 guild_id: guild_id
             }
+
+            console.log(bot_information.bot_password_hash);
+            console.log(bot_information.bot_password_salt);
+
             try {
                 await bot_repository.createBot(bot_information);            
             } catch (error) {
