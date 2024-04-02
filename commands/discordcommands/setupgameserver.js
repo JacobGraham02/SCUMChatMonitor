@@ -1,7 +1,5 @@
-import { ActionRowBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import BotRepository from '../../database/MongoDb/BotRepository';
-
-const { SlashCommandBuilder, ModalBuilder } = require('@discordjs/builders');
+import { ActionRowBuilder, TextInputBuilder, TextInputStyle, ModalBuilder, SlashCommandBuilder } from 'discord.js';
+import BotRepository from '../../database/MongoDb/BotRepository.js';
 
 export default function() {
     const setup_game_server_modal = {
@@ -29,15 +27,19 @@ export default function() {
 
             const ipv4AddressInput = new TextInputBuilder()
                 .setCustomId(`ipv4AddressInput`)
-                .setLabel(`A valid IPv4 address that looks like the following: xxx.xxx.xxx.xxx, where xxx is a number ranging from 0 - 255 (e.g., 192.168.0.1)`)
+                .setLabel(`xxx.xxx.xxx.xxx, where xxx is between 0 - 255`)
                 .setRequired(true)
+                .setMinLength(7)
+                .setMaxLength(15)
                 .setPlaceholder(`192.168.0.1`)
                 .setStyle(TextInputStyle.Short)
 
             const portNumberInput = new TextInputBuilder()
                 .setCustomId(`portInput`)
-                .setLabel(`A valid port number ranging from 1024-65535 (e.g., 45000)`)
+                .setLabel(`A number between from 1024-65535`)
                 .setRequired(true)
+                .setMinLength(4)
+                .setMaxLength(5)
                 .setPlaceholder(`45000`)
                 .setStyle(TextInputStyle.Short)
 

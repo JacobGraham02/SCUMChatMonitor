@@ -19,7 +19,7 @@ import { exec } from 'child_process';
 import fs from 'fs';
 import FTPClient from 'ftp';
 import MongoStore from 'connect-mongo';
-import { Client, Collection, GatewayIntentBits, REST, Routes, Events } from 'discord.js';
+import { Client, Collection, GatewayIntentBits, REST, Routes, Events, ChannelType } from 'discord.js';
 import { EmbedBuilder } from 'discord.js';
 import myEmitter from './utils/EventEmitter.js'
 import Queue from './utils/Queue.js'
@@ -36,7 +36,7 @@ import apiExecutableRecompilation from './api/recompile/recompile-executable.js'
 import PlayerInfoCommand from './api/ipapi/PlayerInfoCommand.js';
 import SteamUserInfoCommand from './api/steam/SteamUserInfoCommand.js';
 import { E_CANCELED } from 'async-mutex';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 
 const bot_token = process.env.discord_wilson_bot_token;
 const test_guild_id="1224366025764634745";
@@ -1375,21 +1375,22 @@ client_instance.on('interactionCreate',  async (interaction) => {
      * If the user executes a valid command on Discord, but the command was executed in the wrong channel, inform them of that
      * The correct channel is 'bot-commands'
      */
-    if (!(determineIfUserMessageInCorrectChannel(interaction.channel.id, discord_chat_channel_bot_commands))) {
-        await interaction.reply({ content: `You must use bot commands in the SCUM game server to execute them` });
-        return;
-    }
+    // if (!(determineIfUserMessageInCorrectChannel(interaction.channel.id, discord_chat_channel_bot_commands))) {
+    //     await interaction.reply({ content: `You must use bot commands in the SCUM game server to execute them` });
+    //     return;
+    // }
 
     /**
      * If the user has permission to execute a command on discord, attempt to execute that command. If they do not, inform them they do not have permission to use that command
      * In each command file in the 'commands' directory, there is an object property called 'authorization_role_name' that dictates the role a user must have to execute the command
      */
     if (determineIfUserCanUseCommand(interaction.member, command.authorization_role_name)) { 
-        try {
-            await command.execute(interaction);
-        } catch (error) {
-            await interaction.reply({ content: 'There was an error while executing this command! Please try again or contact a server administrator', ephermal: true });
-        }
+        await command.execute(interaction);
+        // try {
+        //     await command.execute(interaction);
+        // } catch (error) {
+        //     await interaction.reply({ content: `There was an error while executing this command! Please try again or contact a server administrator regarding this error: ${error}`, ephermal: true });
+        // }
     } else {
         await interaction.reply({ content: `You do not have permission to execute the command ${command.data.name}. Contact a server administrator if you believe this is an error` });
     }
@@ -1401,8 +1402,12 @@ client_instance.on('interactionCreate',  async (interaction) => {
 client_instance.on('guildCreate', async (guild) => {
     const bot_id = client_instance.user.id;
     const guild_id = guild.id;
-    await registerInitialSetupCommands(bot_id, guild_id);
-    // await createBotCategoryAndChannels(guild);
+    try {
+        await registerInitialSetupCommands(bot_token, bot_id, guild_id);
+        // await createBotCategoryAndChannels(guild);
+    } catch (error) {
+        throw new Error(error);
+    }
 });
 
 client_instance.on(Events.InteractionCreate, async interaction => {
@@ -1429,7 +1434,7 @@ client_instance.on(Events.InteractionCreate, async interaction => {
                 throw new Error(`There was an error when attempting to create a bot for you. Please inform the server administrator of this error: ${error}`);
             }
         } 
-        else if (interaction.customId === `channelIdInputModal`) {
+        else if (interaction.customId === `channelIdsInputModal`) {
             const ingame_chat_channel_id = interaction.fields.getTextInputValue(`ingameChatChannelInput`);
             const logins_chat_channel_id = interaction.fields.getTextInputValue(`loginsChannelInput`);
             const new_player_joins_channel_id = interaction.fields.getTextInputValue(`newPlayerJoinsChannelInput`);
@@ -1451,7 +1456,7 @@ client_instance.on(Events.InteractionCreate, async interaction => {
                 throw new Error(`There was an error when attempting to update your bot with Discord channel data. Please inform the server administrator of this error: ${error}`);
             }
         } 
-        else if (interaction.customId === `setupgameserver`) {
+        else if (interaction.customId === `gameServerInputModal`) {
             const ipv4_address = interaction.fields.getTextInputValue(`ipv4AddressInput`);
             const port = interaction.fields.getTextInputValue(`portInput`);
 
@@ -1467,9 +1472,9 @@ client_instance.on(Events.InteractionCreate, async interaction => {
                 throw new Error(`There was an error when attempting to update your bot with game server data. Please inform the server administrator of this error: ${error}`);
             }
         }
-        else if (interaction.customId === `setupftpserver`) {
+        else if (interaction.customId === `ftpServerInputModal`) {
             const ipv4_address = interaction.fields.getTextInputValue(`ipv4AddressInput`);
-            const port = interaction.fields.getTextInputValue(`portNumberInput`);
+            const port = interaction.fields.getTextInputValue(`portInput`);
             const username = interaction.fields.getTextInputValue(`usernameInput`);
             const password = interaction.fields.getTextInputValue(`passwordInput`);
 
@@ -1502,8 +1507,9 @@ client_instance.on(Events.InteractionCreate, async interaction => {
 
 async function createBotCategoryAndChannels(guild) {
     try {
-        const category_creation_response = await guild.channels.create(`Chat monitor bot`, {
-            type: `GUILD_CATEGORY`
+        const category_creation_response = await guild.channels.create({
+            name: `Chat monitor bot`,
+            type: ChannelType.GuildCategory
         });
 
         const channel_names = [
@@ -1514,11 +1520,14 @@ async function createBotCategoryAndChannels(guild) {
             "Server info button"
         ];
 
-        for (const name of channel_names) {
-            await guild.channels.create(name, {
-                type: `GUILD_TEXT`,
-                parent: category_creation_response.id
-            });
+        for (const channel_name of channel_names) {
+            if (channel_name) {
+                await guild.channels.create({
+                    name: `${channel_name}`,
+                    type: ChannelType.GuildText,
+                    parent: category_creation_response.id
+                });
+            }
         }
     } catch (error) {
         console.error(`There was an error when setting up the bot channels. Please inform the server administrator of this error: ${error}`);
@@ -1535,14 +1544,15 @@ async function registerInitialSetupCommands(bot_token, bot_id, guild_id) {
 
     const commands = [];
 
-    const initial_bot_Commands = [`setupuser`, `setupchannels`, `setupgameserver`, `setupchannels`, `setupftpserver`];
+    const initial_bot_commands = [`setupuser`, `setupchannels`, `setupgameserver`, `setupchannels`, `setupftpserver`];
 
     for (const command_file of filtered_command_files) {
         const command_file_path = path.join(commands_folder_path, command_file);
-        const command_import = await import(command_file_path);
+        const command_file_url = pathToFileURL(command_file_path).href;
+        const command_import = await import(command_file_url);
         const command_default_object = command_import.default();
 
-        if (initial_bot_Commands.includes(command_default_object.data.name)) {
+        if (initial_bot_commands.includes(command_default_object.data.name)) {
             commands.push(command_default_object.data);
             client_instance.discord_commands.set(command_default_object.data.name, command_default_object);
         }

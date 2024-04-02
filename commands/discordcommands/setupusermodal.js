@@ -1,7 +1,5 @@
-import { ActionRowBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import BotRepository from '../../database/MongoDb/BotRepository';
-
-const { SlashCommandBuilder, ModalBuilder } = require('@discordjs/builders');
+import { ActionRowBuilder, TextInputBuilder, TextInputStyle, ModalBuilder, SlashCommandBuilder } from 'discord.js';
+import BotRepository from '../../database/MongoDb/BotRepository.js';
 
 export default function() {
     const setup_user_modal_object = {
@@ -29,22 +27,28 @@ export default function() {
 
             const usernameInput = new TextInputBuilder()
                 .setCustomId(`usernameInput`)
-                .setLabel(`A username that only contains uppercase or lowercase letters a to z, and numbers 0 to 9. Maximum of 32 characters`)
+                .setLabel(`Username: a-z, A-Z, 0-9 (e.g., Jacob Graham)`)
+                .setMinLength(1)
+                .setMaxLength(32)
                 .setRequired(true)
                 .setPlaceholder(`Dalton Wexberg`)
                 .setStyle(TextInputStyle.Short)
 
             const emailInput = new TextInputBuilder()
                 .setCustomId(`emailInput`)
-                .setLabel(`A valid email address (e.g., Johndoe027@gmail.com)`)
+                .setLabel(`A valid email (e.g., Johndoe027@gmail.com)`)
+                .setMinLength(1)
+                .setMaxLength(100)
                 .setRequired(true)
                 .setPlaceholder(`Johndoe027@gmail.com`)
                 .setStyle(TextInputStyle.Short)
 
             const passwordInput = new TextInputBuilder()
                 .setCustomId(`passwordInput`)
-                .setLabel(`A password that is a maximum of 32 characters`)
+                .setLabel(`Password: a-z, A-Z, 0-9 (e.g., kLe8PKz9nHepV)`)
                 .setRequired(true)
+                .setMinLength(1)
+                .setMaxLength(32)
                 .setPlaceholder(`kLe8PKz9nHe0Kr6zcAEy7m7b`)
                 .setStyle(TextInputStyle.Short)
 

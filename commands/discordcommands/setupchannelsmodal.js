@@ -1,7 +1,5 @@
-import { ActionRowBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import BotRepository from '../../database/MongoDb/BotRepository';
-
-const { SlashCommandBuilder, ModalBuilder } = require('@discordjs/builders');
+import { ActionRowBuilder, TextInputBuilder, TextInputStyle, SlashCommandBuilder, ModalBuilder } from 'discord.js';
+import BotRepository from '../../database/MongoDb/BotRepository.js';
 
 export default function() {
     const setup_user_modal_object = {
@@ -25,54 +23,52 @@ export default function() {
 
             const modal = new ModalBuilder()
                 .setCustomId(`channelIdsInputModal`)
-                .setTitle(`Enter channel id data below:`)
-
-            const guildIdInput = new TextInputBuilder()
-                .setCustomId(`guildIdInput`)
-                .setLabel(`A guild id only consists of 19 numbers ranging from 0 to 9`)
-                .setRequired(true)
-                .setPlaceholder(`5893640123478915762`)
-                .setStyle(TextInputStyle.Short)
+                .setTitle(`Enter channel id data below where each id contains 19 numbers from 0 to 9`)
 
             const ingameChatIdInput = new TextInputBuilder()
                 .setCustomId(`ingameChatChannelInput`)
-                .setLabel(`A channel id only consists of 19 numbers ranging from 0 to 9`)
+                .setLabel(`Game chat channel id`)
                 .setRequired(true)
+                .setMinLength(19)
+                .setMaxLength(19)
                 .setPlaceholder(`5893640123478915762`)
                 .setStyle(TextInputStyle.Short)
 
             const loginsIdInput = new TextInputBuilder()
                 .setCustomId(`loginsChannelInput`)
-                .setLabel(`A channel id only consists of 19 numbers ranging from 0 to 9`)
+                .setLabel(`Game log ins and log outs channel id`)
                 .setRequired(true)
+                .setMinLength(19)
+                .setMaxLength(19)
                 .setPlaceholder(`5893640123478915762`)
                 .setStyle(TextInputStyle.Short)
 
             const newPlayerJoinsIdInput = new TextInputBuilder()
                 .setCustomId(`newPlayerJoinsChannelInput`)
-                .setLabel(`A channel id only consists of 19 numbers ranging from 0 to 9`)
+                .setLabel(`Game new player joins channel id`)
                 .setRequired(true)
+                .setMinLength(19)
+                .setMaxLength(19)
                 .setPlaceholder(`5893640123478915762`)
                 .setStyle(TextInputStyle.Short)
 
             const battlemetricsServerIdInput = new TextInputBuilder()
                 .setCustomId(`battlemetricsServerInput`)
-                .setLabel(`A battlemetrics server id (e.g, 24767557). Do not use that id for your server, as that id is for demonstration purposes only`)
+                .setLabel(`Battlemetrics server id`)
                 .setRequired(true)
                 .setPlaceholder(`24767557`)
                 .setStyle(TextInputStyle.Short)
 
             const serverInfoButtonIdInput = new TextInputBuilder()
                 .setCustomId(`serverInfoButtonInput`)
-                .setLabel(`A channel id only consists of 19 numbers ranging from 0 to 9`)
+                .setLabel(`Game server information button channel id`)
                 .setRequired(true)
+                .setMinLength(19)
+                .setMaxLength(19)
                 .setPlaceholder(`5893640123478915762`)
                 .setStyle(TextInputStyle.Short)
 
             if (bot_data) {
-                if (bot_data.guild_id) {
-                    guildIdInput.setValue(bot_data.guild_id);
-                }
                 if (bot_data.scum_ingame_chat_channel_id) {
                     ingameChatIdInput.setValue(bot_data.scum_ingame_chat_channel_id);
                 }
@@ -90,7 +86,6 @@ export default function() {
                 }
             }
         
-            const firstActionRow = new ActionRowBuilder().addComponents(guildIdInput);
             const secondActionRow = new ActionRowBuilder().addComponents(ingameChatIdInput);
             const thirdActionRow = new ActionRowBuilder().addComponents(loginsIdInput);
             const fourthActionRow = new ActionRowBuilder().addComponents(newPlayerJoinsIdInput);
@@ -98,7 +93,7 @@ export default function() {
             const sixthActionRow = new ActionRowBuilder().addComponents(serverInfoButtonIdInput);
 
 
-            modal.addComponents(firstActionRow, secondActionRow, thirdActionRow, fourthActionRow, fifthActionRow, sixthActionRow);
+            modal.addComponents(secondActionRow, thirdActionRow, fourthActionRow, fifthActionRow, sixthActionRow);
             
             try {
                 await interaction.showModal(modal);

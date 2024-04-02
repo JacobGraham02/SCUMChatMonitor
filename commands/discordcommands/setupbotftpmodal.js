@@ -1,6 +1,5 @@
-import { ActionRowBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-
-const { SlashCommandBuilder, ModalBuilder } = require('@discordjs/builders');
+import { ActionRowBuilder, TextInputBuilder, TextInputStyle, SlashCommandBuilder, ModalBuilder } from 'discord.js';
+import BotRepository from '../../database/MongoDb/BotRepository.js'
 
 export default function() {
     const setup_ftp_data_modal = {
@@ -28,28 +27,28 @@ export default function() {
 
             const ipv4AddressInput = new TextInputBuilder()
                 .setCustomId(`ipv4AddressInput`)
-                .setLabel(`A valid IPv4 address that looks like the following: xxx.xxx.xxx.xxx, where xxx is a number ranging from 0 - 255 (e.g., 192.168.0.1)`)
+                .setLabel(`xxx.xxx.xxx.xxx, where xxx is between 0 - 255`)
                 .setRequired(true)
                 .setPlaceholder(`192.168.0.1`)
                 .setStyle(TextInputStyle.Short)
 
             const portNumberInput = new TextInputBuilder()
                 .setCustomId(`portInput`)
-                .setLabel(`A valid port number ranging from 1024-65535 (e.g., 45000)`)
+                .setLabel(`A number between 1024-65535`)
                 .setRequired(true)
                 .setPlaceholder(`45000`)
                 .setStyle(TextInputStyle.Short)
 
             const usernameInput = new TextInputBuilder()
                 .setCustomId(`usernameInput`)
-                .setLabel(`A valid FTP server username (e.g., ftpuser01)`)
+                .setLabel(`A valid FTP server username`)
                 .setRequired(true)
                 .setPlaceholder(`ftpuser01`)
                 .setStyle(TextInputStyle.Short)
 
             const passwordInput = new TextInputBuilder()
                 .setCustomId(`passwordInput`)
-                .setLabel(`A valid FTP server password (e.g., R76ReG4UKDw75gZeM8XU)`)
+                .setLabel(`A valid FTP server password`)
                 .setRequired(true)
                 .setPlaceholder(`R76ReG4UKDw75gZeM8XU`)
                 .setStyle(TextInputStyle.Short)
