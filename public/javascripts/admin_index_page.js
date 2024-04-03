@@ -61,6 +61,8 @@ window.onload = function () {
         sort_descending_button.addEventListener('click', () => sortCommands(false));
     }
 
+    sortCommands(true);
+
     const searchInput = document.querySelector('#search_input');
     const commandListItems = document.querySelectorAll('.bot_command_list_item_edit_li'); // Assuming these are the items you want to show/hide
 
