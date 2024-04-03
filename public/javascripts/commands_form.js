@@ -12,21 +12,21 @@ const initial_spawn_item_input = document.querySelector('.item_input');
 const initial_spawn_item_hidden_input = document.querySelector('#hidden_command_id_input');
 
 const scum_items_list = [
-    { value: "#SpawnItem Weapon_M82A1_Black", label: "Black M82A1 sniper" },
-    { value: "#SpawnItem Weapon_M82A1_Desert", label: "Desert M82A1 sniper" },
-    { value: "#SpawnItem Weapon_M82A1_Snow", label: "Snow M82A1 sniper" },
-    { value: "#SpawnItem Weapon_MK18", label: "MK18 rifle" },
+    { value: "#SpawnItem Weapon_M82A1_Black", label: "Black M82A1 sniper", imageUrl:"https://static.wikia.nocookie.net/scum_gamepedia_en/images/2/27/M82A1.png/revision/latest/scale-to-width-down/50?cb=20220813052625" },
+    { value: "#SpawnItem Weapon_M82A1_Desert", label: "Desert M82A1 sniper", imageUrl:"https://static.wikia.nocookie.net/scum_gamepedia_en/images/9/94/M82A1_Sand.png/revision/latest/scale-to-width-down/50?cb=20221129001245" },
+    { value: "#SpawnItem Weapon_M82A1_Snow", label: "Snow M82A1 sniper", imageUrl:"https://static.wikia.nocookie.net/scum_gamepedia_en/images/2/27/M82A1.png/revision/latest/scale-to-width-down/50?cb=20220813052625"},
+    { value: "#SpawnItem Weapon_MK18", label: "MK18 rifle", imageUrl:"https://static.wikia.nocookie.net/scum_gamepedia_en/images/f/f2/MK18.png/revision/latest/scale-to-width-down/50?cb=20220808023416"},
     { value: "#SpawnItem Improvised_Quiver_01", label: "Improvised Quiver" },
     { value: "#SpawnItem Quiver_01", label: "Quiver" },
-    { value: "#SpawnItem Weapon_M1887", label: "M1887 shotgun" },
-    { value: "#SpawnItem Weapon_MosinNagant", label: "Mosin Nagant rifle" },
-    { value: "#SpawnItem Weapon_AS_Val", label: "AS Val rifle" },
+    { value: "#SpawnItem Weapon_M1887", label: "M1887 shotgun", imageUrl:"https://static.wikia.nocookie.net/scum_gamepedia_en/images/4/4f/M1887.png/revision/latest/scale-to-width-down/50?cb=20220813045258" },
+    { value: "#SpawnItem Weapon_MosinNagant", label: "Mosin Nagant rifle", imageUrl:"https://static.wikia.nocookie.net/scum_gamepedia_en/images/c/c4/M1891.png/revision/latest/scale-to-width-down/50?cb=20200404202612"},
+    { value: "#SpawnItem Weapon_AS_Val", label: "AS Val rifle", imageUrl:"https://static.wikia.nocookie.net/scum_gamepedia_en/images/e/ec/AS_Val.png/revision/latest/scale-to-width-down/50?cb=20220808023122"},
     { value: "#SpawnItem Weapon_M16A4", label: "M16A4 rifle" },
     { value: "#SpawnItem Deagle_50", label: "Desert Eagle 50 cal" },
-    { value: "#SpawnItem Weapon_590A11", label: "590A11 shotgun" },
-    { value: "#SpawnItem Weapon_AK47", label: "AK47 rifle" },
-    { value: "#SpawnItem Weapon_AKS_74U", label: "AKS-74U rifle" },
-    { value: "#SpawnItem Weapon_Hunter85", label: "Hunter85 rifle" },
+    { value: "#SpawnItem Weapon_590A11", label: "590A11 shotgun", imageUrl:"https://static.wikia.nocookie.net/scum_gamepedia_en/images/1/19/TEC01_490.png/revision/latest/scale-to-width-down/50?cb=20200404202627" },
+    { value: "#SpawnItem Weapon_AK47", label: "AK47 rifle", imageUrl:"https://static.wikia.nocookie.net/scum_gamepedia_en/images/f/f8/AK-47.png/revision/latest/scale-to-width-down/50?cb=20200404202546" },
+    { value: "#SpawnItem Weapon_AKS_74U", label: "AKS-74U rifle", imageUrl:"https://static.wikia.nocookie.net/scum_gamepedia_en/images/a/af/AKS-74U.png/revision/latest/scale-to-width-down/50?cb=20220812061202" },
+    { value: "#SpawnItem Weapon_Hunter85", label: "Hunter85 rifle", imageUrl:"https://static.wikia.nocookie.net/scum_gamepedia_en/images/1/14/Hunter85.png/revision/latest/scale-to-width-down/50?cb=20220808023258" },
     { value: "#SpawnItem Weapon_M1_Garand", label: "M1 Garand rifle" },
     { value: "#SpawnItem Weapon_MP5", label: "MP5 machine gun" },
     { value: "#SpawnItem Weapon_SVD_Dragunov", label: "Dragunov sniper rifle" },
@@ -1024,14 +1024,16 @@ function populateOriginalHiddenInputFieldWithValue() {
 }
 
 function generateAdditionalInputFields() {
-    const new_input = document.createElement('input');
-    const new_input_label = document.createElement('label');
     const hidden_input = document.createElement('input');
     const inner_parent_section = document.createElement('div');
+
     hidden_input.type = 'hidden';
     hidden_input.name = 'item_input_value';
     hidden_input.id = 'hidden_command_id_input';
     inner_parent_section.className = "individual_add_item_label_and_input";
+    
+    const new_input_label = document.createElement('label');
+    const new_input = document.createElement('input');
     new_input_label.className ="new_command_label";
     new_input_label.htmlFor = 'item_input'
     new_input_label.textContent = "Choose package item";
@@ -1040,6 +1042,7 @@ function generateAdditionalInputFields() {
     new_input.className = 'new_command_input_field';
     new_input.placeholder = 'Type to search...';
     new_input.setAttribute('list', 'items_list');
+
     const outer_parent_section = document.querySelector('#add_item_fields_container');
     inner_parent_section.appendChild(new_input_label);
     inner_parent_section.appendChild(new_input);
@@ -1047,11 +1050,20 @@ function generateAdditionalInputFields() {
     outer_parent_section.appendChild(inner_parent_section);
 
     new_input.addEventListener('change', function() {
-        const selected_item_label = this.value;
-        const selected_item = scum_items_list.find(item => item.label === selected_item_label)
-        console.log(selected_item);
+        console.log('test');
+        const selected_label = this.value;
+        const selected_item = scum_items_list.find(item => item.label === selected_label);
+
         if (selected_item) {
             hidden_input.value = selected_item.value;
+
+            // Load image URL
+            const imageUrl = selected_item.imageUrl;
+            if (imageUrl) {
+                const img = document.createElement('img');
+                img.src = imageUrl;
+                newInputContainer.appendChild(img);
+            }
         }
     });
 }
