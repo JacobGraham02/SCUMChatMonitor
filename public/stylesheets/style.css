@@ -633,7 +633,7 @@ a {
     width: 100%;
 }
 
-#ftp_server_data_edit_page {
+#ftp_server_data_edit_page, #discord_channel_id_edit_page {
     max-width: 100%;
     display: flex;
     flex-direction: column;
@@ -641,7 +641,7 @@ a {
     text-align: center;
 }
 
-#ftp_server_data_form {
+#ftp_server_data_form, #discord_channel_ids_form {
     margin: 0;
     padding: 0;
     display: flex;
@@ -652,14 +652,17 @@ a {
     font-size: 80%;
 }
 
-.ftp_server_data_fieldset {
+.ftp_server_data_fieldset, .discord_channel_ids_fieldset {
     margin-top: 2%;
-    width: 100%;
     width: 100%;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+}
+
+.ftp_server_data_fieldset input, .discord_channel_ids_fieldset input {
+    height: 50%;
 }
 
 .ftp_data_input {
@@ -671,14 +674,7 @@ a {
     align-items: inherit;
 }
 
-/* .togglepassword {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-} */
-
-#ftp_server_data_form_field_buttons {
+#ftp_server_data_form_field_buttons, #discord_channel_ids_form_field_buttons {
     display: flex;
     flex-direction: row;
     justify-content: center;
@@ -688,7 +684,8 @@ a {
     width: 100%;
     height: 100%;
 }
-.article_for_ftp_server_data {
+
+.article_for_ftp_server_data, .discord_channel_ids_article {
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -696,7 +693,7 @@ a {
     align-items: center;
 }
 
-#new_ftp_server_data_section {
+#new_ftp_server_data_section, #new_discord_channel_ids_section {
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -705,7 +702,7 @@ a {
     text-align: center;
 }
 
-#ftp_server_data_edit_page {
+#ftp_server_data_edit_page, #discord_channel_id_edit_page {
     font-size: 125%;
 }
 
@@ -760,6 +757,32 @@ a {
     margin: 100px auto;
 }
 
+#ftp_server_data_edit_page_heading, #discord_channel_id_editor_heading {
+    font-size: 100%;
+}
+
+.is-valid-feedback {
+    display: block;
+}
+
+.is-invalid-feedback {
+    display: block;
+}
+
+/* Style for invalid input */
+.is-invalid {
+    border: 2px solid red;
+}
+
+/* Style for valid input */
+.is-valid {
+    border: 2px solid green;
+}
+
+#article_for_ftp_data_page_disclaimer {
+    margin-bottom: 2%;
+}
+
 /* Media queries for when on a desktop */
 @media screen and (min-width: 1199px) {
     body {
@@ -781,9 +804,30 @@ a {
             "header footer footer footer footer footer";
     }
 
+    .ftp_server_data_fieldset, .discord_channel_ids_fieldset {
+        margin-top: 1%;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+    
+
+    #article_for_ftp_data_page_disclaimer {
+        margin-bottom: 0%;
+    }    
 
     #dropdown_menu_for_spawn_item {
         width: 60%;
+    }
+
+    #ftp_server_data_edit_page_heading, #discord_channel_id_editor_heading {
+        font-size: 150%;
+    }
+
+    #article_for_ftp_data_page_disclaimer {
+        margin-bottom: 1%;
     }
 
     #login_fields_form {
@@ -811,12 +855,16 @@ a {
         width: 30%;
     }
 
-    .ftp_server_data_input {
+    .ftp_server_data_input, .discord_channel_id_input {
         width: 50%;
         height: 100%;
     }
 
     #ftp_server_data_form {
+        font-size: 100%;
+    }
+
+    #discord_channel_ids_form {
         font-size: 100%;
     }
 

@@ -16,7 +16,6 @@
     "test": "nodemon app.js"
   },
   "devDependencies": {
-    "eslint": "^8.42.0",
     "nodemon": "^3.0.2"
   },
   "dependencies": {

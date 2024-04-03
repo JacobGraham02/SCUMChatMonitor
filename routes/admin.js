@@ -138,7 +138,6 @@ router.post('/setftpserverdata', async (request, response) => {
 
 router.post('/setdiscordchannelids', async (request, response) => {
     const discord_server_channel_ids_object = {
-        discord_change_log_channel_id: request.body.bot_change_log_channel_id_input,
         discord_ingame_chat_channel_id: request.body.bot_ingame_chat_log_channel_id_input,
         discord_logins_chat_channel_id: request.body.bot_ingame_logins_channel_id_input,
         discord_new_player_chat_channel_id: request.body.bot_ingame_new_player_joined_id_input,

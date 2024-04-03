@@ -11,12 +11,12 @@ block header
 
 block content(user)
     main#ftp_server_data_edit_page    
-        h2#ftp_server_data_edit_page_heading(class="text-center") Change the FTP data that allows the bot to interact with your SCUM server
-        fieldset#fieldset_for_ftp_data_page_disclaimer(class="text-center") On this page, you must specify the FTP server details for your server provider
+        h2#ftp_server_data_edit_page_heading(class="text-center") View or edit FTP server data
+        article#article_for_ftp_data_page_disclaimer(class="text-center") On this page, you must specify the FTP server details for your server provider
         
         span#span_ftp_server_data_screen_name #{file_name}
 
-        form#ftp_server_data_form(class="needs-validation")
+        form#ftp_server_data_form(method="POST", action="/admin/setftpserverdata" class="needs-validation bot_data_form")
             section#new_ftp_server_data_section
                 fieldset#ftp_server_hostname_fieldset.ftp_server_data_fieldset
                     article#ftp_server_hostname_article(class='article_for_ftp_server_data')
@@ -30,7 +30,7 @@ block content(user)
                             value= user.ftp_server_ip ? user.ftp_server_ip : "",
                             required,
                             title="Please enter an IP address that follows the rule defined above")
-                        #ftp_server_hostname_feedback.invalid-feedback Invalid IP address format
+                        div#ftp_server_hostname_input_feedback
 
                 fieldset#ftp_server_port_fieldset.ftp_server_data_fieldset
                     article#bot_ingame_chat_channel_id_article(class='article_for_ftp_server_data')
@@ -39,13 +39,13 @@ block content(user)
                             class="ftp_server_data_input",
                             type='text',
                             min='0',
-                            pattern="^(102[4-9]|10[3-9]\d|1[1-9]\d{2}|[2-9]\d{3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$",                            
+                            pattern="^(102[4-9]|10[3-9][0-9]|1[1-9][0-9]{2}|[2-9][0-9]{3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$",                            
                             title="Please enter an FTP server port number that follows the rule defined above",
                             name='ftp_server_port_input', 
                             value= user.ftp_server_port ? user.ftp_server_port : "",
                             required,
                             placeholder='52000')
-                        #ftp_server_port_feedback.invalid-feedback Invalid port number format
+                        div#ftp_server_port_input_feedback
 
                 fieldset#ftp_server_username_fieldset.ftp_server_data_fieldset
                     article#bot_ingame_logins_channel_id_article(class='article_for_ftp_server_data')
@@ -59,7 +59,7 @@ block content(user)
                             value= user.ftp_server_username ? user.ftp_server_username : "",
                             required,
                             placeholder='JacobG123')
-                        #ftp_server_username_feedback.invalid-feedback Invalid username format
+                        div#ftp_server_username_input_feedback
 
                 fieldset#ftp_server_password_fieldset.ftp_server_data_fieldset
                     article#bot_ingame_new_player_joins_id_article(class='article_for_ftp_server_data')
@@ -69,10 +69,11 @@ block content(user)
                             type='password',
                             name='ftp_server_password_input', 
                             title="Please enter an FTP server password that follows the rule defined above",
-                            pattern="^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,32}$",      
+                            pattern="^[a-zA-Z0-9 ]{1,}$",      
                             value= user.ftp_server_password ? user.ftp_server_password : "",                      
                             required,
                             placeholder='aED1PbAfqBTjPWnRF1kKUQgd')
+                        div#ftp_server_password_input_feedback 
 
                 fieldset#ftp_server_password_confirm_fieldset.ftp_server_data_fieldset
                     article#bot_ingame_new_player_joins_id_article(class='article_for_ftp_server_data')
@@ -81,13 +82,13 @@ block content(user)
                             class="ftp_server_data_input",
                             type='password',
                             name='ftp_server_confirm_password_input', 
-                            pattern="^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,32}$",
+                            pattern="^[a-zA-Z0-9 ]{1,}$",
                             value= "",
                             required,
                             placeholder='aED1PbAfqBTjPWnRF1kKUQgd')
+                        div#ftp_server_confirm_password_input_feedback
                         
                 fieldset#ftp_server_data_form_field_buttons
                     button#save_changes_to_ftp_server_data_button(class="" type='submit') Save
                     button#cancel_changes_to_ftp_server_data_button(class="" type='button') Cancel
-    
-    script(src="/javascripts/ftp_server_data.js")
+    script(src="/javascripts/validate_form_fields.js")
