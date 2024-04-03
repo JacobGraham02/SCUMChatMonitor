@@ -49,7 +49,7 @@ block content(user)
 
                 fieldset#ftp_server_username_fieldset.ftp_server_data_fieldset
                     article#bot_ingame_logins_channel_id_article(class='article_for_ftp_server_data')
-                        label(class="ftp_server_data_label",for='ftp_server_username_input') FTP server username (e.g. JacobG123). This can only be the - or _ character, upper and lowercase letters, and numbers 0 through 9
+                        label(class="ftp_server_data_label",for='ftp_server_username_input') FTP server username (e.g. JacobG123). This can only be the dash (-) or lowercase (_) character, upper and lowercase letters, and numbers 0 through 9
                         input.validate-input#ftp_server_username_input(
                             class="ftp_server_data_input",
                             type='text',
@@ -73,6 +73,7 @@ block content(user)
                             value= user.ftp_server_password ? user.ftp_server_password : "",                      
                             required,
                             placeholder='aED1PbAfqBTjPWnRF1kKUQgd')
+                        button#toggle_password_visibility_button(class="btn btn-primary" type="button") Toggle Password Visibility
                         div#ftp_server_password_input_feedback 
 
                 fieldset#ftp_server_password_confirm_fieldset.ftp_server_data_fieldset

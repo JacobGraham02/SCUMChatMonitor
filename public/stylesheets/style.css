@@ -779,6 +779,11 @@ a {
     border: 2px solid green;
 }
 
+.validate-input {
+    border-radius: 0.25rem;
+    scale: 1.05;
+}
+
 #article_for_ftp_data_page_disclaimer {
     margin-bottom: 2%;
 }

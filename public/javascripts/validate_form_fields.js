@@ -48,4 +48,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Apply the validation listener to each input field
     inputFields.forEach(addValidationListener);
+
+    const togglePasswordVisibilityButton = document.querySelector('#toggle_password_visibility_button');
+    const passwordInput = document.querySelector('#ftp_server_password_input');
+    const confirmPasswordInput = document.querySelector('#ftp_server_confirm_password_input');
+
+    togglePasswordVisibilityButton.addEventListener('click', function() {
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            confirmPasswordInput.type = 'text';
+        } else {
+            passwordInput.type = 'password';
+            confirmPasswordInput.type = 'password';
+        }
+    });
 });
