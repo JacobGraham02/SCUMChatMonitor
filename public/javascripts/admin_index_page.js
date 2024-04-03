@@ -29,7 +29,9 @@ window.onload = function () {
         });
     });
 
-    // Integration of sorting functionality
+    /*
+    Integration of button sort for ascending and descending command names
+    */
     const sort_ascending_button = document.querySelector('#sort_ascending');
     const sort_descending_button = document.querySelector('#sort_descending');
     const command_list = document.querySelector('#bot_command_list').querySelectorAll('li');
@@ -42,16 +44,33 @@ window.onload = function () {
             return ascending ? textA.localeCompare(textB) : textB.localeCompare(textA);
         });
 
-        // Re-attach sorted items to the DOM
+        /*
+        Re-render the sorted items into the DOM
+        */
         const parent = document.querySelector('#bot_command_list');
         commands_array.forEach(command => parent.appendChild(command));
     };
 
-    // Event listeners for sorting
+    /*
+    Trigger the elements sorting based on whether a sort ascending or sort descending button was clicked
+    */
     if (sort_ascending_button) {
         sort_ascending_button.addEventListener('click', () => sortCommands(true));
     }
     if (sort_descending_button) {
         sort_descending_button.addEventListener('click', () => sortCommands(false));
     }
+
+    const searchInput = document.querySelector('#search_input');
+    const commandListItems = document.querySelectorAll('.bot_command_list_item_edit_li'); // Assuming these are the items you want to show/hide
+
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.trim().toUpperCase(); // Convert search term to upper case for case-insensitive matching
+
+        commandListItems.forEach(item => {
+            const commandName = item.querySelector('.bot_command_list_item_edit').innerText.toUpperCase(); // Assuming this is where the command name is stored
+            const shouldShow = commandName.includes(searchTerm) || searchTerm === ''; // Show item if it includes the search term or if the search term is empty
+            item.style.display = shouldShow ? '' : 'none'; // Use the 'display' property to hide or show the item
+        });
+    });
 }

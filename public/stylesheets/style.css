@@ -788,6 +788,11 @@ a {
     margin-bottom: 2%;
 }
 
+/* This element is used to hide or show pagination command items when searching for specific commands */
+.hidden {
+    display: none;
+}
+
 /* Media queries for when on a desktop */
 @media screen and (min-width: 1199px) {
     body {
