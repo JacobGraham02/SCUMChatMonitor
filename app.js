@@ -1024,33 +1024,22 @@ passport.serializeUser(function (user, done) {
     done(null, user.guild_id);
 });
 
-// passport.deserializeUser(async (guildId, done) => {
-//     const userCacheKey = `user:${guildId}`;
-//     try {
-//         // Attempt to retrieve user data from cache with a timeout
-//         const cachedUserData = await withTimeout(getAsync(userCacheKey), 5000); // Timeout after 5000ms
+passport.deserializeUser(async (guildId, done) => {
+    try {
+        const repositoryUser = await bot_repository.getBotDataByGuildId(guildId);
 
-//         if (cachedUserData) {
-//             const user = JSON.parse(cachedUserData);
-//             return done(null, user);
-//         }
-
-//         // User data not found in cache, retrieve from repository
-//         const repositoryUser = await bot_repository.getBotDataByGuildId(guildId);
-
-//         if (repositoryUser) {
-//             // User data found in repository, store in cache and return
-//             await withTimeout(setAsync(userCacheKey, JSON.stringify(repositoryUser), 'EX', 60 * 60), 5000); // Timeout after 5000ms
-//             return done(null, repositoryUser);
-//         } else {
-//             // User not found in repository, return false
-//             return done(null, false);
-//         }
-//     } catch (error) {
-//         console.error(`Error in deserializeUser for guildId ${guildId}: ${error}`);
-//         return done(error, null);
-//     }
-// });
+        if (repositoryUser) {
+            // User data found in repository, store in cache and return
+            return done(null, repositoryUser);
+        } else {
+            // User not found in repository, return false
+            return done(null, false);
+        }
+    } catch (error) {
+        console.error(`Error in deserializeUser for guildId ${guildId}: ${error}`);
+        return done(error, null);
+    }
+});
 
 passport.deserializeUser(async (guildId, done) => {
     let repository_user = undefined;
