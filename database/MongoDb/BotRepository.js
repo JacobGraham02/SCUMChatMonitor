@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import DatabaseConnectionManager from './DatabaseConnectionManager.js';
 const database_connection_manager = new DatabaseConnectionManager();
+dotenv.config();
 
 export default class BotRepository {
 
