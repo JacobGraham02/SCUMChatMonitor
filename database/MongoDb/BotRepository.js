@@ -20,11 +20,10 @@ export default class BotRepository {
 
     async createBot(bot_information) {
         const database_connection = await database_connection_manager.getConnection();
-        const bot_password_salt = bot_information.bot_password.substring(0, 32);
         const new_bot_document = {
             bot_username: bot_information.bot_username,
-            bot_password: bot_information.bot_password,
-            bot_salt: bot_password_salt,
+            bot_password: bot_information.bot_password_hash,
+            bot_salt: bot_information.bot_password_salt,
             bot_email: bot_information.bot_email,
             guild_id: bot_information.guild_id,
         };
@@ -126,7 +125,7 @@ export default class BotRepository {
 
     async createBotItemPackage(bot_id, bot_package) {
         const database_connection = await database_connection_manager.getConnection();
-
+    
         const new_bot_item_package_document = {
             bot_id: bot_id,
             package_name: bot_package.package_name,
@@ -134,22 +133,22 @@ export default class BotRepository {
             package_cost: bot_package.package_cost,
             package_items: bot_package.package_items
         };
-
+    
         try {
             const bot_collection = database_connection.collection('bot_packages');
-
-            await bot_collection.updateOne(
-                { bot_id: bot_id },
-                { $setOnInsert: new_bot_item_package_document },
-                { upsert: true }
-            );
+    
+            // Use insertOne to add the new bot item package document to the collection
+            await bot_collection.insertOne(new_bot_item_package_document);
+            console.log("New bot item package inserted successfully.");
+    
         } catch (error) {
-            console.error(`There was an error when attempting to create a new bot item package. Please inform the server administrator of this error: ${error}`);
-            throw new Error(`There was an error when attempting to create a new bot item package. Please inform the server administrator of this error: ${error}`);
+            console.error(`There was an error when attempting to create a new bot item package: ${error}`);
+            throw new Error(`There was an error when attempting to create a new bot item package: ${error}`);
         } finally {
             await this.releaseConnectionSafely(database_connection);
         }
     }
+    
 
     async getBotItemPackageData(bot_id) {
         const database_connection = await database_connection_manager.getConnection();
@@ -214,6 +213,45 @@ export default class BotRepository {
         } catch (error) {
             console.error(`There was an error when attempting to retrieve the bot data by email. Please inform the server administrator of this error: ${error}`);
             throw new Error(`There was an error when attempting to retrieve the bot data by email. Please inform the server administrator of this error: ${error}`);
+        } finally {
+            await this.releaseConnectionSafely(database_connection);
+        }
+    }
+
+    async updateBotDataByGuildId(guild_id, new_bot_data) {
+        try {
+            const database_connection = await database_connection_manager.getConnection();
+            
+            // Retrieve the existing user document from the database
+            const user_collection = database_connection.collection('users');
+            const existing_user = await user_collection.findOne({ guild_id: guild_id });
+    
+            if (!existing_user) {
+                throw new Error('User not found');
+            }
+    
+            /*
+            The spread operator merges existing user data with the new data provided as an argument to the function
+            */
+            const updated_user = { ...existing_user, ...new_bot_data };
+    
+            /*
+            Iterate over the keys of the merged document and remove any fields with undefined values to avoid clearing existing data in the database
+            */
+            Object.keys(updated_user).forEach(key => {
+                if (updated_user[key] === undefined) {
+                    delete updated_user[key];
+                }
+            });
+    
+            /*
+            updateOne used to update a single user document in the database with the merged and filtered data
+            */
+            await userCollection.updateOne({ guild_id: guild_id }, { $set: updated_user });
+    
+            return updated_user;
+        } catch (error) {
+            throw error;
         } finally {
             await this.releaseConnectionSafely(database_connection);
         }

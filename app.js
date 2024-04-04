@@ -37,9 +37,31 @@ import PlayerInfoCommand from './api/ipapi/PlayerInfoCommand.js';
 import SteamUserInfoCommand from './api/steam/SteamUserInfoCommand.js';
 import { E_CANCELED } from 'async-mutex';
 import { fileURLToPath, pathToFileURL } from 'url';
+// import { createClient } from 'redis'
+import { promisify } from 'util';
 
 const bot_token = process.env.discord_wilson_bot_token;
-const test_guild_id="1224366025764634745";
+// const redis_cache_host_name = process.env.azure_cache_for_redis_host_name;
+// const redis_cache_password = process.env.azure_cache_for_redis_access_key;
+
+// const redis_client = createClient({
+//     url: `rediss://${redis_cache_host_name}:6380`,
+//     password: redis_cache_password,
+// }); 
+
+// await redis_client.connect();
+
+// const getAsync = promisify(redis_client.get).bind(redis_client);
+
+// const setAsync = promisify(redis_client.set).bind(redis_client);
+
+// redis_client.on('connect', () => {
+//     console.log(`The Azure Redis server has been initialized`);
+// });
+
+// redis_client.on('error', (error) => {
+//     console.log(`Redis client error: ${error}`);
+// });
 
 const client_instance = new Client({
     intents: [GatewayIntentBits.Guilds,
@@ -112,14 +134,6 @@ const gportal_ftp_config = {
 };
 
 let gportal_log_file_ftp_client = undefined;
-
-/**
- * Name of username and login fields used on the login form 
- */
-const username_and_password_fields = {
-    email_field: 'email',
-    password_field: 'password'
-};
 
 var app = express();
 
@@ -917,7 +931,7 @@ async function insertSteamUsersIntoDatabase(steam_user_ids_array, steam_user_nam
  * @param {any} password
  * @param {any} done
  */
-const verifyCallback = async (email, password, done) => {
+const verifyCredentialsCallback = async (email, password, done) => {
     let bot_user_data = undefined;
     try {
         bot_user_data = await bot_repository.getBotDataByEmail(email);
@@ -925,10 +939,10 @@ const verifyCallback = async (email, password, done) => {
         console.error(`An error has occurred when attempting to verify that your log in. Please contact the server administrator with the following error: ${error}`);
         throw new Error(`An error has occurred when attempting to verify that your log in. Please contact the server administrator with the following error: ${error}`);
     }
-    if (bot_user_data === null) {
+    if (!bot_user_data) {
+        console.log(`No user with this login exists`);
         return done(null, false);
     }
-    const bot_user_uuid = bot_user_data.bot_id;
     const bot_user_email = bot_user_data.bot_email;
     const bot_user_username = bot_user_data.bot_username;
     const bot_user_password = bot_user_data.bot_password;
@@ -948,8 +962,7 @@ const verifyCallback = async (email, password, done) => {
 
     const valid_user_account = validatePassword(password, bot_user_password, bot_user_salt);
 
-    const logged_in_bot_user_data = {
-        uuid: bot_user_uuid,
+    const user = {
         username: bot_user_username,
         email: bot_user_email,
         guild_id: bot_user_guild_id,
@@ -967,7 +980,7 @@ const verifyCallback = async (email, password, done) => {
     };
 
     if (valid_user_account) {
-        return done(null, logged_in_bot_user_data);
+        return done(null, user);
     } else {
         return done(null, false);
     }
@@ -1000,23 +1013,77 @@ app.get('/login-failure', function (request, response, next) {
     });
 });
 
-const strategy = new LocalStrategy(username_and_password_fields, verifyCallback);
-passport.use(strategy);
+const passportLoginStrategy = new LocalStrategy({
+    usernameField: "email",
+    passwordField: "password"
+}, verifyCredentialsCallback);
 
-passport.serializeUser(function (admin, done) {
-    done(null, admin.uuid);
+passport.use(passportLoginStrategy);
+
+passport.serializeUser(function (user, done) {
+    done(null, user.guild_id);
 });
 
-/**
- * This is used in conjunction with serializeUser to give passport the ability to attach 
- */
-passport.deserializeUser(function (uuid, done) {
-    user_repository.findAdminByUuid(uuid).then(function (admin_data_results) {
-        done(null, admin_data_results);
-    }).catch(error => {
+passport.deserializeUser(async (guildId, done) => {
+    try {
+        const repositoryUser = await bot_repository.getBotDataByGuildId(guildId);
+
+        if (repositoryUser) {
+            // User data found in repository, store in cache and return
+            return done(null, repositoryUser);
+        } else {
+            // User not found in repository, return false
+            return done(null, false);
+        }
+    } catch (error) {
+        console.error(`Error in deserializeUser for guildId ${guildId}: ${error}`);
+        return done(error, null);
+    }
+});
+
+passport.deserializeUser(async (guildId, done) => {
+    let repository_user = undefined;
+    try {
+        repository_user = await bot_repository.getBotDataByGuildId(guildId);
+
+        if (repository_user) {
+            return done(null, repository_user);
+        } else {
+            return done(null, false);
+        }
+    } catch (error) {
         done(error, null);
-    });
+        throw new Error(`Error in deserializeUser for guildId ${guildId}: ${error}`)
+    }
 });
+
+async function updateBotUserCache(guildId, newData) {
+    let new_data = undefined;
+    let serialized_data = undefined;
+
+    try {
+        await bot_repository.updateBotDataByGuildId(guildId, newData);
+        
+        const cache_key = `user:${guildId}`;
+        const transaction = redis_client.multi();
+        
+        if (typeof new_data === 'object') {
+            serialized_data = JSON.stringify(new_data);
+        } else {
+            serialized_data = new_data;
+        }
+
+        transaction
+            .del(cache_key)
+            .set(cache_key, serialized_data);
+
+        await promisify(transaction.exec).bind(transaction)();
+    } catch (error) {
+        throw new Error(`Error updating user cache: ${error.message}`);
+    }
+}
+
+
 
 /**
  * Creates a 404 error when the application tries to navigate to a non-existent page.
@@ -1418,16 +1485,21 @@ client_instance.on(Events.InteractionCreate, async interaction => {
         if (interaction.customId === 'userDataInputModal') {
             const user_username = interaction.fields.getTextInputValue('usernameInput');
             const user_email = interaction.fields.getTextInputValue('emailInput');
-            const user_password = hashPassword(interaction.fields.getTextInputValue('passwordInput'));
+            const user_password_hash_object = hashPassword(interaction.fields.getTextInputValue('passwordInput'));
             const guild_id = interaction.guildId;
 
             const bot_information = {
                 bot_username: user_username,
                 bot_email: user_email,
-                bot_password: user_password,
+                bot_password_hash: user_password_hash_object.hash,
+                bot_password_salt: user_password_hash_object.salt,
                 bot_id: bot_token,
                 guild_id: guild_id
             }
+
+            console.log(bot_information.bot_password_hash);
+            console.log(bot_information.bot_password_salt);
+
             try {
                 await bot_repository.createBot(bot_information);            
             } catch (error) {

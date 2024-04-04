@@ -16,7 +16,6 @@
     "test": "nodemon app.js"
   },
   "devDependencies": {
-    "eslint": "^8.42.0",
     "nodemon": "^3.0.2"
   },
   "dependencies": {
@@ -46,6 +45,7 @@
     "passport-local": "^1.0.0",
     "pkg": "^5.8.1",
     "pug": "^3.0.2",
+    "redis": "^4.6.13",
     "uuid": "^9.0.0"
   },
   "pkg": {
