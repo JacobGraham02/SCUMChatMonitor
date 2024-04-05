@@ -135,20 +135,20 @@ const gportal_ftp_config = {
 
 let gportal_log_file_ftp_client = undefined;
 
-var app = express();
+var expressServer = express();
 
 /**
  * Initial configuration to enable express to use Mongodb as a storage location for session information
  */
-app.use(session({
+expressServer.use(session({
     secret: process.env.express_session_key,
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({ mongoUrl: process.env.mongodb_connection_string })
 }));
 
-app.use(passport.initialize());
-app.use(passport.session());
+expressServer.use(passport.initialize());
+expressServer.use(passport.session());
 
 /**
  * existing_cached_file_content_hash is a variable which stores a hashed version of the raw file contents retrieved from the ftp log files in gportal
@@ -336,7 +336,7 @@ async function determinePlayerLoginSessionMoney(logs) {
     /**
      * This is the loop which fetches both the user steam id and their total amount of discord money earned from the Map. For each user within the Map that has both a log in and log out time,
      * their database record is updated with the amount of money they earned in this specific play session. 
-     * If the operation fails for whatever reason, the app developer will get an email stating this, and the app will also crash. 
+     * If the operation fails for whatever reason, the expressServer developer will get an email stating this, and the expressServer will also crash. 
      */
     for (const [user_steam_id, update] of user_balance_updates) {
         try {
@@ -989,25 +989,25 @@ const verifyCredentialsCallback = async (email, password, done) => {
 // view engine setup
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'pug');
+expressServer.set('views', path.join(__dirname, 'views'));
+expressServer.set('view engine', 'pug');
 
-app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+expressServer.use(logger('dev'));
+expressServer.use(express.json());
+expressServer.use(express.urlencoded({ extended: true }));
+expressServer.use(cookieParser());
+expressServer.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
-app.use('/admin', adminRouter);
-app.use('/api/', apiExecutableRecompilation);
+expressServer.use('/', indexRouter);
+expressServer.use('/admin', adminRouter);
+expressServer.use('/api/', apiExecutableRecompilation);
 
-app.post('/login', passport.authenticate('local', {
+expressServer.post('/login', passport.authenticate('local', {
     successRedirect: 'admin/login-success',
     failureRedirect: 'login-failure'
 }));
 
-app.get('/login-failure', function (request, response, next) {
+expressServer.get('/login-failure', function (request, response, next) {
     response.render('login', {
         title: "Invalid login", invalid_login_message: 'Invalid login credentials. Please try again with a different set of credentials.'
     });
@@ -1060,19 +1060,19 @@ passport.deserializeUser(async (guildId, done) => {
 /**
  * Creates a 404 error when the application tries to navigate to a non-existent page.
  */
-app.use(function (req, res, next) {
+expressServer.use(function (req, res, next) {
     next(createError(404));
 });
 
-app.listen(process.env.port, function () {
+expressServer.listen(process.env.port, function () {
     console.log(`Server is running on port ${process.env.port}`);
 })
 
 // error handler
-app.use(function (err, req, res, next) {
+expressServer.use(function (err, req, res, next) {
     // set locals, only providing error in development
     res.locals.message = err.message;
-    res.locals.error = req.app.get('env') === 'development' ? err : {};
+    res.locals.error = req.expressServer.get('env') === 'development' ? err : {};
 
     // render the error page
     res.status(err.status || 500);
@@ -1912,4 +1912,4 @@ function determineIfUserMessageInCorrectChannel(channel_message_was_sent, discor
     return channel_message_was_sent === discord_bot_channel_id;
 }
 
-export default app;
+export default expressServer;
