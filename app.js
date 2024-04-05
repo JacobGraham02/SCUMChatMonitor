@@ -1223,7 +1223,6 @@ function checkIfGameServerOnline() {
  * The discord API triggers an event called 'ready' when the discord bot is ready to respond to commands and other input. 
  */
 client_instance.on('ready', () => {
-    Logger = new Logger();
     /**
      * Inform administrators that the bot has successfully logged into the Discord guild
      */

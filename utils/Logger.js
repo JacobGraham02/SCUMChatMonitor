@@ -1,6 +1,6 @@
-import fs from 'fs';
 import { config } from 'dotenv';
-import { BlobServiceClient, BlobUploadCommonResponse, ContainerClient } from '@azure/storage-blob';
+import pkg from '@azure/storage-blob';
+const { BlobServiceClient, BlobUploadCommonResponse, ContainerClient } = pkg;
 config({ path: '.env' });
 
 export default class Logger {
