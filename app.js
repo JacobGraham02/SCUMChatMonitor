@@ -381,7 +381,7 @@ maxRetries is used to indicate the maximum number of retry attempts that will be
 retryDelay is used to indicate how many milliseconds to wait before attempting to establish a new connection
  * @returns nothing if an FTP connection cannot be made to GPortal within 5 attempts
  */
-async function establishFtpConnectionToGportal() {
+export async function establishFtpConnectionToGportal() {
     gportal_log_file_ftp_client = new FTPClient();
     gportal_log_file_ftp_client.removeAllListeners();
     
