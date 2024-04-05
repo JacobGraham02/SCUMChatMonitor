@@ -1,4 +1,5 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
+import path from 'path';
 
 let mainWindow;
 
@@ -8,8 +9,9 @@ function createWindow() {
         width: 800,
         height: 600,
         webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false,
+            preload: path.join(__dirname, 'preload.js'),
+            nodeIntegration: false,
+            contextIsolation: true,
         },
     });
 
@@ -24,6 +26,10 @@ function createWindow() {
         mainWindow = null;
     });
 }
+
+ipcMain.on(`login-event`, function(event, args) {
+    console.log(`Login event emitted`);
+});
 
 // Electron 'app' lifecycle events
 app.on('ready', function() {

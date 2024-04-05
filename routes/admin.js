@@ -3,6 +3,7 @@ var router = Router();
 import { join } from 'path';
 import { exec } from 'child_process';
 import BotRepository from '../database/MongoDb/BotRepository.js';
+import { ipcMain } from 'electron';
 const botRepository = new BotRepository();
 
 function isLoggedIn(request, response, next) {
@@ -28,6 +29,7 @@ router.get('/command/:commandname', isLoggedIn, async (request, response) => {
         const package_data = await botRepository.getBotPackageFromName(package_name); 
 
         response.render('admin/command', { user: request.user, package: package_data });
+        
     } catch (error) {
         console.error(`Error fetching command data: ${error}`);
         response.render('admin/command', { user: request.user, info_message: `There was an internal server error when attempting to load the admin command file after logging in. Please inform the server administrator of this error or try again: ${error}`, show_alert: true});

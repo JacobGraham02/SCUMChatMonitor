@@ -37,8 +37,7 @@ import PlayerInfoCommand from './api/ipapi/PlayerInfoCommand.js';
 import SteamUserInfoCommand from './api/steam/SteamUserInfoCommand.js';
 import { E_CANCELED } from 'async-mutex';
 import { fileURLToPath, pathToFileURL } from 'url';
-// import { createClient } from 'redis'
-import { promisify } from 'util';
+import WebSocket from 'ws';
 
 const bot_token = process.env.discord_wilson_bot_token;
 // const redis_cache_host_name = process.env.azure_cache_for_redis_host_name;
@@ -144,6 +143,7 @@ expressServer.use(session({
     secret: process.env.express_session_key,
     resave: false,
     saveUninitialized: false,
+    cookie: { secure: true, maxAge: 6000 },
     store: MongoStore.create({ mongoUrl: process.env.mongodb_connection_string })
 }));
 
@@ -1001,6 +1001,22 @@ expressServer.use(express.static(path.join(__dirname, 'public')));
 expressServer.use('/', indexRouter);
 expressServer.use('/admin', adminRouter);
 expressServer.use('/api/', apiExecutableRecompilation);
+
+const web_socket_server_instance = new WebSocket.Server({ noServer: true });
+
+web_socket_server_instance.on('connection', function(websocket, request) {
+    const userId = request.session.userId;
+
+    websocket.on('message', function(message) { 
+        console.log(`Web socket message: ${message}`);
+    });
+
+    websocket.on('close', function() {
+
+    });
+
+    websocket.send(`Welcome user ${userId}`);
+});
 
 expressServer.post('/login', passport.authenticate('local', {
     successRedirect: 'admin/login-success',
