@@ -75,6 +75,31 @@ export default class BotRepository {
             await this.releaseConnectionSafely(database_connection);
         }
     }
+
+    async createBotTeleportNewPlayerCoordinates(teleport_command) {
+        const database_connection = await database_connection_manager.getConnection();
+        const new_start_area_data_document = {
+            command_prefix: teleport_command.prefix,
+            x_coordinate: teleport_command.x,
+            y_coordinate: teleport_command.y,
+            z_coordinate: teleport_command.z
+        };
+
+        try {
+            const bot_collection = database_connection.collection('bot');
+
+            await bot_collection.updateOne(
+                { guild_id: teleport_command.guild_id },
+                { $set: new_start_area_data_document },
+                { upsert: true}
+            );
+        } catch (error) {
+            console.error(`There was an error when attempting to insert a start teleport area into the discord bot. Please contact the server administrator and inform them of this error: ${error}`);
+            throw new Error(`There was an error when attempting to insert a start teleport area into the discord bot. Please contact the server administrator and inform them of this error: ${error}`);
+        } finally {
+            await this.releaseConnectionSafely(database_connection);
+        }
+    }
     
     async createBotFtpServerData(ftp_server_data) {
         const database_connection = await database_connection_manager.getConnection();
