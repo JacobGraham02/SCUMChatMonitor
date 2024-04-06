@@ -1,0 +1,65 @@
+extends layout
+
+block variables
+    - var page_title = 'Spawn zone coordinate data'
+
+include menu
+
+block header
+    header#header.header
+        +menu(user)
+
+block content(user)
+    main#coordinate_data_edit_page    
+        h2#coordinate_data_edit_page_heading(class="text-center") View or edit spawn zone XYZ coordinates
+        article#article_for_coordinate_data_page_disclaimer(class="text-center") On this page, you must specify the spawn zone XYZ coordinates
+
+        form#coordinate_data_form(method="POST", action="/admin/setftpserverdata" class="needs-validation bot_data_form")
+            section#coordinate_data_form_section
+                fieldset#start_zone_x_coordinate_fieldset.start_zone_coordinates_fieldset
+                    article#x_coordinate_article(class='article_for_coordinate_data')
+                        label(class="coordinate_data_label",for='x_coordinate_data_input') X coordinate (e.g., 218593.6683)
+                        input.validate-input#x_coordinate_input(
+                            class="coordinate_data_input",
+                            type='text',
+                            name='x_coordinate_data_input', 
+                            pattern="^-?\d{1,6}(\.\d{1,6})?$",                           
+                            placeholder='218593.6683',
+                            value= user.x_coordinate ? user.x_coordinate : "",
+                            required,
+                            title="Please enter an x coordinate that corresponds with the rule described above")
+                        div#x_coordinate_input_feedback
+
+                fieldset#start_zone_y_coordinate_fieldset.start_zone_coordinates_fieldset
+                    article#y_coordinate_article(class='article_for_coordinate_data')
+                        label(class="coordinate_data_label",for='y_coordinate_data_input') Y coordinate (e.g., 72405.7868)
+                        input.validate-input#y_coordinate_input(
+                            class="coordinate_data_input",
+                            type='text',
+                            min='0',
+                            pattern="^-?\d{1,6}(\.\d{1,6})?$",                            
+                            title="Please enter a y coordinate that corresponds with the rule described above",
+                            name='y_coordinate_data_input', 
+                            value= user.y_coordinate ? user.y_coordinate : "",
+                            required,
+                            placeholder='72405.7868')
+                        div#y_coordinate_input_feedback
+
+                fieldset#start_zone_z_coordinate_fieldset.start_zone_coordinates_fieldset
+                    article#z_coordinate_article(class='article_for_coordinate_data')
+                        label(class="coordinate_data_label",for='x_coordinate_input') Z coordinate (e.g., 0)
+                        input.validate-input#z_coordinate_input(
+                            class="coordinate_data_input",
+                            type='text',
+                            title="Please enter a z coordinate that corresponds with the rule described above",
+                            pattern="^-?\d{1,6}(\.\d{1,6})?$",
+                            name='z_coordinate_input', 
+                            value= user.z_coordinate ? user.z_coordinate : "",
+                            required,
+                            placeholder='0')
+                        div#z_coordinate_input_feedback
+                        
+                fieldset#coordinate_data_form_buttons
+                    button#save_changes_to_coordinate_data_button(class="" type='submit') Save
+                    button#cancel_changes_to_coordinate_data_button(class="" type='button') Cancel
+    script(src="/javascripts/validate_form_fields.js")
