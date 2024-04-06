@@ -3,7 +3,6 @@ var router = Router();
 import { join } from 'path';
 import { exec } from 'child_process';
 import BotRepository from '../database/MongoDb/BotRepository.js';
-import { ipcMain } from 'electron';
 const botRepository = new BotRepository();
 
 function isLoggedIn(request, response, next) {

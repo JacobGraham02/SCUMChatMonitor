@@ -38,29 +38,12 @@ import SteamUserInfoCommand from './api/steam/SteamUserInfoCommand.js';
 import { E_CANCELED } from 'async-mutex';
 import { fileURLToPath, pathToFileURL } from 'url';
 import WebSocket from 'ws';
+import http from 'http';
+import { WebSocketServer } from 'ws';
+import WebSocketGenerator from './utils/WebSocketGenerator.js';
+
 
 const bot_token = process.env.discord_wilson_bot_token;
-// const redis_cache_host_name = process.env.azure_cache_for_redis_host_name;
-// const redis_cache_password = process.env.azure_cache_for_redis_access_key;
-
-// const redis_client = createClient({
-//     url: `rediss://${redis_cache_host_name}:6380`,
-//     password: redis_cache_password,
-// }); 
-
-// await redis_client.connect();
-
-// const getAsync = promisify(redis_client.get).bind(redis_client);
-
-// const setAsync = promisify(redis_client.set).bind(redis_client);
-
-// redis_client.on('connect', () => {
-//     console.log(`The Azure Redis server has been initialized`);
-// });
-
-// redis_client.on('error', (error) => {
-//     console.log(`Redis client error: ${error}`);
-// });
 
 const client_instance = new Client({
     intents: [GatewayIntentBits.Guilds,
@@ -136,6 +119,7 @@ let gportal_log_file_ftp_client = undefined;
 
 var expressServer = express();
 
+const web_socket_generator = new WebSocketGenerator();
 /**
  * Initial configuration to enable express to use Mongodb as a storage location for session information
  */
@@ -143,7 +127,6 @@ expressServer.use(session({
     secret: process.env.express_session_key,
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: true, maxAge: 6000 },
     store: MongoStore.create({ mongoUrl: process.env.mongodb_connection_string })
 }));
 
@@ -962,6 +945,8 @@ const verifyCredentialsCallback = async (email, password, done) => {
 
     const valid_user_account = validatePassword(password, bot_user_password, bot_user_salt);
 
+    const websocket = web_socket_generator.createWebSocketConnection(bot_user_guild_id);
+
     const user = {
         username: bot_user_username,
         email: bot_user_email,
@@ -976,7 +961,8 @@ const verifyCredentialsCallback = async (email, password, done) => {
         ingame_logins_channel_id: bot_user_ingame_logins_channel_id,
         new_player_joins_channel_id: bot_user_new_player_joins_channel_id,
         battlemetrics_channel_id: bot_user_battlemetrics_channel_id,
-        server_info_channel_id: bot_user_server_info_channel_id
+        server_info_channel_id: bot_user_server_info_channel_id,
+        websocket: websocket
     };
 
     if (valid_user_account) {
@@ -1002,20 +988,33 @@ expressServer.use('/', indexRouter);
 expressServer.use('/admin', adminRouter);
 expressServer.use('/api/', apiExecutableRecompilation);
 
-const web_socket_server_instance = new WebSocket.Server({ noServer: true });
+const web_socket_server = http.createServer(expressServer);
+
+const web_socket_server_instance = new WebSocketServer({
+    noServer: true
+});
+
+web_socket_server.on('upgrade', (request, socket, head) => {
+    if (request.headers.upgrade === 'websocket') {
+        web_socket_server_instance.handleUpgrade(request, socket, head, (websocket) => {
+            web_socket_server_instance.emit('connection', websocket, request);
+        });
+    } else {
+        socket.destroy();
+    }
+});
 
 web_socket_server_instance.on('connection', function(websocket, request) {
-    const userId = request.session.userId;
 
     websocket.on('message', function(message) { 
-        console.log(`Web socket message: ${message}`);
+
     });
 
     websocket.on('close', function() {
 
     });
 
-    websocket.send(`Welcome user ${userId}`);
+    websocket.send(`Welcome to an empty web socket, user`);
 });
 
 expressServer.post('/login', passport.authenticate('local', {
@@ -1057,22 +1056,6 @@ passport.deserializeUser(async (guildId, done) => {
     }
 });
 
-passport.deserializeUser(async (guildId, done) => {
-    let repository_user = undefined;
-    try {
-        repository_user = await bot_repository.getBotDataByGuildId(guildId);
-
-        if (repository_user) {
-            return done(null, repository_user);
-        } else {
-            return done(null, false);
-        }
-    } catch (error) {
-        done(error, null);
-        throw new Error(`Error in deserializeUser for guildId ${guildId}: ${error}`)
-    }
-});
-
 /**
  * Creates a 404 error when the application tries to navigate to a non-existent page.
  */
@@ -1080,15 +1063,15 @@ expressServer.use(function (req, res, next) {
     next(createError(404));
 });
 
-expressServer.listen(process.env.port, function () {
+web_socket_server.listen(process.env.port, function () {
     console.log(`Server is running on port ${process.env.port}`);
-})
+});
 
 // error handler
 expressServer.use(function (err, req, res, next) {
     // set locals, only providing error in development
     res.locals.message = err.message;
-    res.locals.error = req.expressServer.get('env') === 'development' ? err : {};
+    res.locals.error = req.app.get('env') === 'development' ? err : {};
 
     // render the error page
     res.status(err.status || 500);
@@ -1484,9 +1467,6 @@ client_instance.on(Events.InteractionCreate, async interaction => {
                 bot_id: bot_token,
                 guild_id: guild_id
             }
-
-            console.log(bot_information.bot_password_hash);
-            console.log(bot_information.bot_password_salt);
 
             try {
                 await bot_repository.createBot(bot_information);            
