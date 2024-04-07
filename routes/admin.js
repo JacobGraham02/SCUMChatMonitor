@@ -100,13 +100,14 @@ router.get(['/commands', '/'], isLoggedIn, async (request, response) => {
         current_page_of_commands: current_page_number, 
         total_command_files: bot_package.length, 
         page_numbers,
-        user: request.user 
+        user: request.user,
+        currentPage: '/admin/command_list'
     });
 });
 
 router.get('/discordchannelids', (request, response) => {
     try {
-        response.render('admin/discord_channel_ids', { user: request.user, title: `Discord channel ids` });
+        response.render('admin/discord_channel_ids', { user: request.user, title: `Discord channel ids`, currentPage: '/admin/discordchannelids' });
     } catch (error) {
         console.error(`There was an error when attempting to retrieve the page that allows you to change the Discord channel data. Please inform the server administrator of this error: ${error}`);
         response.render('admin/discord_channel_ids', { user: request.user, title: `Discord channel ids`, info_message: `There was an Internal Server Error when attempting to retrieve the page that allows you to change the Discord channel data. Please inform the server administrator of this error: ${error}`, show_alert: true});
@@ -115,16 +116,25 @@ router.get('/discordchannelids', (request, response) => {
 
 router.get('/ftpserverdata', (request, response) => {
     try {
-        response.render('admin/ftp_server_data', { user: request.user, title: `FTP server data` });
+        response.render('admin/ftp_server_data', { user: request.user, title: `FTP server data`, currentPage: '/admin/ftpserverdata'});
     } catch (error) {
         console.error(`There was an error when attempting to retrieve the page that allows you to change the FTP server data. Please inform the server administrator of this error: ${error}`);
         response.render('admin/ftp_server_data', { user: request.user, info_message: `There was an Internal Server Error when attempting to retrieve the page that allows you to change the FTP server data. Please inform the server administrator of this error: ${error}`, show_alert: true });
     }
 });
 
+router.get('/gameserverdata', (request, response) => {
+    try {
+        response.render('admin/game_server_data', { user: request.user, currentPage: '/admin/gameserverdata'});
+    } catch (error) {
+        console.error(`There was an error when attempting to retrieve the page that allows you to set game server data`);
+        response.render('admin/game_server_data', { user: request.user, info_message: `There was an error`});
+    }
+});
+
 router.get('/spawncoordinates', (request, response) => {
     try {
-        response.render('admin/new_player_join_coordinates', { user: request.user });
+        response.render('admin/new_player_join_coordinates', { user: request.user, currentPage: '/admin/spawncoordinates' });
     } catch (error) {
         console.error(`There was an error when attempting to retrieve the page that allows you to set the spawn location of players. Please inform the server administrator of this error: ${error}`);
         response.render('admin/new_player_join_coordinates', { user: request.user });

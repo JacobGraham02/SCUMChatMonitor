@@ -8,7 +8,7 @@ include menu
 
 block header
 	header#header.header
-		+menu(user)
+		+menu(user, currentPage)
 
 block content(user)
 	main#game_server_data_edit_page
@@ -26,7 +26,7 @@ block content(user)
 						label(class='game_server_data_label', for='game_server_hostname_input') Game server IP address (Must be an IPv4 address of the format: x.x.x.x where x is between 0 and 255)
 						input#game_server_hostname_input(class="game_server_data_input", type="text", name="game_server_hostname_input", placeholder="192.168.122.56")
 
-                fieldset#game_server_port_fieldset 
+				fieldset#game_server_port_fieldset 
 					article#game_server_port_article(class='article_for_game_server_port')
 						label(class='game_server_data_label', for='game_server_port_input') (Port number will be between 49152 and 65535)
 						input#game_server_hostname_input(class="game_server_data_input", type="text", name="game_server_port_input", placeholder="52000")

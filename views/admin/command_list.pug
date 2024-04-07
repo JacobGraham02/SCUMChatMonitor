@@ -6,6 +6,12 @@ block variables
 	- var current_page_number = 1
 	- var total_number_of_pages = Math.ceil(total_command_files / commands_per_page) // Returns smallest integer greater than or equal to (command_files.length / commands_per_page)
 
+include menu
+
+block header
+	header#header.header
+		+menu(user, currentPage)
+
 block content(user)
 	article#message_dialog 
 		-if (alert_info) {
