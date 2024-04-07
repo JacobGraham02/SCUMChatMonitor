@@ -12,6 +12,7 @@ block header
 
 block content(user)
 	main#discord_channel_id_edit_page
+		h1#test= user.ingame_chat_channel_id
 		h2#discord_channel_id_editor_heading Discord channel ids
 		article#heading_for_adding_items On this page, you must specify the channel id for the specified text channels on Discord
 
@@ -26,9 +27,9 @@ block content(user)
 							type='text',
 							name='bot_ingame_chat_log_channel_id_input', 
 							required,
-							pattern="^[0-9]{19}",
-							value= user.ingame_chat_channel_id ? user.ingame_chat_channel_id : ''
-							title="Please enter a discord channel id that consists of 19 numbers where each number is between 0 and 9, inclusive"
+							pattern="^[0-9]{19}$",
+							value= user.scum_ingame_chat_channel_id ? user.scum_ingame_chat_channel_id: '',
+							title="Please enter a discord channel id that consists of 19 numbers where each number is between 0 and 9, inclusive",
 							placeholder='1234567891234567891')
 						div#discord_channel_id_for_scum_chat_input_feedback
 
@@ -40,9 +41,9 @@ block content(user)
 							type='text',
 							name='bot_ingame_logins_channel_id_input', 
 							required,
-							pattern="^[0-9]{19}",
-							value= user.ingame_logins_channel_id ? user.ingame_logins_channel_id : ''
-							title="Please enter a discord channel id that consists of 19 numbers where each number is between 0 and 9, inclusive"
+							pattern="^[0-9]{19}$",
+							value= user.scum_ingame_logins_channel_id ? user.scum_ingame_logins_channel_id: '',
+							title="Please enter a discord channel id that consists of 19 numbers where each number is between 0 and 9, inclusive",
 							placeholder='1234567891234567891')
 						div#discord_channel_id_for_scum_logins_input_feedback
 
@@ -54,9 +55,9 @@ block content(user)
 							type='text',
 							name='bot_ingame_new_player_joined_id_input', 
 							required,
-							pattern="^[0-9]{19}",
-							value= user.new_player_joins_channel_id ? user.new_player_joins_channel_id : ''
-							title="Please enter a discord channel id that consists of 19 numbers where each number is between 0 and 9, inclusive"
+							pattern="^[0-9]{19}$",
+							value= user.scum_new_player_joins_channel_id ? user.scum_new_player_joins_channel_id: '',
+							title="Please enter a discord channel id that consists of 19 numbers where each number is between 0 and 9, inclusive",
 							placeholder='1234567891234567891')
 						div#discord_channel_id_for_scum_new_player_joins_feedback
 
@@ -69,8 +70,8 @@ block content(user)
 							name='battlemetrics_server_id_input', 
 							required,
 							pattern="^[0-9]{1,}$",
-							value= user.battlemetrics_channel_id ? user.battlemetrics_channel_id : ''
-							title="Please enter a battlemetrics server id that consists of only numbers where each number is between 0 and 9, inclusive"
+							value= user.scum_battlemetrics_server_id ? user.scum_battlemetrics_server_id: '',
+							title="Please enter a battlemetrics server id that consists of only numbers where each number is between 0 and 9, inclusive",
 							placeholder='23474')
 						div#discord_channel_id_for_battlemetrics_info_feedback
 
@@ -83,8 +84,8 @@ block content(user)
 							name='bot_server_info_channel_id_input',
 							required,
 							pattern="^[0-9]{19}$",
-							value= user.server_info_channel_id ? user.server_info_channel_id : ''
-							title="Please enter a discord channel id that consists of 19 numbers where each number is between 0 and 9, inclusive"
+							value= user.scum_server_info_channel_id ? user.scum_server_info_channel_id: '',
+							title="Please enter a discord channel id that consists of 19 numbers where each number is between 0 and 9, inclusive",
 							placeholder='1234567891234567891')
 						div#discord_channel_id_for_server_info_button_feedback
 

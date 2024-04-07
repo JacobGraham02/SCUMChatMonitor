@@ -23,7 +23,7 @@ block content(user)
 						class="game_server_data_input", 
 						type="text", 
 						name="game_server_hostname_input", 
-						value= user.game_server_ipv4 ? user.game_server_ipv4 : ''
+						value= user.game_server_ipv4_address ? user.game_server_ipv4_address : ''
 						pattern="^(25[0-5]|2[0-4]\\d|1\\d{2}|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d{2}|[1-9]?\\d)){3}$",
 						required,
 						title="Please enter an IP address that follows the rule shown above",
@@ -32,7 +32,7 @@ block content(user)
 
 			fieldset#game_server_port_fieldset.game_server_fieldset
 				article#game_server_port_article(class='article_for_game_server_data')
-					label(class='game_server_data_label', for='game_server_port_input') (Port number will be between 49152 and 65535)
+					label(class='game_server_data_label', for='game_server_port_input') (Port number will be between 1024 and 65535)
 					input.validate-input#game_server_port_input(
 						class="game_server_data_input", 
 						type="text", 

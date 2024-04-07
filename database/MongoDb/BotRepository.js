@@ -52,6 +52,7 @@ export default class BotRepository {
 
     async createBotDiscordData(discord_server_data) {
         const database_connection = await database_connection_manager.getConnection();
+        console.log(discord_server_data.guild_id);
         const new_discord_data_document = {
             scum_ingame_chat_channel_id: discord_server_data.discord_ingame_chat_channel_id,
             scum_ingame_logins_channel_id: discord_server_data.discord_logins_chat_channel_id,
@@ -104,10 +105,10 @@ export default class BotRepository {
     async createBotFtpServerData(ftp_server_data) {
         const database_connection = await database_connection_manager.getConnection();
         const new_ftp_server_data_document = {
-            ftp_server_ip: ftp_server_data.server_hostname,
-            ftp_server_port: ftp_server_data.server_port,
-            ftp_server_username: ftp_server_data.server_username,
-            ftp_server_password: ftp_server_data.server_password
+            ftp_server_ip: ftp_server_data.ftp_server_hostname,
+            ftp_server_port: ftp_server_data.ftp_server_port,
+            ftp_server_username: ftp_server_data.ftp_server_username,
+            ftp_server_password: ftp_server_data.ftp_server_password
         };
 
         try {
