@@ -928,6 +928,7 @@ const verifyCredentialsCallback = async (email, password, done) => {
         console.log(`No user with this login exists`);
         return done(null, false);
     }
+
     const bot_user_email = bot_user_data.bot_email;
     const bot_user_username = bot_user_data.bot_username;
     const bot_user_password = bot_user_data.bot_password;
@@ -944,6 +945,9 @@ const verifyCredentialsCallback = async (email, password, done) => {
     const bot_user_new_player_joins_channel_id = bot_user_data.scum_new_player_joins_channel_id;
     const bot_user_battlemetrics_channel_id = bot_user_data.scum_battlemetrics_server_id;
     const bot_user_server_info_channel_id = bot_user_data.scum_server_info_channel_id;
+    const bot_user_spawn_x_coordinate = bot_user_data.x_coordinate;
+    const bot_user_spawn_y_coordinate = bot_user_data.y_coordinate;
+    const bot_user_spawn_z_coordinate = bot_user_data.z_coordinate;
 
     const valid_user_account = validatePassword(password, bot_user_password, bot_user_salt);
 
@@ -964,6 +968,9 @@ const verifyCredentialsCallback = async (email, password, done) => {
         new_player_joins_channel_id: bot_user_new_player_joins_channel_id,
         battlemetrics_channel_id: bot_user_battlemetrics_channel_id,
         server_info_channel_id: bot_user_server_info_channel_id,
+        x_coordinate: bot_user_spawn_x_coordinate,
+        y_coordinate: bot_user_spawn_y_coordinate,
+        z_coordinate: bot_user_spawn_z_coordinate,
         websocket: websocket
     };
 

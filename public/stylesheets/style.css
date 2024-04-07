@@ -644,7 +644,7 @@ a {
     width: 100%;
 }
 
-#ftp_server_data_edit_page, #discord_channel_id_edit_page, #coordinate_data_edit_page {
+#ftp_server_data_edit_page, #discord_channel_id_edit_page, #coordinate_data_edit_page, #game_server_data_edit_page {
     max-width: 100%;
     display: flex;
     flex-direction: column;
@@ -652,7 +652,7 @@ a {
     text-align: center;
 }
 
-#ftp_server_data_form, #discord_channel_ids_form, #coordinate_data_form {
+#ftp_server_data_form, #discord_channel_ids_form, #coordinate_data_form, #game_server_data_form {
     margin: 0;
     padding: 0;
     display: flex;
@@ -662,7 +662,7 @@ a {
     width: 80%;
 }
 
-.ftp_server_data_fieldset, .discord_channel_ids_fieldset, .start_zone_coordinates_fieldset {
+.ftp_server_data_fieldset, .discord_channel_ids_fieldset, .start_zone_coordinates_fieldset, .game_server_fieldset {
     margin-top: 2%;
     width: 100%;
     display: flex;
@@ -671,7 +671,7 @@ a {
     align-items: center;
 }
 
-.ftp_server_data_fieldset input, .discord_channel_ids_fieldset input, .start_zone_coordinates_fieldset input {
+.ftp_server_data_fieldset input, .discord_channel_ids_fieldset input, .start_zone_coordinates_fieldset input, .game_server_fieldset input {
     height: 50%;
 }
 
@@ -684,18 +684,18 @@ a {
     align-items: inherit;
 }
 
-#ftp_server_data_form_field_buttons, #discord_channel_ids_form_field_buttons, #coordinate_data_form_buttons {
+#ftp_server_data_form_field_buttons, #discord_channel_ids_form_field_buttons, #coordinate_data_form_buttons, #game_server_data_form_field_buttons {
     display: flex;
     flex-direction: row;
     justify-content: center;
 }
 
-.ftp_server_data_input, .coordinate_data_input {
+.ftp_server_data_input, .coordinate_data_input, .game_server_data_input, .bot_ingame_chat_log_channel_id_input {
     width: 100%;
     height: 100%;
 }
 
-.article_for_ftp_server_data, .discord_channel_ids_article, .article_for_coordinate_data {
+.article_for_ftp_server_data, .discord_channel_ids_article, .article_for_coordinate_data, .article_for_game_server_data {
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -703,7 +703,7 @@ a {
     align-items: center;
 }
 
-#new_ftp_server_data_section, #new_discord_channel_ids_section, #coordinate_data_form_section {
+#new_ftp_server_data_section, #new_discord_channel_ids_section, #coordinate_data_form_section, #game_server_data_section {
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -712,7 +712,7 @@ a {
     text-align: center;
 }
 
-#ftp_server_data_edit_page, #discord_channel_id_edit_page, #coordinate_data_edit_page {
+#ftp_server_data_edit_page, #discord_channel_id_edit_page, #coordinate_data_edit_page, #game_server_data_edit_page {
     font-size: 100%;
 }
 
@@ -768,7 +768,7 @@ a {
     margin: 100px auto;
 }
 
-#ftp_server_data_edit_page_heading, #discord_channel_id_editor_heading, #ftp_server_data_edit_page_heading {
+#ftp_server_data_edit_page_heading, #discord_channel_id_editor_heading, #ftp_server_data_edit_page_heading, #game_server_data_edit_page_heading {
     font-size: 100%;
 }
 
@@ -892,11 +892,11 @@ a {
         width: 60%;
     }
 
-    #ftp_server_data_edit_page, #discord_channel_id_edit_page, #coordinate_data_edit_page {
+    #ftp_server_data_edit_page, #discord_channel_id_edit_page, #coordinate_data_edit_page, #game_server_data_edit_page {
         font-size: 125%;
     }
 
-    #ftp_server_data_edit_page_heading, #discord_channel_id_editor_heading, #coordinate_data_edit_page_heading {
+    #ftp_server_data_edit_page_heading, #discord_channel_id_editor_heading, #coordinate_data_edit_page_heading, #game_server_data_edit_page_heading {
         font-size: 150%;
     }
 
@@ -948,12 +948,12 @@ a {
         width: 30%;
     }
 
-    .ftp_server_data_input, .discord_channel_id_input, .coordinate_data_input {
+    .ftp_server_data_input, .discord_channel_id_input, .coordinate_data_input, .game_server_data_input {
         width: 50%;
         height: 100%;
     }
 
-    #ftp_server_data_form, #discord_channel_ids_form, #coordinate_data_form_section {
+    #ftp_server_data_form, #discord_channel_ids_form, #coordinate_data_form_section, #game_server_data_form {
         font-size: 100%;
     }
 
