@@ -54,6 +54,8 @@ const client_instance = new Client({
     ]
 });
 
+const custom_logger = new Logger();
+
 /** Each channel in a discord server is identified by a unique integer value
  */
 const discord_chat_channel_bot_commands = '1125874103757328494';
@@ -964,6 +966,11 @@ const verifyCredentialsCallback = async (email, password, done) => {
         server_info_channel_id: bot_user_server_info_channel_id,
         websocket: websocket
     };
+
+    // custom_logger.writeLogToAzureContainer(`WebsiteLogins`, 
+    // `The user with guild id ${bot_user_guild_id} with username ${bot_user_username} has just logged in`,
+    // bot_user_guild_id,
+    // `${email}-logs`);
 
     if (valid_user_account) {
         return done(null, user);

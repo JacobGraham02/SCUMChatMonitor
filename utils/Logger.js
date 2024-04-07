@@ -5,6 +5,13 @@ config({ path: '.env' });
 
 export default class Logger {
 
+    constructor() {
+        if (Logger.instance) {
+            return Logger.instance;
+        }
+        Logger.instance = this;
+    }
+    
     error_and_info_regex_pattern = /[a-zA-Z0-9()\[\]'":/.,{} ]{1,1000}/g
 
     /**
@@ -87,31 +94,43 @@ export default class Logger {
 
         const log_message = this.formatLogMessageToRelativeDate(fileContents);
 
+        // Get the current date in ISO format to use in the blob file name
         const current_iso_date = this.getCurrentDateISO();
-
         const blob_file_name = `${guildId}-${current_iso_date}-${logName}.log`;
+        // const blob_file_name = `test.log`;
 
+        // Create BlobServiceClient from the connection string
         const blob_service_client = BlobServiceClient.fromConnectionString(storage_account_connection);
 
+        // Get a reference to the container
         const container_client = blob_service_client.getContainerClient(containerName);
 
         try {
+            // Ensure the container exists
             await container_client.createIfNotExists();
 
+            // Get a reference to the BlockBlobClient for the specific blob
             const blob_client = container_client.getBlockBlobClient(blob_file_name);
+
+            // Check if the blob (log file) already exists
             const blob_client_exists = await blob_client.exists();
 
             if (blob_client_exists) {
+                // If the blob exists, append the new log message to the existing log file contents
                 const existing_log_contents = await blob_client.downloadToBuffer();
-                const modified_file_contents = existing_log_contents.toString() + '\n' + `${log_message}`;
-                const file_upload_response = await blob_client.upload(modified_file_contents, Buffer.byteLength(modified_file_contents));
-
-                if (!(file_upload_response._response.status === 201)) {
-                    throw new Error(`Failed to upload the log file ${blob_file_name}`);
-                }
+                const modified_file_contents = existing_log_contents.toString() + '\n' + log_message;
+                // Upload the modified contents with overwrite option to replace the existing blob
+                await blob_client.uploadData(Buffer.from(modified_file_contents), {
+                    overwrite: true
+                });
+            } else {
+                // If the blob does not exist, create a new blob with the log message
+                await blob_client.uploadData(Buffer.from(log_message), {
+                    overwrite: true
+                });
             }
         } catch (error) {
-            throw new Error(`There was an error when creating the container or uploading the log file ${logName}`);
+            throw new Error(`There was an error when creating the container or uploading the log file ${logName}: ${error}`);
         }
     }
 
