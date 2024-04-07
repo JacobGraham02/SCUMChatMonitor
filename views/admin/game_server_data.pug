@@ -8,28 +8,42 @@ include menu
 
 block header
 	header#header.header
-		+menu(user)
+		+menu(user, currentPage)
 
 block content(user)
 	main#game_server_data_edit_page
-		h1#game_server_data_edit_page_heading 
-			| Change the FTP data that allows the bot to interact with your SCUM server
-			span#span_game_server_data_screen_name
-				| #{file_name}
+		h1#game_server_data_edit_page_heading Game server data
+		article#article_for_ftp_data_page_disclaimer(class="text-center") On this page, you must specify your game server details (IP address and port number)
+
 		form#game_server_data_form(method='POST', action='/admin/setgameserverdata/')
-			section#game_server_data_section
-				fieldset#fieldset_for_ftp_data_page_disclaimer
-					h1.heading_for_game_server_data On this page, you must specify the game server details for your server provider
+			fieldset#game_server_hostname_fieldset.game_server_fieldset
+				article#game_server_hostname_article(class='article_for_game_server_data')
+					label(class='game_server_data_label', for='game_server_hostname_input') Game server IP address (Must be an IPv4 address of the format: x.x.x.x where x is between 0 and 255)
+					input.validate-input#game_server_hostname_input(
+						class="game_server_data_input", 
+						type="text", 
+						name="game_server_hostname_input", 
+						value= user.game_server_ipv4_address ? user.game_server_ipv4_address : ''
+						pattern="^(25[0-5]|2[0-4]\\d|1\\d{2}|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d{2}|[1-9]?\\d)){3}$",
+						required,
+						title="Please enter an IP address that follows the rule shown above",
+						placeholder="192.168.122.56")
+					div#game_server_hostname_input_feedback
 
-				fieldset#game_server_hostname_fieldset 
-					article#game_server_hostname_article(class='article_for_game_server_hostname')
-						label(class='game_server_data_label', for='game_server_hostname_input') Game server IP address (Must be an IPv4 address of the format: x.x.x.x where x is between 0 and 255)
-						input#game_server_hostname_input(class="game_server_data_input", type="text", name="game_server_hostname_input", placeholder="192.168.122.56")
-
-                fieldset#game_server_port_fieldset 
-					article#game_server_port_article(class='article_for_game_server_port')
-						label(class='game_server_data_label', for='game_server_port_input') (Port number will be between 49152 and 65535)
-						input#game_server_hostname_input(class="game_server_data_input", type="text", name="game_server_port_input", placeholder="52000")
+			fieldset#game_server_port_fieldset.game_server_fieldset
+				article#game_server_port_article(class='article_for_game_server_data')
+					label(class='game_server_data_label', for='game_server_port_input') (Port number will be between 1024 and 65535)
+					input.validate-input#game_server_port_input(
+						class="game_server_data_input", 
+						type="text", 
+						min="0",
+						name="game_server_port_input", 
+						value= user.game_server_port ? user.game_server_port : ''
+						pattern="^(102[4-9]|10[3-9][0-9]|1[1-9][0-9]{2}|[2-9][0-9]{3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$",
+						required,
+						title="Please enter a port number that follows the rule shown above",
+						placeholder="52000")
+					div#game_server_port_input_feedback
 
 
 			section#game_server_data_form_field_buttons
@@ -38,3 +52,4 @@ block content(user)
 
 				fieldset#cancel_game_server_data_changes
 					button#cancel_changes_to_ftp_server_data_button(type='button') Cancel
+	script(src="/javascripts/validate_form_fields.js")

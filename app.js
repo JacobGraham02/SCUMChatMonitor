@@ -37,31 +37,13 @@ import PlayerInfoCommand from './api/ipapi/PlayerInfoCommand.js';
 import SteamUserInfoCommand from './api/steam/SteamUserInfoCommand.js';
 import { E_CANCELED } from 'async-mutex';
 import { fileURLToPath, pathToFileURL } from 'url';
-// import { createClient } from 'redis'
-import { promisify } from 'util';
+import WebSocket from 'ws';
+import http from 'http';
+import { WebSocketServer } from 'ws';
+import WebSocketGenerator from './utils/WebSocketGenerator.js';
+
 
 const bot_token = process.env.discord_wilson_bot_token;
-// const redis_cache_host_name = process.env.azure_cache_for_redis_host_name;
-// const redis_cache_password = process.env.azure_cache_for_redis_access_key;
-
-// const redis_client = createClient({
-//     url: `rediss://${redis_cache_host_name}:6380`,
-//     password: redis_cache_password,
-// }); 
-
-// await redis_client.connect();
-
-// const getAsync = promisify(redis_client.get).bind(redis_client);
-
-// const setAsync = promisify(redis_client.set).bind(redis_client);
-
-// redis_client.on('connect', () => {
-//     console.log(`The Azure Redis server has been initialized`);
-// });
-
-// redis_client.on('error', (error) => {
-//     console.log(`Redis client error: ${error}`);
-// });
 
 const client_instance = new Client({
     intents: [GatewayIntentBits.Guilds,
@@ -71,6 +53,8 @@ const client_instance = new Client({
     GatewayIntentBits.GuildPresences,
     ]
 });
+
+const custom_logger = new Logger();
 
 /** Each channel in a discord server is identified by a unique integer value
  */
@@ -135,20 +119,21 @@ const gportal_ftp_config = {
 
 let gportal_log_file_ftp_client = undefined;
 
-var app = express();
+var expressServer = express();
 
+const web_socket_generator = new WebSocketGenerator();
 /**
  * Initial configuration to enable express to use Mongodb as a storage location for session information
  */
-app.use(session({
+expressServer.use(session({
     secret: process.env.express_session_key,
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({ mongoUrl: process.env.mongodb_connection_string })
 }));
 
-app.use(passport.initialize());
-app.use(passport.session());
+expressServer.use(passport.initialize());
+expressServer.use(passport.session());
 
 /**
  * existing_cached_file_content_hash is a variable which stores a hashed version of the raw file contents retrieved from the ftp log files in gportal
@@ -336,7 +321,7 @@ async function determinePlayerLoginSessionMoney(logs) {
     /**
      * This is the loop which fetches both the user steam id and their total amount of discord money earned from the Map. For each user within the Map that has both a log in and log out time,
      * their database record is updated with the amount of money they earned in this specific play session. 
-     * If the operation fails for whatever reason, the app developer will get an email stating this, and the app will also crash. 
+     * If the operation fails for whatever reason, the expressServer developer will get an email stating this, and the expressServer will also crash. 
      */
     for (const [user_steam_id, update] of user_balance_updates) {
         try {
@@ -381,7 +366,7 @@ maxRetries is used to indicate the maximum number of retry attempts that will be
 retryDelay is used to indicate how many milliseconds to wait before attempting to establish a new connection
  * @returns nothing if an FTP connection cannot be made to GPortal within 5 attempts
  */
-async function establishFtpConnectionToGportal() {
+export async function establishFtpConnectionToGportal() {
     gportal_log_file_ftp_client = new FTPClient();
     gportal_log_file_ftp_client.removeAllListeners();
     
@@ -943,6 +928,7 @@ const verifyCredentialsCallback = async (email, password, done) => {
         console.log(`No user with this login exists`);
         return done(null, false);
     }
+
     const bot_user_email = bot_user_data.bot_email;
     const bot_user_username = bot_user_data.bot_username;
     const bot_user_password = bot_user_data.bot_password;
@@ -959,25 +945,39 @@ const verifyCredentialsCallback = async (email, password, done) => {
     const bot_user_new_player_joins_channel_id = bot_user_data.scum_new_player_joins_channel_id;
     const bot_user_battlemetrics_channel_id = bot_user_data.scum_battlemetrics_server_id;
     const bot_user_server_info_channel_id = bot_user_data.scum_server_info_channel_id;
+    const bot_user_spawn_x_coordinate = bot_user_data.x_coordinate;
+    const bot_user_spawn_y_coordinate = bot_user_data.y_coordinate;
+    const bot_user_spawn_z_coordinate = bot_user_data.z_coordinate;
 
     const valid_user_account = validatePassword(password, bot_user_password, bot_user_salt);
+
+    const websocket = web_socket_generator.createWebSocketConnection(bot_user_guild_id);
 
     const user = {
         username: bot_user_username,
         email: bot_user_email,
         guild_id: bot_user_guild_id,
-        ftp_server_ipv4: bot_user_ftp_server_ipv4,
+        ftp_server_ip: bot_user_ftp_server_ipv4,
         ftp_server_port: bot_user_ftp_server_port,
         ftp_server_username: bot_user_ftp_server_username,
         ftp_server_password: bot_user_ftp_server_password,
         game_server_ipv4: bot_user_game_server_ipv4,
         game_server_port: bot_user_game_server_port,
-        ingame_chat_channel_id: bot_user_ingame_chat_channel_id,
-        ingame_logins_channel_id: bot_user_ingame_logins_channel_id,
-        new_player_joins_channel_id: bot_user_new_player_joins_channel_id,
-        battlemetrics_channel_id: bot_user_battlemetrics_channel_id,
-        server_info_channel_id: bot_user_server_info_channel_id
+        scum_ingame_chat_channel_id: bot_user_ingame_chat_channel_id,
+        scum_ingame_logins_channel_id: bot_user_ingame_logins_channel_id,
+        scum_new_player_joins_channel_id: bot_user_new_player_joins_channel_id,
+        scum_battlemetrics_server_id: bot_user_battlemetrics_channel_id,
+        scum_server_info_channel_id: bot_user_server_info_channel_id,
+        x_coordinate: bot_user_spawn_x_coordinate,
+        y_coordinate: bot_user_spawn_y_coordinate,
+        z_coordinate: bot_user_spawn_z_coordinate,
+        websocket: websocket
     };
+
+    // custom_logger.writeLogToAzureContainer(`WebsiteLogins`, 
+    // `The user with guild id ${bot_user_guild_id} with username ${bot_user_username} has just logged in`,
+    // bot_user_guild_id,
+    // `${email}-logs`);
 
     if (valid_user_account) {
         return done(null, user);
@@ -989,25 +989,54 @@ const verifyCredentialsCallback = async (email, password, done) => {
 // view engine setup
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'pug');
+expressServer.set('views', path.join(__dirname, 'views'));
+expressServer.set('view engine', 'pug');
 
-app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+expressServer.use(logger('dev'));
+expressServer.use(express.json());
+expressServer.use(express.urlencoded({ extended: true }));
+expressServer.use(cookieParser());
+expressServer.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
-app.use('/admin', adminRouter);
-app.use('/api/', apiExecutableRecompilation);
+expressServer.use('/', indexRouter);
+expressServer.use('/admin', adminRouter);
+expressServer.use('/api/', apiExecutableRecompilation);
 
-app.post('/login', passport.authenticate('local', {
+const web_socket_server = http.createServer(expressServer);
+
+const web_socket_server_instance = new WebSocketServer({
+    noServer: true
+});
+
+web_socket_server.on('upgrade', (request, socket, head) => {
+    if (request.headers.upgrade === 'websocket') {
+        web_socket_server_instance.handleUpgrade(request, socket, head, (websocket) => {
+            web_socket_server_instance.emit('connection', websocket, request);
+        });
+    } else {
+        socket.destroy();
+    }
+});
+
+web_socket_server_instance.on('connection', function(websocket, request) {
+
+    websocket.on('message', function(message) { 
+
+    });
+
+    websocket.on('close', function() {
+
+    });
+
+    websocket.send(`Welcome to an empty web socket, user`);
+});
+
+expressServer.post('/login', passport.authenticate('local', {
     successRedirect: 'admin/login-success',
     failureRedirect: 'login-failure'
 }));
 
-app.get('/login-failure', function (request, response, next) {
+expressServer.get('/login-failure', function (request, response, next) {
     response.render('login', {
         title: "Invalid login", invalid_login_message: 'Invalid login credentials. Please try again with a different set of credentials.'
     });
@@ -1041,63 +1070,19 @@ passport.deserializeUser(async (guildId, done) => {
     }
 });
 
-passport.deserializeUser(async (guildId, done) => {
-    let repository_user = undefined;
-    try {
-        repository_user = await bot_repository.getBotDataByGuildId(guildId);
-
-        if (repository_user) {
-            return done(null, repository_user);
-        } else {
-            return done(null, false);
-        }
-    } catch (error) {
-        done(error, null);
-        throw new Error(`Error in deserializeUser for guildId ${guildId}: ${error}`)
-    }
-});
-
-async function updateBotUserCache(guildId, newData) {
-    let new_data = undefined;
-    let serialized_data = undefined;
-
-    try {
-        await bot_repository.updateBotDataByGuildId(guildId, newData);
-        
-        const cache_key = `user:${guildId}`;
-        const transaction = redis_client.multi();
-        
-        if (typeof new_data === 'object') {
-            serialized_data = JSON.stringify(new_data);
-        } else {
-            serialized_data = new_data;
-        }
-
-        transaction
-            .del(cache_key)
-            .set(cache_key, serialized_data);
-
-        await promisify(transaction.exec).bind(transaction)();
-    } catch (error) {
-        throw new Error(`Error updating user cache: ${error.message}`);
-    }
-}
-
-
-
 /**
  * Creates a 404 error when the application tries to navigate to a non-existent page.
  */
-app.use(function (req, res, next) {
+expressServer.use(function (req, res, next) {
     next(createError(404));
 });
 
-app.listen(process.env.port, function () {
+web_socket_server.listen(process.env.port, function () {
     console.log(`Server is running on port ${process.env.port}`);
-})
+});
 
 // error handler
-app.use(function (err, req, res, next) {
+expressServer.use(function (err, req, res, next) {
     // set locals, only providing error in development
     res.locals.message = err.message;
     res.locals.error = req.app.get('env') === 'development' ? err : {};
@@ -1108,17 +1093,17 @@ app.use(function (err, req, res, next) {
 });
 
 function sendPlayerMessagesToDiscord(discord_scum_game_chat_messages, discord_channel) {
-    if (discord_scum_game_chat_messages === undefined) {
+    if (!discord_scum_game_chat_messages) {
         message_logger.logError(`The scum in game chat messages could not be fetched and are undefined`);
         return;
     };
 
-    if (discord_channel === undefined) {
+    if (!discord_channel) {
         message_logger.logError(`The Discord channel for logging player chat messages could not be reached and is undefined`);
         return;
     };
 
-    if (discord_scum_game_chat_messages !== undefined) {
+    if (discord_scum_game_chat_messages) {
         if (!arraysEqual(previous_player_chat_messages, discord_scum_game_chat_messages)) {
             previous_player_chat_messages = discord_scum_game_chat_messages.slice();
         /*
@@ -1251,86 +1236,6 @@ function checkIfGameServerOnline() {
  * The discord API triggers an event called 'ready' when the discord bot is ready to respond to commands and other input. 
  */
 client_instance.on('ready', () => {
-    /**
-     * Access the discord API channel cache for a specific guild (server) and fetch channels via their id
-     */
-    const discord_channel_id_for_logins = process.env.discord_channel_id_for_logins
-    const discord_channel_id_for_scum_chat = process.env.discord_channel_id_for_scum_chat
-    const discord_channel_id_for_bot_online = process.env.discord_channel_id_for_bot_online
-    const discord_channel_id_for_first_time_logins = process.env.discord_channel_id_for_first_time_logins
-    const discord_channel_id_for_server_info = process.env.discord_channel_id_for_server_info
-    const discord_scum_game_ingame_messages_chat = client_instance.channels.cache.get(discord_channel_id_for_scum_chat);
-    const discord_scum_game_login_messages_chat = client_instance.channels.cache.get(discord_channel_id_for_logins);
-    const discord_scum_game_bot_online_chat = client_instance.channels.cache.get(discord_channel_id_for_bot_online);
-    const discord_scum_game_first_time_logins_chat = client_instance.channels.cache.get(discord_channel_id_for_first_time_logins);
-    const discord_server_info_chat = client_instance.channels.cache.get(discord_channel_id_for_server_info);
-
-    /**
-     * A 60t    Wilson bot has been activated and is ready to use
-     * -second interval that reads all contents from the in-game SCUM server chat and uses the discord API EmbedBuilder to write a nicely-formatted chat message
-     * into discord. This allows administrators to monitor the in-game SCUM chat remotely. Each time we enter this interval with the SCUM in-game chat logs, we will copy those
-     * logs to another array, and compare that array to the next iteration of chat logs. 
-     *  We use a callback function because the Node.js package 'exec' is asynchronous, but this callback function is synchronous
-     */
-    // setInterval(() => {
-    //     if (typeof player_chat_messages_sent_inside_scum === 'undefined') {            
-    //         message_logger.logError(`The FTP file for player chat messages could not be fetched`);
-    //         return;
-    //     }
-    //     sendPlayerMessagesToDiscord(player_chat_messages_sent_inside_scum, discord_scum_game_ingame_messages_chat);
-    // }, gportal_ftp_server_log_interval_seconds["20"]);
-
-
-    // setInterval(() => {
-    //     if (typeof player_ftp_log_login_messages === 'undefined') {
-    //         message_logger.logError(`The FTP file for player log login messages could not be fetched.`);
-    //         return;
-    //     }
-    //     sendPlayerLoginMessagesToDiscord(player_ftp_log_login_messages, discord_scum_game_login_messages_chat);
-    // }, gportal_ftp_server_log_interval_seconds["20"]);
-
-    /**
-     * A 60 second interval which returns a callback function from a class which checks to see if the bot is connected to the SCUM game server.
-     * This check is based on whether there is a TCP connection to the game server. This method is used because the bot is a regular .exe file on a computer,
-     * and therefore can access all of the computer resources. 
-     * We use a callback function because the Node.js package 'exec' is asynchronous, but this callback function is synchronous
-     */
-    // setInterval(() => {
-    //     checkTcpConnectionToServer(discord_scum_game_bot_online_chat);
-    // }, gportal_ftp_server_log_interval_seconds["300"]);
-
-    /**
-     * A 10 second interval which returns a callback function from a class which checks to see if the bot can ping the game server, indicating that the game server is currently online
-     * This check is based on whether a ping request is responded to with a valid reply. This method is used because the bot is a regular .exe file on a computer,
-     * and therefore can access all of the computer resources
-     * We use a callback function because the Node.js package 'exec' is asynchronous, but this callback function is synchronous
-     */
-    // setInterval(() => {
-    //     checkIfGameServerOnline();
-    // }, gportal_ftp_server_log_interval_seconds["60"]);
-
-    /**
-     * Use the Discord API ButtonBuilder to build a button that will return a JSON API response from the Battlemetrics API to indicate the current status of the server
-     * We must add an ActionRowBuilder to add functionality, or action events, to the button
-     * After the button is constructed, we will send that button to the discord chat we are targeting
-     */
-    // const server_info_button = new ButtonBuilder()
-	// 	.setCustomId('serverinformationbutton')
-	// 	.setLabel('View server info')
-	// 	.setStyle(ButtonStyle.Success);
-
-	// const button_row = new ActionRowBuilder()
-	// 	.addComponents(server_info_button);
-
-    // discord_server_info_chat.send({
-    //     content: "Click the button below to get server information",
-    //     components: [button_row]
-    // });
-    
-    myEmitter.on('newUserJoinedServer', (steam_id) => {
-        sendNewPlayerLoginMessagesToDiscord(player_ipv4_addresses, steam_id, discord_scum_game_first_time_logins_chat)
-    });
-
     /**
      * Inform administrators that the bot has successfully logged into the Discord guild
      */
@@ -1467,14 +1372,94 @@ client_instance.on('interactionCreate',  async (interaction) => {
  * The guildCreate event is triggered when the Discord bot joins a new server
  */
 client_instance.on('guildCreate', async (guild) => {
+    let bot_discord_information = undefined;
     const bot_id = client_instance.user.id;
     const guild_id = guild.id;
     try {
+        bot_discord_information = bot_repository.getBotDataByGuildId(guild.id);
         await registerInitialSetupCommands(bot_token, bot_id, guild_id);
         // await createBotCategoryAndChannels(guild);
     } catch (error) {
         throw new Error(error);
     }
+
+    /**
+    * Access the discord API channel cache for a specific guild (server) and fetch channels via their id
+    */
+    const discord_channel_id_for_chat = bot_discord_information.scum_ingame_chat_channel_id;
+    const discord_channel_id_for_logins = bot_discord_information.scum_ingame_logins_channel_id;
+    const discord_channel_id_for_new_player_joins = bot_discord_information.scum_new_player_joins_channel_id;
+    const discord_channel_id_for_server_info_button = bot_discord_information.scum_server_info_channel_id;
+    const discord_channel_for_chat = guild.channels.cache.get(discord_channel_id_for_chat);
+    const discord_channel_for_logins = guild.channels.cache.get(discord_channel_id_for_logins);
+    const discord_channel_for_new_joins = guild.channels.cache.get(discord_channel_id_for_new_player_joins);
+    const discord_channel_for_server_info = guild.channels.cache.get(discord_channel_id_for_server_info_button);
+    
+        /**
+         * 
+         * 60 second interval that reads all contents from the in-game SCUM server chat and uses the discord API EmbedBuilder to write a nicely-formatted chat message
+         * into discord. This allows administrators to monitor the in-game SCUM chat remotely. Each time we enter this interval with the SCUM in-game chat logs, we will copy those
+         * logs to another array, and compare that array to the next iteration of chat logs. 
+         *  We use a callback function because the Node.js package 'exec' is asynchronous, but this callback function is synchronous
+         */
+        // setInterval(() => {
+        //     if (typeof player_chat_messages_sent_inside_scum === 'undefined') {            
+        //         message_logger.logError(`The FTP file for player chat messages could not be fetched`);
+        //         return;
+        //     }
+        //     sendPlayerMessagesToDiscord(player_chat_messages_sent_inside_scum, discord_scum_game_ingame_messages_chat);
+        // }, gportal_ftp_server_log_interval_seconds["20"]);
+    
+    
+        // setInterval(() => {
+        //     if (typeof player_ftp_log_login_messages === 'undefined') {
+        //         message_logger.logError(`The FTP file for player log login messages could not be fetched.`);
+        //         return;
+        //     }
+        //     sendPlayerLoginMessagesToDiscord(player_ftp_log_login_messages, discord_scum_game_login_messages_chat);
+        // }, gportal_ftp_server_log_interval_seconds["20"]);
+    
+        /**
+         * A 60 second interval which returns a callback function from a class which checks to see if the bot is connected to the SCUM game server.
+         * This check is based on whether there is a TCP connection to the game server. This method is used because the bot is a regular .exe file on a computer,
+         * and therefore can access all of the computer resources. 
+         * We use a callback function because the Node.js package 'exec' is asynchronous, but this callback function is synchronous
+         */
+        // setInterval(() => {
+        //     checkTcpConnectionToServer(discord_scum_game_bot_online_chat);
+        // }, gportal_ftp_server_log_interval_seconds["300"]);
+    
+        /**
+         * A 10 second interval which returns a callback function from a class which checks to see if the bot can ping the game server, indicating that the game server is currently online
+         * This check is based on whether a ping request is responded to with a valid reply. This method is used because the bot is a regular .exe file on a computer,
+         * and therefore can access all of the computer resources
+         * We use a callback function because the Node.js package 'exec' is asynchronous, but this callback function is synchronous
+         */
+        // setInterval(() => {
+        //     checkIfGameServerOnline();
+        // }, gportal_ftp_server_log_interval_seconds["60"]);
+    
+        /**
+         * Use the Discord API ButtonBuilder to build a button that will return a JSON API response from the Battlemetrics API to indicate the current status of the server
+         * We must add an ActionRowBuilder to add functionality, or action events, to the button
+         * After the button is constructed, we will send that button to the discord chat we are targeting
+         */
+        // const server_info_button = new ButtonBuilder()
+        // 	.setCustomId('serverinformationbutton')
+        // 	.setLabel('View server info')
+        // 	.setStyle(ButtonStyle.Success);
+    
+        // const button_row = new ActionRowBuilder()
+        // 	.addComponents(server_info_button);
+    
+        // discord_server_info_chat.send({
+        //     content: "Click the button below to get server information",
+        //     components: [button_row]
+        // });
+        
+        myEmitter.on('newUserJoinedServer', (steam_id) => {
+            sendNewPlayerLoginMessagesToDiscord(player_ipv4_addresses, steam_id, discord_scum_game_first_time_logins_chat)
+        });
 });
 
 client_instance.on(Events.InteractionCreate, async interaction => {
@@ -1496,9 +1481,6 @@ client_instance.on(Events.InteractionCreate, async interaction => {
                 bot_id: bot_token,
                 guild_id: guild_id
             }
-
-            console.log(bot_information.bot_password_hash);
-            console.log(bot_information.bot_password_salt);
 
             try {
                 await bot_repository.createBot(bot_information);            
@@ -1940,4 +1922,4 @@ function determineIfUserMessageInCorrectChannel(channel_message_was_sent, discor
     return channel_message_was_sent === discord_bot_channel_id;
 }
 
-export default app;
+export default expressServer;

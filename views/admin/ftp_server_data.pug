@@ -7,14 +7,12 @@ include menu
 
 block header
     header#header.header
-        +menu(user)
+        +menu(user, currentPage)
 
 block content(user)
     main#ftp_server_data_edit_page    
-        h2#ftp_server_data_edit_page_heading(class="text-center") View or edit FTP server data
+        h2#ftp_server_data_edit_page_heading(class="text-center") FTP server data
         article#article_for_ftp_data_page_disclaimer(class="text-center") On this page, you must specify the FTP server details for your server provider
-        
-        span#span_ftp_server_data_screen_name #{file_name}
 
         form#ftp_server_data_form(method="POST", action="/admin/setftpserverdata" class="needs-validation bot_data_form")
             section#new_ftp_server_data_section

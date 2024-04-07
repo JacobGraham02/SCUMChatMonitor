@@ -1,6 +1,8 @@
 import { randomUUID } from 'crypto';
 import DatabaseConnectionManager from './DatabaseConnectionManager.js';
 const database_connection_manager = new DatabaseConnectionManager();
+import dotenv from 'dotenv';
+dotenv.config();
 
 export default class BotRepository {
 
@@ -50,6 +52,7 @@ export default class BotRepository {
 
     async createBotDiscordData(discord_server_data) {
         const database_connection = await database_connection_manager.getConnection();
+        console.log(discord_server_data.guild_id);
         const new_discord_data_document = {
             scum_ingame_chat_channel_id: discord_server_data.discord_ingame_chat_channel_id,
             scum_ingame_logins_channel_id: discord_server_data.discord_logins_chat_channel_id,
@@ -73,14 +76,39 @@ export default class BotRepository {
             await this.releaseConnectionSafely(database_connection);
         }
     }
+
+    async createBotTeleportNewPlayerCoordinates(teleport_command) {
+        const database_connection = await database_connection_manager.getConnection();
+        const new_start_area_data_document = {
+            command_prefix: teleport_command.prefix,
+            x_coordinate: teleport_command.x,
+            y_coordinate: teleport_command.y,
+            z_coordinate: teleport_command.z
+        };
+
+        try {
+            const bot_collection = database_connection.collection('bot');
+
+            await bot_collection.updateOne(
+                { guild_id: teleport_command.guild_id },
+                { $set: new_start_area_data_document },
+                { upsert: true}
+            );
+        } catch (error) {
+            console.error(`There was an error when attempting to insert a start teleport area into the discord bot. Please contact the server administrator and inform them of this error: ${error}`);
+            throw new Error(`There was an error when attempting to insert a start teleport area into the discord bot. Please contact the server administrator and inform them of this error: ${error}`);
+        } finally {
+            await this.releaseConnectionSafely(database_connection);
+        }
+    }
     
     async createBotFtpServerData(ftp_server_data) {
         const database_connection = await database_connection_manager.getConnection();
         const new_ftp_server_data_document = {
-            ftp_server_ip: ftp_server_data.server_hostname,
-            ftp_server_port: ftp_server_data.server_port,
-            ftp_server_username: ftp_server_data.server_username,
-            ftp_server_password: ftp_server_data.server_password
+            ftp_server_ip: ftp_server_data.ftp_server_hostname,
+            ftp_server_port: ftp_server_data.ftp_server_port,
+            ftp_server_username: ftp_server_data.ftp_server_username,
+            ftp_server_password: ftp_server_data.ftp_server_password
         };
 
         try {
@@ -222,12 +250,11 @@ export default class BotRepository {
         try {
             const database_connection = await database_connection_manager.getConnection();
             
-            // Retrieve the existing user document from the database
-            const user_collection = database_connection.collection('users');
+            const bot_collection = database_connection.collection('bot');
             const existing_user = await user_collection.findOne({ guild_id: guild_id });
     
             if (!existing_user) {
-                throw new Error('User not found');
+                throw new Error('The bot user was not found');
             }
     
             /*
@@ -247,11 +274,11 @@ export default class BotRepository {
             /*
             updateOne used to update a single user document in the database with the merged and filtered data
             */
-            await userCollection.updateOne({ guild_id: guild_id }, { $set: updated_user });
+            await bot_collection.updateOne({ guild_id: guild_id }, { $set: updated_user });
     
             return updated_user;
         } catch (error) {
-            throw error;
+            throw new Error(`There was an error when attempting to update the bot identified by guild id: ${guild_id}: ${error}`);
         } finally {
             await this.releaseConnectionSafely(database_connection);
         }

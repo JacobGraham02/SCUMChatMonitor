@@ -345,10 +345,7 @@ body {
 .menu {
     height: 100%;
     width: 100%;
-    margin: 0;
     gap: 5%;
-    font-size: 150%;
-    padding: 0;
     list-style: none;
     overflow: hidden;
     display: flex;
@@ -647,7 +644,7 @@ a {
     width: 100%;
 }
 
-#ftp_server_data_edit_page, #discord_channel_id_edit_page {
+#ftp_server_data_edit_page, #discord_channel_id_edit_page, #coordinate_data_edit_page, #game_server_data_edit_page {
     max-width: 100%;
     display: flex;
     flex-direction: column;
@@ -655,7 +652,7 @@ a {
     text-align: center;
 }
 
-#ftp_server_data_form, #discord_channel_ids_form {
+#ftp_server_data_form, #discord_channel_ids_form, #coordinate_data_form, #game_server_data_form {
     margin: 0;
     padding: 0;
     display: flex;
@@ -663,10 +660,9 @@ a {
     justify-content: center;
     align-items: center;
     width: 80%;
-    font-size: 80%;
 }
 
-.ftp_server_data_fieldset, .discord_channel_ids_fieldset {
+.ftp_server_data_fieldset, .discord_channel_ids_fieldset, .start_zone_coordinates_fieldset, .game_server_fieldset {
     margin-top: 2%;
     width: 100%;
     display: flex;
@@ -675,7 +671,7 @@ a {
     align-items: center;
 }
 
-.ftp_server_data_fieldset input, .discord_channel_ids_fieldset input {
+.ftp_server_data_fieldset input, .discord_channel_ids_fieldset input, .start_zone_coordinates_fieldset input, .game_server_fieldset input {
     height: 50%;
 }
 
@@ -688,18 +684,18 @@ a {
     align-items: inherit;
 }
 
-#ftp_server_data_form_field_buttons, #discord_channel_ids_form_field_buttons {
+#ftp_server_data_form_field_buttons, #discord_channel_ids_form_field_buttons, #coordinate_data_form_buttons, #game_server_data_form_field_buttons {
     display: flex;
     flex-direction: row;
     justify-content: center;
 }
 
-.ftp_server_data_input {
+.ftp_server_data_input, .coordinate_data_input, .game_server_data_input, .bot_ingame_chat_log_channel_id_input {
     width: 100%;
     height: 100%;
 }
 
-.article_for_ftp_server_data, .discord_channel_ids_article {
+.article_for_ftp_server_data, .discord_channel_ids_article, .article_for_coordinate_data, .article_for_game_server_data {
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -707,7 +703,7 @@ a {
     align-items: center;
 }
 
-#new_ftp_server_data_section, #new_discord_channel_ids_section {
+#new_ftp_server_data_section, #new_discord_channel_ids_section, #coordinate_data_form_section, #game_server_data_section {
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -716,8 +712,8 @@ a {
     text-align: center;
 }
 
-#ftp_server_data_edit_page, #discord_channel_id_edit_page {
-    font-size: 125%;
+#ftp_server_data_edit_page, #discord_channel_id_edit_page, #coordinate_data_edit_page, #game_server_data_edit_page {
+    font-size: 100%;
 }
 
 .bot_item_edit {
@@ -748,7 +744,7 @@ a {
 }
 
 #menu_links_image {
-    display: none;
+    display: block;
     margin: 0;
 }
 
@@ -772,7 +768,7 @@ a {
     margin: 100px auto;
 }
 
-#ftp_server_data_edit_page_heading, #discord_channel_id_editor_heading {
+#ftp_server_data_edit_page_heading, #discord_channel_id_editor_heading, #ftp_server_data_edit_page_heading, #game_server_data_edit_page_heading {
     font-size: 100%;
 }
 
@@ -837,6 +833,42 @@ a {
     margin-top: 5%;
 }
 
+#logout_button_container {
+    margin-top: 100%;
+    border: 2px dotted black;
+}
+#global_site_navigation_logout_form {
+    border: 2px solid blue;
+}
+
+.menu a.active {
+    background-image: linear-gradient(to bottom, orangered, red);
+    background-image: -moz-linear-gradient(to bottom, orangered, red);
+    background-image: -webkit-linear-gradient(to bottom, orangered, red);
+    background-clip: text;
+    -webkit-text-stroke-width: 0.5px;
+    -webkit-text-stroke-color: brown;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    -webkit-transition: text-shadow 0.15s;
+}
+
+/* Coordinate selection page iframe */
+#map_selection_tool {
+    width: 80%; 
+    height: 100%; 
+    display:block;
+}
+
+/* Coordinate pag buttons */
+#toggle_map_view_button {
+    display: none;
+}
+
+#copy_tp_location_icon {
+    font-size: 100%;
+}
+
 /* Media queries for when on a desktop */
 @media screen and (min-width: 1199px) {
     body {
@@ -858,7 +890,7 @@ a {
             "header footer footer footer footer footer";
     }
 
-    .ftp_server_data_fieldset, .discord_channel_ids_fieldset {
+    .ftp_server_data_fieldset, .discord_channel_ids_fieldset, .start_zone_coordinates_fieldset {
         margin-top: 1%;
         width: 100%;
         display: flex;
@@ -876,7 +908,11 @@ a {
         width: 60%;
     }
 
-    #ftp_server_data_edit_page_heading, #discord_channel_id_editor_heading {
+    #ftp_server_data_edit_page, #discord_channel_id_edit_page, #coordinate_data_edit_page, #game_server_data_edit_page {
+        font-size: 125%;
+    }
+
+    #ftp_server_data_edit_page_heading, #discord_channel_id_editor_heading, #coordinate_data_edit_page_heading, #game_server_data_edit_page_heading {
         font-size: 150%;
     }
 
@@ -914,8 +950,8 @@ a {
 
     .header .menu {
         font-size: 60%;
-        width: 80%;
-        height: 80%;
+        width: 100%;
+        height: 100%;
         font-size: 100%;
         clear: none;
         max-height: 100vh;
@@ -928,23 +964,17 @@ a {
         width: 30%;
     }
 
-    .ftp_server_data_input, .discord_channel_id_input {
+    .ftp_server_data_input, .discord_channel_id_input, .coordinate_data_input, .game_server_data_input {
         width: 50%;
         height: 100%;
     }
 
-    #ftp_server_data_form {
-        font-size: 100%;
-    }
-
-    #discord_channel_ids_form {
+    #ftp_server_data_form, #discord_channel_ids_form, #coordinate_data_form_section, #game_server_data_form {
         font-size: 100%;
     }
 
     #menu_links_image {
-        height: 100%;
-        width: 100%;
-        object-fit: cover;
+        width: 25%;
         display: block;
     }
 
@@ -963,7 +993,7 @@ a {
         height: fit-content;
         align-items: center;
         text-align: center;
-        gap: 5%;
+        gap: 3%;
     }
     
     #menu_container {

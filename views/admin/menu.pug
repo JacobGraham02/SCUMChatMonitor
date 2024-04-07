@@ -1,4 +1,4 @@
-mixin menu(user)
+mixin menu(user, currentPage)
  section#menu_container
   div#website_menu_username_container
    input#menu-btn.menu-btn(type='checkbox')
@@ -8,15 +8,33 @@ mixin menu(user)
     li
       div#navbar_welcome_message
     -if (user.bot_username) {
-         a#index_page_home_button(href='/admin/commands' title='A link to go to the website home page')
+         a#index_page_home_button(href='/admin/' title='A link to go to the website home page')
           img#menu_links_image(src='../../images/WilsonBotMenu.png', alt='The WilsonBot logo')
          h1#user_administrator_name_heading Welcome, #{user.bot_username}
+    li  
+      a(href='/admin/'
+      title='A link to go to the site home page'
+      class=(currentPage === '/admin/' ? 'active' : '')) Home
     li
-      a(href='/admin/commands' title='A link to go to the site commands page') Bot commands 
+      a(href='/admin/commands' 
+      title='A link to go to the site commands page' 
+      class=(currentPage === '/admin/command_list' ? 'active' : '')) Bot commands 
     li
-      a(href='/admin/discordchannelids' title='A link to go to the Discord channel ids page that the bot will post content into') Discord channel ids
+      a(href='/admin/discordchannelids' 
+      title='A link to go to the Discord channel ids page that the bot will post content into'
+      class=(currentPage === '/admin/discordchannelids' ? 'active' : '')) Discord channel ids
     li 
-      a(href='/admin/ftpserverdata' title='A link to go to the FTP server data page that the bot will read from to access the FTP server log files') FTP server data
+      a(href='/admin/ftpserverdata' 
+      title='A link to go to the FTP server data page that the bot will read from to access the FTP server log files'
+      class=(currentPage === '/admin/ftpserverdata' ? 'active' : '')) FTP server data
+    li 
+      a(href='/admin/spawncoordinates'
+      title='A link to go to the new player spawn zone coordinate set page'
+      class=(currentPage === '/admin/spawncoordinates' ? 'active' : '')) Spawn zone coordinates
+    li 
+      a(href='/admin/gameserverdata'
+      title='A link to go to the game server data page that the bot will read from to access your SCUM server'
+      class=(currentPage === '/admin/gameserverdata' ? 'active' : '')) Game server data
     -} else {
       h1#user_administrator_name_heading Welcome, anonymous!
     -}
@@ -24,14 +42,10 @@ mixin menu(user)
      div#logout_button_container
       form#global_site_navigation_logout_form(action='/logout' method='POST')
        button#gui_bot_web_interface_logout_button(type="submit") Log out
-    li
-     div#recompile_executable_button_container
-      form#global_site_navigation_recompile_application_executable(action='/admin/recompile', method='POST')
-       button#recompile_executable_button(type="submit") Recompile executable
 
   script.
     document.addEventListener('DOMContentLoaded', function() {
-      const menuBtn = document.querySelector('#menu-btn'); // Adjusted to use ID
+      const menuBtn = document.querySelector('#menu-btn'); 
       menuBtn.addEventListener('change', function() {
           if (this.checked) {
               document.body.style.overflow = 'hidden';

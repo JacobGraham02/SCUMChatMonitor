@@ -28,6 +28,7 @@ router.get('/command/:commandname', isLoggedIn, async (request, response) => {
         const package_data = await botRepository.getBotPackageFromName(package_name); 
 
         response.render('admin/command', { user: request.user, package: package_data });
+        
     } catch (error) {
         console.error(`Error fetching command data: ${error}`);
         response.render('admin/command', { user: request.user, info_message: `There was an internal server error when attempting to load the admin command file after logging in. Please inform the server administrator of this error or try again: ${error}`, show_alert: true});
@@ -35,16 +36,16 @@ router.get('/command/:commandname', isLoggedIn, async (request, response) => {
 });
 
 
-router.get('/login-success', isLoggedIn, function(request, response) {
+router.get(['/login-success', '/'], isLoggedIn, function(request, response) {
     try {
-        response.render('admin/index', { user: request.user });
+        response.render('admin/index', { user: request.user, currentPage: '/admin/' });
     } catch (error) {
         console.error(`There was an error when attempting to load the admin index file after logging in. Please inform the server administrator of this error or try again: ${error}`);
         response.render('admin/index', { user: request.user, info_message: `There was an Internal Server Error when attempting to load the admin index file after logging in. Please inform the server administrator of this error or try again: ${error}`, show_alert: true });
     }
 });
 
-router.get(['/commands', '/'], isLoggedIn, async (request, response) => {
+router.get(['/commands'], isLoggedIn, async (request, response) => {
     const bot_id = 1; 
     let bot_package;
     
@@ -99,13 +100,14 @@ router.get(['/commands', '/'], isLoggedIn, async (request, response) => {
         current_page_of_commands: current_page_number, 
         total_command_files: bot_package.length, 
         page_numbers,
-        user: request.user 
+        user: request.user,
+        currentPage: '/admin/command_list'
     });
 });
 
 router.get('/discordchannelids', (request, response) => {
     try {
-        response.render('admin/discord_channel_ids', { user: request.user, title: `Discord channel ids` });
+        response.render('admin/discord_channel_ids', { user: request.user, title: `Discord channel ids`, currentPage: '/admin/discordchannelids' });
     } catch (error) {
         console.error(`There was an error when attempting to retrieve the page that allows you to change the Discord channel data. Please inform the server administrator of this error: ${error}`);
         response.render('admin/discord_channel_ids', { user: request.user, title: `Discord channel ids`, info_message: `There was an Internal Server Error when attempting to retrieve the page that allows you to change the Discord channel data. Please inform the server administrator of this error: ${error}`, show_alert: true});
@@ -114,30 +116,70 @@ router.get('/discordchannelids', (request, response) => {
 
 router.get('/ftpserverdata', (request, response) => {
     try {
-        response.render('admin/ftp_server_data', { user: request.user, title: `FTP server data` });
+        response.render('admin/ftp_server_data', { user: request.user, title: `FTP server data`, currentPage: '/admin/ftpserverdata'});
     } catch (error) {
         console.error(`There was an error when attempting to retrieve the page that allows you to change the FTP server data. Please inform the server administrator of this error: ${error}`);
         response.render('admin/ftp_server_data', { user: request.user, info_message: `There was an Internal Server Error when attempting to retrieve the page that allows you to change the FTP server data. Please inform the server administrator of this error: ${error}`, show_alert: true });
     }
 });
 
+router.get('/gameserverdata', (request, response) => {
+    try {
+        response.render('admin/game_server_data', { user: request.user, currentPage: '/admin/gameserverdata'});
+    } catch (error) {
+        console.error(`There was an error when attempting to retrieve the page that allows you to set game server data`);
+        response.render('admin/game_server_data', { user: request.user, info_message: `There was an error`});
+    }
+});
+
+router.get('/spawncoordinates', (request, response) => {
+    try {
+        response.render('admin/new_player_join_coordinates', { user: request.user, currentPage: '/admin/spawncoordinates' });
+    } catch (error) {
+        console.error(`There was an error when attempting to retrieve the page that allows you to set the spawn location of players. Please inform the server administrator of this error: ${error}`);
+        response.render('admin/new_player_join_coordinates', { user: request.user });
+    }
+});
+
 router.post('/setftpserverdata', async (request, response) => {
+    const request_user_id = request.user.guild_id;
     const ftp_server_data_object = {
+        guild_id: request_user_id,
         ftp_server_hostname: request.body.ftp_server_hostname_input,
         ftp_server_port: request.body.ftp_server_port_input,
         ftp_server_username: request.body.ftp_server_username_input,
         ftp_server_password: request.body.ftp_server_password_input
     }
     try {
-        await botRepository.createBotFtpServerData(1, ftp_server_data_object);
+        await botRepository.createBotFtpServerData(ftp_server_data_object);
         response.render('admin/ftp_server_data', { user: request.user, info_message: `You have successfully created new FTP server credentials`, show_alert: true });
     } catch (error) {
         response.render('admin/ftp_server_data', { user: request.user, info_message: `There was an error when attempting to update the ftp server data in the bot database document ${error}`});
     }
 });
 
+router.post('/setspawncoordinates', async (request, response) => {
+    const request_user_id = request.user.guild_id;
+    const coordinates_object = {
+        guild_id: request_user_id,
+        prefix: "#Teleport",
+        x: request.body.x_coordinate_data_input,
+        y: request.body.y_coordinate_data_input,
+        z: request.body.z_coordinate_input
+    }
+    try {
+        await botRepository.createBotTeleportNewPlayerCoordinates(coordinates_object);
+        response.render('admin/new_player_join_coordinates', { user: request.user });
+    } catch (error) {
+        response.render('admin/new_player_join_coordinates', { user: request.user, info_message: `There was an error` });
+    }
+});
+
 router.post('/setdiscordchannelids', async (request, response) => {
+    const request_user_id = request.user.guild_id;
+
     const discord_server_channel_ids_object = {
+        guild_id: request_user_id,
         discord_ingame_chat_channel_id: request.body.bot_ingame_chat_log_channel_id_input,
         discord_logins_chat_channel_id: request.body.bot_ingame_logins_channel_id_input,
         discord_new_player_chat_channel_id: request.body.bot_ingame_new_player_joined_id_input,
@@ -145,7 +187,7 @@ router.post('/setdiscordchannelids', async (request, response) => {
         discord_server_info_button_channel_id: request.body.bot_server_info_channel_id_input
     };
     try {
-        await botRepository.createBotDiscordData(1, discord_server_channel_ids_object);
+        await botRepository.createBotDiscordData(discord_server_channel_ids_object);
         response.render('admin/index', { user: request.user, alert_info: `Successfully changed the Discord channel ids associated with the bot`, show_alert: true });
     } catch (error) {
         console.error(`There was an error when attempting to update discord channel ids in the bot database document: ${error}`);
@@ -154,40 +196,19 @@ router.post('/setdiscordchannelids', async (request, response) => {
 });
 
 router.post('/setgameserverdata', async (request, response) => {
+    const request_user_id = request.user.guild_id;
     const game_server_data = {
+        guild_id: request_user_id,
         game_server_hostname_input: request.body.game_server_hostname_input,
         game_server_port_input: request.body.game_server_port_input
     }
     try {
-        await botRepository.createBotDiscordData(1, game_server_data);
+        await botRepository.createBotGameServerData(game_server_data);
         response.render('admin/game_server_data', { user: request.user, alert_info: `Successfully changed the game server IP address and port number`, show_alert: true})
     } catch (error) {
         console.error(`There was an error when attempting to update the game server IP address and port number: ${error}`);
         response.render('admin/game_server_data', { user: request.user, alert_info: `An Internal Server Error occurred when attempting to update the game server IP address and port number. Please try submitting this form again or contact the site administrator if you believe this is an error: ${error}`, show_alert: true})
     }
-});
-
-router.post('/recompile', (request, response) => {
-    const output_directory = join(__dirname, '..', 'executable');
-    const application_name = 'scumchatmonitor';
-    const build_command = `pkg . --output ${join(output_directory, application_name)}`;
-
-    exec(build_command, (error, stdout, stderr) => {
-        if (error) {
-            console.error(`Error: ${error}`);
-            return response.status(500).json({ error: `Error recompiling executable: ${error}` });
-        }
-        if (stderr) {
-            console.error(`Stderr: ${stderr}`);
-            return response.status(500).json({ error: `Error recompiling executable: ${stderr}` });
-        }
-        try {
-            response.render('admin/index', { user: request.user, alert_info: `The application has been successfully recompiled. Please restart the application by double clicking on the .exe file`});
-        } catch (error) {
-            console.error(`There was an error when attempting to go to the administrator landing page after recompiling the .exe file. Please inform the server administrator of this error: ${error}`);
-            response.render('admin/index', { user: request.user, alert_info: `There was an Internal Server Error when attempting to go to the administrator landing page after recompiling the .exe file. Please inform the server administrator of this error: ${error}`, alert_info: true});
-        }
-    });
 });
 
 router.post('/botcommand/new', isLoggedIn, async (request, response, next) => {
