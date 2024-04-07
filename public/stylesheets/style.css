@@ -942,9 +942,7 @@ a {
     }
 
     #menu_links_image {
-        height: 100%;
-        width: 100%;
-        object-fit: cover;
+        width: 25%;
         display: block;
     }
 

@@ -26,10 +26,6 @@ mixin menu(user)
      div#logout_button_container
       form#global_site_navigation_logout_form(action='/logout' method='POST')
        button#gui_bot_web_interface_logout_button(type="submit") Log out
-    li
-     div#recompile_executable_button_container
-      form#global_site_navigation_recompile_application_executable(action='/admin/recompile', method='POST')
-       button#recompile_executable_button(type="submit") Recompile executable
 
   script.
     document.addEventListener('DOMContentLoaded', function() {
