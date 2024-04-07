@@ -12,15 +12,29 @@ block header
 block content(user)
     main#coordinate_data_edit_page    
         h2#coordinate_data_edit_page_heading(class="text-center") Spawn zone coordinates
-        article#article_for_coordinate_data_page_disclaimer(class="text-center") On this page, you must specify the spawn zone XYZ coordinates
-
         button#toggle_map_view_button(type='button') Show map
         button#toggle_form_view_button(type='button') Show form
-
-        iframe#map_selection_tool(src="https://scum-map.com/en/interactive_map")
+        section#iframe_instructions_section
+            article#article_for_coordinate_data_page_disclaimer(class="text-center")
+                | On this page, you must specify the spawn zone XYZ coordinates. Using the map below, follow this list of instructions:     
+                |   1. Click on 'Copy TP Location' on the left side of the screen. An indicator should pop up informing you to select a location to copy to clipboard.
+                |   2. Next, select anywhere on the map window until you see a green confirmation dialog which tells you 'Teleport location copied to the clipboard'
+                |   3. Finally, with this text copied, click the 'Show form' button, and paste the text into the 'Paste your clipboard text below' input field.
+        iframe#map_selection_tool(src="https://scum-map.com/en/interactive_map") 
 
         form#coordinate_data_form(method="POST", action="/admin/setspawncoordinates" class="needs-validation bot_data_form")
             section#coordinate_data_form_section
+                fieldset.paste_coordinates_fieldset.start_zone_coordinates_fieldset
+                    article.paste_coordinates_article(class='article_for_coordinate_data')
+                        label(class="coordinate_data_label", for='paste_coordinates_input') Paste your clipboard text below
+                        input.validate-input#paste_coordinates_input(
+                            class="coordinate_data_input",
+                            type='text',
+                            name='paste_coordinates_input',
+                            placeholder='#Teleport 218096.6355 64808.3453 0',
+                            title="Please paste the entire #Teleport command that you acquired from the website")
+                        div#paste_coordinates_input_feedback
+
                 fieldset#start_zone_x_coordinate_fieldset.start_zone_coordinates_fieldset
                     article#x_coordinate_article(class='article_for_coordinate_data')
                         label(class="coordinate_data_label",for='x_coordinate_data_input') X coordinate (e.g., 218593.6683)

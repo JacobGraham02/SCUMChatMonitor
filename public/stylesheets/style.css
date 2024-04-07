@@ -865,6 +865,10 @@ a {
     display: none;
 }
 
+#copy_tp_location_icon {
+    font-size: 100%;
+}
+
 /* Media queries for when on a desktop */
 @media screen and (min-width: 1199px) {
     body {
