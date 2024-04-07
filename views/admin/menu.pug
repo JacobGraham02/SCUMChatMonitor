@@ -8,9 +8,13 @@ mixin menu(user, currentPage)
     li
       div#navbar_welcome_message
     -if (user.bot_username) {
-         a#index_page_home_button(href='/admin/commands' title='A link to go to the website home page')
+         a#index_page_home_button(href='/admin/' title='A link to go to the website home page')
           img#menu_links_image(src='../../images/WilsonBotMenu.png', alt='The WilsonBot logo')
          h1#user_administrator_name_heading Welcome, #{user.bot_username}
+    li  
+      a(href='/admin/'
+      title='A link to go to the site home page'
+      class=(currentPage === '/admin/' ? 'active' : '')) Home
     li
       a(href='/admin/commands' 
       title='A link to go to the site commands page' 

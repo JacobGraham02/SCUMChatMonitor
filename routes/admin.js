@@ -36,16 +36,16 @@ router.get('/command/:commandname', isLoggedIn, async (request, response) => {
 });
 
 
-router.get('/login-success', isLoggedIn, function(request, response) {
+router.get(['/login-success', '/'], isLoggedIn, function(request, response) {
     try {
-        response.render('admin/index', { user: request.user });
+        response.render('admin/index', { user: request.user, currentPage: '/admin/' });
     } catch (error) {
         console.error(`There was an error when attempting to load the admin index file after logging in. Please inform the server administrator of this error or try again: ${error}`);
         response.render('admin/index', { user: request.user, info_message: `There was an Internal Server Error when attempting to load the admin index file after logging in. Please inform the server administrator of this error or try again: ${error}`, show_alert: true });
     }
 });
 
-router.get(['/commands', '/'], isLoggedIn, async (request, response) => {
+router.get(['/commands'], isLoggedIn, async (request, response) => {
     const bot_id = 1; 
     let bot_package;
     
