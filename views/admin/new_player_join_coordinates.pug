@@ -14,6 +14,11 @@ block content(user)
         h2#coordinate_data_edit_page_heading(class="text-center") Spawn zone coordinates
         article#article_for_coordinate_data_page_disclaimer(class="text-center") On this page, you must specify the spawn zone XYZ coordinates
 
+        button#toggle_map_view_button(type='button') Show map
+        button#toggle_form_view_button(type='button') Show form
+
+        iframe#map_selection_tool(src="https://scum-map.com/en/interactive_map")
+
         form#coordinate_data_form(method="POST", action="/admin/setspawncoordinates" class="needs-validation bot_data_form")
             section#coordinate_data_form_section
                 fieldset#start_zone_x_coordinate_fieldset.start_zone_coordinates_fieldset
@@ -55,8 +60,10 @@ block content(user)
                             value= user.z_coordinate ? user.z_coordinate : "",
                             placeholder='0')
                         div#z_coordinate_input_feedback
-                        
+                               
                 fieldset#coordinate_data_form_buttons
                     button#save_changes_to_coordinate_data_button(class="" type='submit') Save
                     button#cancel_changes_to_coordinate_data_button(class="" type='button') Cancel
     script(src="/javascripts/validate_form_fields.js")
+    script(src="/javascripts/coordinate_chooser_iframe.js")
+     

@@ -853,6 +853,18 @@ a {
     -webkit-transition: text-shadow 0.15s;
 }
 
+/* Coordinate selection page iframe */
+#map_selection_tool {
+    width: 80%; 
+    height: 100%; 
+    display:block;
+}
+
+/* Coordinate pag buttons */
+#toggle_map_view_button {
+    display: none;
+}
+
 /* Media queries for when on a desktop */
 @media screen and (min-width: 1199px) {
     body {
