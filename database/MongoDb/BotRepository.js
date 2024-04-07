@@ -249,12 +249,11 @@ export default class BotRepository {
         try {
             const database_connection = await database_connection_manager.getConnection();
             
-            // Retrieve the existing user document from the database
-            const user_collection = database_connection.collection('users');
+            const bot_collection = database_connection.collection('bot');
             const existing_user = await user_collection.findOne({ guild_id: guild_id });
     
             if (!existing_user) {
-                throw new Error('User not found');
+                throw new Error('The bot user was not found');
             }
     
             /*
@@ -274,11 +273,11 @@ export default class BotRepository {
             /*
             updateOne used to update a single user document in the database with the merged and filtered data
             */
-            await userCollection.updateOne({ guild_id: guild_id }, { $set: updated_user });
+            await bot_collection.updateOne({ guild_id: guild_id }, { $set: updated_user });
     
             return updated_user;
         } catch (error) {
-            throw error;
+            throw new Error(`There was an error when attempting to update the bot identified by guild id: ${guild_id}: ${error}`);
         } finally {
             await this.releaseConnectionSafely(database_connection);
         }
