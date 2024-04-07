@@ -137,6 +137,22 @@ router.post('/setftpserverdata', async (request, response) => {
     }
 });
 
+router.post('/setspawncoordinates', async (request, response) => {
+    const coordinates_object = {
+        prefix: "#Teleport",
+        x: request.body.x_coordinate_data_input,
+        y: request.body.y_coordinate_data_input,
+        z: request.body.z_coordinate_input
+    }
+
+    try {
+        await botRepository.createBotTeleportNewPlayerCoordinates(1, coordinates_object);
+        response.render('admin/new_player_join_coordinates', { user: request.user });
+    } catch (error) {
+        response.render('admin/new_player_join_coordinates', { user: request.user, info_message: `There was an error` });
+    }
+});
+
 router.post('/setdiscordchannelids', async (request, response) => {
     const discord_server_channel_ids_object = {
         discord_ingame_chat_channel_id: request.body.bot_ingame_chat_log_channel_id_input,
