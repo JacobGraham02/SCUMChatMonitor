@@ -122,6 +122,15 @@ router.get('/ftpserverdata', (request, response) => {
     }
 });
 
+router.get('/spawncoordinates', (request, response) => {
+    try {
+        response.render('admin/new_player_join_coordinates', { user: request.user });
+    } catch (error) {
+        console.error(`There was an error when attempting to retrieve the page that allows you to set the spawn location of players. Please inform the server administrator of this error: ${error}`);
+        response.render('admin/new_player_join_coordinates', { user: request.user });
+    }
+});
+
 router.post('/setftpserverdata', async (request, response) => {
     const ftp_server_data_object = {
         ftp_server_hostname: request.body.ftp_server_hostname_input,
