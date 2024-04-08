@@ -164,9 +164,9 @@ router.post('/setftpserverdata', async (request, response) => {
     }
     try {
         await botRepository.createBotFtpServerData(ftp_server_data_object);
-        response.render('admin/ftp_server_data', { user: request.user, info_message: `You have successfully created new FTP server credentials`, show_alert: true });
+        response.render('admin/ftp_server_data', { user: request.user, alert_title: `Successfully updated FTP server credentials`, alert_description: `You have successfully updated your FTP server credentials`, show_submit_modal: true });
     } catch (error) {
-        response.render('admin/ftp_server_data', { user: request.user, info_message: `There was an error when attempting to update the ftp server data in the bot database document ${error}`});
+        response.render('admin/ftp_server_data', { user: request.user, alert_title: `Error updating FTP server credentials`, alert_description: `Please try submitting this form again or contacting the site administrator if you believe this is an error: ${error}`, show_error_modal: true });
     }
 });
 
@@ -181,9 +181,9 @@ router.post('/setspawncoordinates', async (request, response) => {
     }
     try {
         await botRepository.createBotTeleportNewPlayerCoordinates(coordinates_object);
-        response.render('admin/new_player_join_coordinates', { user: request.user });
+        response.render('admin/new_player_join_coordinates', { user: request.user, alert_title: `Successfully updated spawn zone coordinates`, alert_description: `You have successfully changed the coordinates for the new player spawn zone`, show_submit_modal: true });
     } catch (error) {
-        response.render('admin/new_player_join_coordinates', { user: request.user, info_message: `There was an error` });
+        response.render('admin/new_player_join_coordinates', { user: request.user, alert_info: `Error updating spawn zone coordinates`, alert_description: `Please try submitting this form again or contacting the site administrator if you believe this is an error: ${error}`, show_error_modal: true });
     }
 });
 
@@ -200,10 +200,10 @@ router.post('/setdiscordchannelids', async (request, response) => {
     };
     try {
         await botRepository.createBotDiscordData(discord_server_channel_ids_object);
-        response.render('admin/index', { user: request.user, alert_info: `Successfully changed the Discord channel ids associated with the bot`, show_alert: true });
+        response.render('admin/discord_channel_ids', { user: request.user, alert_title: `Successfully changed Discord channel ids`, alert_description: `You have successfully changed the Discord channel ids associated with the bot`, show_submit_modal: true });
     } catch (error) {
         console.error(`There was an error when attempting to update discord channel ids in the bot database document: ${error}`);
-        response.render('admin/discord_channel_ids', { user: request.user, alert_info: `An Internal Server Error occurred when attempting to update the Discord chat channel ids. Please try submitting this form again or contact the site administrator if you believe this is an error: ${error}`});
+        response.render('admin/discord_channel_ids', { user: request.user, alert_title: `Error changing Discord channel ids`, alert_description: `Please try submitting this form again or contact the site administrator if you believe this is an error: ${error}`, show_error_modal: true});
     }
 });
 
@@ -216,10 +216,10 @@ router.post('/setgameserverdata', async (request, response) => {
     }
     try {
         await botRepository.createBotGameServerData(game_server_data);
-        response.render('admin/game_server_data', { user: request.user, alert_title: `Successfully submitted changes`, alert_description: `Successfully changed the game server IPv4 address and port number`, show_submit_modal: true})
+        response.render('admin/game_server_data', { user: request.user, alert_title: `Successfully submitted changes`, alert_description: `You have successfully changed the game server IPv4 address and port number`, show_submit_modal: true})
     } catch (error) {
         console.error(`There was an error when attempting to update the game server IP address and port number: ${error}`);
-        response.render('admin/game_server_data', { user: request.user, alert_title: `Error submitting changes`, alert_description: `There was an error when submitting changes to the database. Please inform the server administrator of the following error: ${error}`, show_error_modal: true})
+        response.render('admin/game_server_data', { user: request.user, alert_title: `Error submitting changes`, alert_description: `Please try submitting this form again or contact the server administrator if you believe this is an error: ${error}`, show_error_modal: true})
     }
 });
 
@@ -242,9 +242,9 @@ router.post('/botcommand/new', isLoggedIn, async (request, response, next) => {
 
     try {
         // await botRepository.createBotItemPackage(1, new_bot_package);
-        response.render('admin/new_command', { user: request.user, page_title:`Create new command`, info_message: `You have successfully created a new item package`, show_alert: true });
+        response.render('admin/new_command', { user: request.user, page_title:`Create new command`, alert_title: `Successfuly created new package`, alert_description: `You have successfully created a new item package and registered it with your bot`, show_submit_modal: true });
     } catch (error) {
-        response.render('admin/new_command', { user: request.user, page_title:`Error`, info_message: `An error has occurred! Please inform the server administrator of this error or try creating another command: ${error}`, show_alert: true});
+        response.render('admin/new_command', { user: request.user, page_title:`Error`, alert_title: `Error creating new package`, alert_description: `Please try submitting this form again or contact the server administrator if you believe this is an error: ${error}`, show_error_modal: true});
     }
 });
 

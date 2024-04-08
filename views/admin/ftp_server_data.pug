@@ -4,13 +4,21 @@ block variables
     - var page_title= title
 
 include menu
+include smallModal
+include successModal
+include errorModal
 
 block header
     header#header.header
         +menu(user, currentPage)
 
 block content(user)
-    main#ftp_server_data_edit_page    
+    main#ftp_server_data_edit_page   
+        +smallModal
+        if show_submit_modal
+            +successModal(alert_title, alert_description)
+        if show_error_modal
+            +errorModal(alert_title, alert_description) 
         h2#ftp_server_data_edit_page_heading(class="text-center") FTP server data
         article#article_for_ftp_data_page_disclaimer(class="text-center") On this page, you must specify the FTP server details for your server provider
 
@@ -87,6 +95,7 @@ block content(user)
                         div#ftp_server_confirm_password_input_feedback
                         
                 fieldset#ftp_server_data_form_field_buttons.fieldset_for_form_buttons
-                    button#save_changes_to_ftp_server_data_button(class="" type='submit') Save
+                    button#save_changes_button(class="" type='submit') Save
                     button#cancel_changes_to_ftp_server_data_button(class="" type='button') Cancel
     script(src="/javascripts/validate_form_fields.js")
+    script(src="/javascripts/show_submit_modal.js")

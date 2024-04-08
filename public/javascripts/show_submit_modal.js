@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", function() {
-    const form = document.getElementById('game_server_data_form');
-    const submitButton = document.getElementById('save_changes_to_ftp_server_data_button');
+    const form = document.querySelector(".bot_data_form");
+    const submitButton = document.getElementById('save_changes_button');
     const modal = $('#submitFormModal'); // Using jQuery for Bootstrap modal
     const modalSubmitButton = document.getElementById('submitButton');
 

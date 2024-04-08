@@ -4,6 +4,9 @@ block variables
     - var page_title= title
 
 include menu
+include smallModal
+include successModal
+include errorModal
 
 block header
     header#header.header
@@ -11,6 +14,11 @@ block header
 
 block content(user)
     main#coordinate_data_edit_page    
+        +smallModal 
+        if show_submit_modal
+            +successModal(alert_title, alert_description)
+        if show_error_modal
+            +errorModal(alert_title, alert_description)
         h2#coordinate_data_edit_page_heading(class="text-center") Spawn zone coordinates
         button#toggle_map_view_button(type='button') Show map
         button#toggle_form_view_button(type='button') Show form
@@ -76,8 +84,9 @@ block content(user)
                         div#z_coordinate_input_feedback
                                
                 fieldset#coordinate_data_form_buttons.fieldset_for_form_buttons
-                    button#save_changes_to_coordinate_data_button(class="" type='submit') Save
+                    button#save_changes_button(class="" type='submit') Save
                     button#cancel_changes_to_coordinate_data_button(class="" type='button') Cancel
     script(src="/javascripts/validate_form_fields.js")
     script(src="/javascripts/coordinate_chooser_iframe.js")
+    script(src="/javascripts/show_submit_modal.js")
      

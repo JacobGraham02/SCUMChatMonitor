@@ -14,7 +14,7 @@ block content(user)
 	main#command_edit_page
 		span#span_command_file_edit_screen_name
 				Edit #{package.package_name}
-		form#command_editor_form(method='POST', action='/admin/commands/' + file_name, enctype='application/x-www-form-urlencoded')
+		form#command_editor_form(method='POST', action='/admin/commands/' + file_name, enctype='application/x-www-form-urlencoded' class="needs-validation bot_data_form")
 			section#new_command_section_easy
 				fieldset#fieldset_for_form_heading 
 					h1.heading_for_adding_items Edit your bot command
@@ -39,3 +39,4 @@ block content(user)
 					button#cancel_changes_to_command_button(type='button') Cancel packages changes
 		
 		script(src='/javascripts/commands_form.js')
+		script(src='/javascripts/show_submit_modal.js')

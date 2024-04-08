@@ -7,17 +7,21 @@ block variables
 	- var total_number_of_pages = Math.ceil(total_command_files / commands_per_page) // Returns smallest integer greater than or equal to (command_files.length / commands_per_page)
 
 include menu
+include smallModal
+include successModal
+include errorModal
 
 block header
 	header#header.header
 		+menu(user, currentPage)
 
 block content(user)
-	article#message_dialog 
-		-if (alert_info) {
-			p= alert_info
-		-}
 	main#commands_page_main
+		+smallModal
+		if show_submit_modal 
+			+successModal(alert_title, alert_description)
+		if show_error_modal
+			+errorModal(alert_title, alert_description)
 		h1#list_of_commands List of Commands
 		aside#create_new_command_link_container
 			a#create_new_command_link_anchor(href='/admin/newcommand') Create new command
