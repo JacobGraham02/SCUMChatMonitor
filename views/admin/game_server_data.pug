@@ -16,19 +16,11 @@ block header
 block content(user)
 	main#game_server_data_edit_page
 		+smallmodal
-		if show_alert 
-			if alert_info === `Successfully changed the game server IP address and port number`
-				+successModal
-				script.
-					$(document).ready(function() {
-						$('#successModal').modal('show');
-					});
-			else 
-				+errorModal 
-				script.
-					$(document).ready(function() {
-						$('#errorModal').modal('show');
-					});
+		if show_submit_modal 
+			+successModal(alert_title, alert_description)
+		if show_error_modal
+			+errorModal(alert_title, alert_description)
+			
 		h1#game_server_data_edit_page_heading Game server data
 		article#article_for_ftp_data_page_disclaimer(class="text-center") On this page, you must specify your game server details (IP address and port number)
 

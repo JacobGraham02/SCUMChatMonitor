@@ -12,4 +12,13 @@ document.addEventListener("DOMContentLoaded", function() {
     modalSubmitButton.addEventListener('click', function() {
         form.submit(); // Submit the form
     });
+
+    // Check for the presence of modals on the page
+    if(document.getElementById('successModal')) {
+        $('#successModal').modal('show');
+    }
+
+    if(document.getElementById('errorModal')) {
+        $('#errorModal').modal('show');
+    }
 });
