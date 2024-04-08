@@ -18,7 +18,7 @@ router.get('/newcommand', isLoggedIn, function(request, response) {
         response.render('admin/new_command', { user: request.user, title: `New bot package` });
     } catch (error) {
         console.error(`There was an error when attempting to load the admin new command page. Please inform the server administrator of this error or try again: ${error}`);
-        response.render('admin/new_command', { user: request.user, info_message: `There was an Internal Server Error when attempting to load the admin index file after logging in. Please inform the server administrator of this error or try again: ${error}`, show_alert: true });
+        response.render('admin/new_command', { user: request.user, title: `New bot package` });
     }
 });
 
@@ -27,21 +27,21 @@ router.get('/command/:commandname', isLoggedIn, async (request, response) => {
     try {
         const package_data = await botRepository.getBotPackageFromName(package_name); 
 
-        response.render('admin/command', { user: request.user, package: package_data });
+        response.render('admin/command', { user: request.user, package: package_data, title: `${package_name}` });
         
     } catch (error) {
         console.error(`Error fetching command data: ${error}`);
-        response.render('admin/command', { user: request.user, info_message: `There was an internal server error when attempting to load the admin command file after logging in. Please inform the server administrator of this error or try again: ${error}`, show_alert: true});
+        response.render('admin/command', { user: request.user, title: `${package_name}`});
     }
 });
 
 
 router.get(['/login-success', '/'], isLoggedIn, function(request, response) {
     try {
-        response.render('admin/index', { user: request.user, currentPage: '/admin/' });
+        response.render('admin/index', { user: request.user, currentPage: '/admin/', title: `Admin dashboard` });
     } catch (error) {
         console.error(`There was an error when attempting to load the admin index file after logging in. Please inform the server administrator of this error or try again: ${error}`);
-        response.render('admin/index', { user: request.user, info_message: `There was an Internal Server Error when attempting to load the admin index file after logging in. Please inform the server administrator of this error or try again: ${error}`, show_alert: true });
+        response.render('admin/index', { user: request.user, currentPage: '/admin/', title: `Admin dashboard` });
     }
 });
 
@@ -95,7 +95,7 @@ router.get(['/commands'], isLoggedIn, async (request, response) => {
     const commands = current_page_packages;
 
     response.render('admin/command_list', {
-        title: 'Admin Dashboard', 
+        title: 'Bot commands', 
         commands, 
         current_page_of_commands: current_page_number, 
         total_command_files: bot_package.length, 
@@ -107,10 +107,10 @@ router.get(['/commands'], isLoggedIn, async (request, response) => {
 
 router.get('/discordchannelids', (request, response) => {
     try {
-        response.render('admin/discord_channel_ids', { user: request.user, title: `Discord channel ids`, currentPage: '/admin/discordchannelids' });
+        response.render('admin/discord_channel_ids', { user: request.user, title: `Discord channel ids`, currentPage: '/admin/discordchannelids', title:`Discord channel ids` });
     } catch (error) {
         console.error(`There was an error when attempting to retrieve the page that allows you to change the Discord channel data. Please inform the server administrator of this error: ${error}`);
-        response.render('admin/discord_channel_ids', { user: request.user, title: `Discord channel ids`, info_message: `There was an Internal Server Error when attempting to retrieve the page that allows you to change the Discord channel data. Please inform the server administrator of this error: ${error}`, show_alert: true});
+        response.render('admin/discord_channel_ids', { user: request.user, title: `Discord channel ids`, title:`Discord channel ids` });
     }
 });
 
@@ -119,38 +119,37 @@ router.get('/ftpserverdata', (request, response) => {
         response.render('admin/ftp_server_data', { user: request.user, title: `FTP server data`, currentPage: '/admin/ftpserverdata'});
     } catch (error) {
         console.error(`There was an error when attempting to retrieve the page that allows you to change the FTP server data. Please inform the server administrator of this error: ${error}`);
-        response.render('admin/ftp_server_data', { user: request.user, info_message: `There was an Internal Server Error when attempting to retrieve the page that allows you to change the FTP server data. Please inform the server administrator of this error: ${error}`, show_alert: true });
+        response.render('admin/ftp_server_data', { user: request.user, title: `FTP server data` });
     }
 });
 
 router.get('/gameserverdata', (request, response) => {
     try {
-        response.render('admin/game_server_data', { user: request.user, currentPage: '/admin/gameserverdata'});
+        response.render('admin/game_server_data', { user: request.user, currentPage: '/admin/gameserverdata', title: `Game server data` });
     } catch (error) {
         console.error(`There was an error when attempting to retrieve the page that allows you to set game server data`);
-        response.render('admin/game_server_data', { user: request.user, info_message: `There was an error`});
+        response.render('admin/game_server_data', { user: request.user, info_message: `There was an error`, title: `Game server data` });
     }
 });
 
 router.get('/spawncoordinates', (request, response) => {
     try {
-        response.render('admin/new_player_join_coordinates', { user: request.user, currentPage: '/admin/spawncoordinates' });
+        response.render('admin/new_player_join_coordinates', { user: request.user, currentPage: '/admin/spawncoordinates', title: `Spawn zone coordinates`});
     } catch (error) {
         console.error(`There was an error when attempting to retrieve the page that allows you to set the spawn location of players. Please inform the server administrator of this error: ${error}`);
-        response.render('admin/new_player_join_coordinates', { user: request.user });
+        response.render('admin/new_player_join_coordinates', { user: request.user, currentPage: `/admin/spawncoordinates`, title: `Spawn zone coordinates`});
     }
 });
 
 router.get('/logfiles', async (request, response) => {
     const user_guild_id = request.user.guild_id;
-    console.log(`${user_guild_id}-info-logs`);
     const info_log_files_blob = await logger.readAllLogsFromAzureContainer(`${user_guild_id}-info-logs`);
     // const error_log_files_blob = await logger.readAllLogsFromAzureContainer(`${user_guild_id}-error-logs`);
     try {
-        response.render('admin/logs_page', { user: request.user, log_files: info_log_files_blob, currentPage: '/admin/logfiles'});
+        response.render('admin/logs_page', { user: request.user, log_files: info_log_files_blob, currentPage: '/admin/logfiles', title: `Log files`});
     } catch (error) {
         console.error(`There was an error when attempting to retrieve the page that allows you to view your log files. Please inform the server administrator of this error: ${error}`);
-        response.render('admin/logs_page', { user: request.user });
+        response.render('admin/logs_page', { user: request.user, currentPage: `/admin/logfiles`, title: `Log files`});
     }
 }); 
 
