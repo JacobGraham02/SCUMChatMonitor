@@ -88,11 +88,8 @@ block content(user)
 							title="Please enter a discord channel id that consists of 19 numbers where each number is between 0 and 9, inclusive",
 							placeholder='1234567891234567891')
 						div#discord_channel_id_for_server_info_button_feedback
-
-			section#discord_channel_ids_form_field_buttons
-				fieldset#save_command_changes
+						
+				fieldset#discord_channel_ids_form_buttons.fieldset_for_form_buttons
 					button#save_changes_to_discord_channel_ids_button(type='submit') Save
-
-				fieldset#cancel_command_changes
 					button#cancel_changes_to_discord_channel_ids_button(type='button') Cancel
 	script(src="/javascripts/validate_form_fields.js")

@@ -62,11 +62,8 @@ block content(user)
 						placeholder="52000")
 					div#game_server_port_input_feedback
 
-			section#game_server_data_form_field_buttons
-				fieldset#save_game_server_data_changes
+			fieldset#save_game_server_data_changes.fieldset_for_form_buttons
 					button#save_changes_to_ftp_server_data_button(type='submit') Save
-
-				fieldset#cancel_game_server_data_changes
 					button#cancel_changes_to_ftp_server_data_button(type='button') Cancel
 	script(src="/javascripts/validate_form_fields.js")
 	script(src="/javascripts/show_submit_modal.js")

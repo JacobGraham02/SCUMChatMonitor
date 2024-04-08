@@ -645,6 +645,7 @@ a {
 }
 
 #ftp_server_data_edit_page, #discord_channel_id_edit_page, #coordinate_data_edit_page, #game_server_data_edit_page {
+    overflow-x: hidden;
     max-width: 100%;
     display: flex;
     flex-direction: column;
@@ -660,6 +661,7 @@ a {
     justify-content: center;
     align-items: center;
     width: 80%;
+    margin-top: 2%;
 }
 
 .ftp_server_data_fieldset, .discord_channel_ids_fieldset, .start_zone_coordinates_fieldset, .game_server_fieldset {
@@ -684,10 +686,15 @@ a {
     align-items: inherit;
 }
 
-#ftp_server_data_form_field_buttons, #discord_channel_ids_form_field_buttons, #coordinate_data_form_buttons, #game_server_data_form_field_buttons {
+#ftp_server_data_form_field_buttons, #discord_channel_ids_form_field_buttons, #coordinate_data_form_buttons, #game_server_data_form_field_buttons, #discord_channel_ids_form_buttons, #save_game_server_data_changes {
     display: flex;
     flex-direction: row;
-    justify-content: center;
+    justify-content: space-evenly;
+}
+
+.fieldset_for_form_buttons {
+    width: 50%;
+    margin-top: 1%;
 }
 
 .ftp_server_data_input, .coordinate_data_input, .game_server_data_input, .bot_ingame_chat_log_channel_id_input {
@@ -713,7 +720,7 @@ a {
 }
 
 #ftp_server_data_edit_page, #discord_channel_id_edit_page, #coordinate_data_edit_page, #game_server_data_edit_page {
-    font-size: 100%;
+    font-size: 90%;
 }
 
 .bot_item_edit {
@@ -769,7 +776,7 @@ a {
 }
 
 #ftp_server_data_edit_page_heading, #discord_channel_id_editor_heading, #ftp_server_data_edit_page_heading, #game_server_data_edit_page_heading {
-    font-size: 100%;
+    font-weight: bold;
 }
 
 .is-valid-feedback {
@@ -966,11 +973,15 @@ a {
 
     .ftp_server_data_input, .discord_channel_id_input, .coordinate_data_input, .game_server_data_input {
         width: 50%;
-        height: 100%;
+        height: 50%;
     }
 
     #ftp_server_data_form, #discord_channel_ids_form, #coordinate_data_form_section, #game_server_data_form {
-        font-size: 100%;
+        font-size: 90%;
+    }
+
+    .fieldset_for_form_buttons {
+        width: 25%;
     }
 
     #menu_links_image {
