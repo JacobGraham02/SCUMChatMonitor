@@ -1,17 +1,32 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', () => {
+    // Select all log file links
     const logFileLinks = document.querySelectorAll('.log-file-link');
-    const logFileModalTitle = document.getElementById('logFileModalLabel');
-    const logFileContents = document.getElementById('logFileContents');
+    const downloadButton = document.getElementById('downloadButton');
 
-    logFileLinks.forEach(function(link) {
-        link.addEventListener('click', function(event) {
-            event.preventDefault();
-            const logName = this.getAttribute('data-log-name');
-            const logContent = this.getAttribute('data-log-content');
+    logFileLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            // Extract log file name and content from data attributes
+            const logName = link.getAttribute('data-log-name');
+            const logContent = link.getAttribute('data-log-content');
+            
+            // Update modal title and body with log file name and content
+            document.getElementById('logFileModalLabel').textContent = logName;
+            document.getElementById('logFileContents').textContent = logContent;
+            
+            // Create a Blob with the log file content
+            const blob = new Blob([logContent], {type: "text/plain"});
+            
+            // Create a URL for the Blob
+            const url = window.URL.createObjectURL(blob);
+            
+            // Update the download button's href and download attributes
+            downloadButton.href = url;
+            downloadButton.setAttribute('download', logName);
 
-            // Update modal title and content
-            logFileModalTitle.textContent = 'Log File Content - ' + logName;
-            logFileContents.textContent = logContent;
+            // Add an event listener to revoke the created URL after the download starts
+            downloadButton.addEventListener('click', () => URL.revokeObjectURL(url), {once: true});
         });
     });
 });
