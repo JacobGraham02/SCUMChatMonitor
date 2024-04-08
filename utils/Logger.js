@@ -137,9 +137,8 @@ export default class Logger {
     /**
      * Reads all log files from a container that was created for a player
      * @param {string} containerName name of container to search for log files 
-     * @param {string} guildId Discord id for a guild
      */
-    async readAllLogsFromAzureContainer(containerName, guildId) {
+    async readAllLogsFromAzureContainer(containerName) {
         const storage_account_connection = process.env.azure_storage_account_connection_string;
 
         if (!storage_account_connection) {
@@ -150,7 +149,7 @@ export default class Logger {
         const container_client = blob_service_client.getContainerClient(containerName);
         const log_files = [];
 
-        await container_client.createIfNotExists();
+        // await container_client.createIfNotExists();
 
         try {
             for await (const blob of container_client.listBlobsFlat()) {

@@ -1,0 +1,23 @@
+extends layout
+
+block variables
+    - var page_title = "Log files"
+
+include menu
+include modal
+
+block header
+    header#header.header 
+        +menu(user, currentPage)
+
+block content(user)
+    main#game_server_data_edit_page
+        +modal
+        h1 Log files
+
+        section#info_log_files
+            for log_file in log_files 
+                a(href="#" class="log-file-link" data-toggle="modal" data-target="#logFileModal" data-log-name=log_file.name data-log-content=log_file.content)= log_file.name
+    
+    script(src="/javascripts/load_modal_contents.js")
+

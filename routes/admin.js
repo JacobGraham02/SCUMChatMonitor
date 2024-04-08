@@ -1,9 +1,9 @@
 import { Router } from 'express';
 var router = Router();
-import { join } from 'path';
-import { exec } from 'child_process';
 import BotRepository from '../database/MongoDb/BotRepository.js';
+import Logger from '../utils/Logger.js';
 const botRepository = new BotRepository();
+const logger = new Logger();
 
 function isLoggedIn(request, response, next) {
     if (request.isAuthenticated()) {
@@ -140,6 +140,19 @@ router.get('/spawncoordinates', (request, response) => {
         response.render('admin/new_player_join_coordinates', { user: request.user });
     }
 });
+
+router.get('/logfiles', async (request, response) => {
+    const user_guild_id = request.user.guild_id;
+    console.log(`${user_guild_id}-info-logs`);
+    const info_log_files_blob = await logger.readAllLogsFromAzureContainer(`${user_guild_id}-info-logs`);
+    // const error_log_files_blob = await logger.readAllLogsFromAzureContainer(`${user_guild_id}-error-logs`);
+    try {
+        response.render('admin/logs_page', { user: request.user, log_files: info_log_files_blob, currentPage: '/admin/logfiles'});
+    } catch (error) {
+        console.error(`There was an error when attempting to retrieve the page that allows you to view your log files. Please inform the server administrator of this error: ${error}`);
+        response.render('admin/logs_page', { user: request.user });
+    }
+}); 
 
 router.post('/setftpserverdata', async (request, response) => {
     const request_user_id = request.user.guild_id;

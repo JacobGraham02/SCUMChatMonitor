@@ -974,10 +974,10 @@ const verifyCredentialsCallback = async (email, password, done) => {
         websocket: websocket
     };
 
-    // custom_logger.writeLogToAzureContainer(`WebsiteLogins`, 
-    // `The user with guild id ${bot_user_guild_id} with username ${bot_user_username} has just logged in`,
-    // bot_user_guild_id,
-    // `${email}-logs`);
+    custom_logger.writeLogToAzureContainer(`WebsiteLogins`, 
+    `The user with guild id ${bot_user_guild_id} with username ${bot_user_username} has just logged in`,
+    bot_user_guild_id,
+    `${bot_user_guild_id}-info-logs`);
 
     if (valid_user_account) {
         return done(null, user);
