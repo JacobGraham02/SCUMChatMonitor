@@ -144,9 +144,11 @@ router.get('/spawncoordinates', (request, response) => {
 router.get('/logfiles', async (request, response) => {
     const user_guild_id = request.user.guild_id;
     const info_log_files_blob = await logger.readAllLogsFromAzureContainer(`${user_guild_id}-info-logs`);
-    // const error_log_files_blob = await logger.readAllLogsFromAzureContainer(`${user_guild_id}-error-logs`);
+    const error_log_files_blob = await logger.readAllLogsFromAzureContainer(`${user_guild_id}-error-logs`);
+    const chat_log_files_blob = await logger.readAllLogsFromAzureContainer(`${user_guild_id}-chat-logs`);
+    const logins_log_files_blob = await logger.readAllLogsFromAzureContainer(`${user_guild_id}-login-logs`);
     try {
-        response.render('admin/logs_page', { user: request.user, log_files: info_log_files_blob, currentPage: '/admin/logfiles', title: `Log files`});
+        response.render('admin/logs_page', { user: request.user, info_log_files: info_log_files_blob, error_log_files: error_log_files_blob, chat_log_files: chat_log_files_blob, login_and_logout_log_files: logins_log_files_blob, currentPage: '/admin/logfiles', title: `Log files`});
     } catch (error) {
         console.error(`There was an error when attempting to retrieve the page that allows you to view your log files. Please inform the server administrator of this error: ${error}`);
         response.render('admin/logs_page', { user: request.user, currentPage: `/admin/logfiles`, title: `Log files`});

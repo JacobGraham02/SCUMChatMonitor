@@ -876,6 +876,41 @@ a {
     font-size: 100%;
 }
 
+/* Log files page containers */
+#log_files_page {
+    display: flex;
+    flex-direction: column; /* Keep children (the title and the container div) in a column */
+    align-items: center; /* Center children horizontally */
+    height: 100vh; /* Make it take up the full viewport height */
+}
+
+/* Container for log files to sit side by side */
+#log_files_container {
+    display: flex;
+    flex-direction: row; /* Place log file sections side by side */
+    justify-content: center; /* Center these sections horizontally */
+    align-items: flex-start; /* Align items at the start vertically */
+    width: 100%; /* Take up the full width */
+    flex-wrap: wrap; /* Allow the sections to wrap on smaller screens */
+}
+
+#error_log_files, #info_log_files, #chat_log_files, #login_and_logout_log_file {
+    width: 50%; /* Adjust width to allow both sections to sit side by side */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#log_files_page article {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 80%;
+    height: auto; /* Adjust height to auto to fit content */
+    flex-direction: column;
+}
+
 /* Media queries for when on a desktop */
 @media screen and (min-width: 1199px) {
     body {

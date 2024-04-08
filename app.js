@@ -974,10 +974,33 @@ const verifyCredentialsCallback = async (email, password, done) => {
         websocket: websocket
     };
 
-    custom_logger.writeLogToAzureContainer(`WebsiteLogins`, 
-    `The user with guild id ${bot_user_guild_id} with username ${bot_user_username} has just logged in`,
-    bot_user_guild_id,
-    `${bot_user_guild_id}-info-logs`);
+    // custom_logger.writeLogToAzureContainer(
+    //     `WebsiteLogins`, 
+    //     `The user with guild id ${bot_user_guild_id} with username ${bot_user_username} has just logged in`,
+    //     bot_user_guild_id,
+    //     `${bot_user_guild_id}-info-logs`
+    // );
+
+    // custom_logger.writeLogToAzureContainer(
+    //     `WebsiteErrors`,
+    //     `The user with guild id ${bot_user_guild_id} experienced an error while logging in`,
+    //     bot_user_guild_id,
+    //     `${bot_user_guild_id}-error-logs`
+    // );
+
+    // custom_logger.writeLogToAzureContainer(
+    //     `IngameChat`,
+    //     `The user with guild id ${bot_user_guild_id} said the message 'hello' in chat`,
+    //     bot_user_guild_id,
+    //     `${bot_user_guild_id}-chat-logs`
+    // );
+
+    // custom_logger.writeLogToAzureContainer(
+    //     `Login`,
+    //     `The user with guild id ${bot_user_guild_id} has logged in`,
+    //     bot_user_guild_id,
+    //     `${bot_user_guild_id}-login-logs`
+    // );
 
     if (valid_user_account) {
         return done(null, user);
