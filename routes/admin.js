@@ -4,6 +4,7 @@ import BotRepository from '../database/MongoDb/BotRepository.js';
 import Logger from '../utils/Logger.js';
 const botRepository = new BotRepository();
 const logger = new Logger();
+import { validatePassword } from '../modules/hashAndValidatePassword.js';
 
 function isLoggedIn(request, response, next) {
     if (request.isAuthenticated()) {
@@ -12,6 +13,32 @@ function isLoggedIn(request, response, next) {
         response.redirect('/login');
     }
 }
+
+router.post('/login', async function(request, response) {
+    const { email, password } = request.body;
+
+    try {
+        const repository_user = await botRepository.getBotDataByEmail(email);
+
+        if (repository_user) {
+            const user_password = repository_user.bot_password;
+            const user_salt = repository_user.bot_salt;
+            const is_valid_account = validatePassword(password, user_password, user_salt);
+            
+            if (is_valid_account) {
+                const user_id = repository_user.guild_id;
+                response.json({ success: true, message: `Login successful`, bot_id: user_id});
+            } else {
+                response.status(401).json({ success: false, message: `Invalid credentials` });
+            }
+        } else {
+            response.status(401).json({ success: false, message: `Invalid credentials` });
+        }
+    } catch (error) {
+        console.error(`Login error: ${error}`);
+        response.status(500).json({success: false, message: "An error occurred during login."})
+    }
+});
 
 router.get('/newcommand', isLoggedIn, function(request, response) {
     try {

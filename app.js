@@ -1019,6 +1019,8 @@ expressServer.use('/', indexRouter);
 expressServer.use('/admin', adminRouter);
 expressServer.use('/api/', apiExecutableRecompilation);
 
+const client_websocket_connections = new Map();
+
 const web_socket_server = http.createServer(expressServer);
 
 const web_socket_server_instance = new WebSocketServer({
@@ -1037,12 +1039,18 @@ web_socket_server.on('upgrade', (request, socket, head) => {
 
 web_socket_server_instance.on('connection', function(websocket, request) {
 
+    const queryParameters = new URL(request.url, `http://${request.headers.host}`).searchParams;
+    const websocket_id = queryParameters.get('websocket_id');
+    websocket.id = websocket_id;
+    
+    client_websocket_connections.set(websocket_id, websocket);
+
     websocket.on('message', function(message) { 
-        
+
     });
 
     websocket.on('close', function() {
-
+        
     });
 
     websocket.send(`Welcome to an empty web socket, user`);
