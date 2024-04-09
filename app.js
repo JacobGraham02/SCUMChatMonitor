@@ -35,13 +35,12 @@ import adminRouter from './routes/admin.js';
 import apiExecutableRecompilation from './api/recompile/recompile-executable.js';
 import PlayerInfoCommand from './api/ipapi/PlayerInfoCommand.js';
 import SteamUserInfoCommand from './api/steam/SteamUserInfoCommand.js';
+import Cache from './utils/Cache.js';
 import { E_CANCELED } from 'async-mutex';
 import { fileURLToPath, pathToFileURL } from 'url';
 import WebSocket from 'ws';
 import http from 'http';
 import { WebSocketServer } from 'ws';
-import WebSocketGenerator from './utils/WebSocketGenerator.js';
-
 
 const bot_token = process.env.discord_wilson_bot_token;
 
@@ -54,14 +53,10 @@ const client_instance = new Client({
     ]
 });
 
-const custom_logger = new Logger();
-
-/** Each channel in a discord server is identified by a unique integer value
- */
-const discord_chat_channel_bot_commands = '1125874103757328494';
-
 const user_repository = new UserRepository();
 const bot_repository = new BotRepository();
+const message_logger = new Logger();
+const cache = new Cache();
 /**
  * The following regex string is for steam ids associated with a steam name specifically for the login log file. 
  * They are saved as a 17-digit number (e.g. 12345678912345678)
@@ -105,23 +100,9 @@ const gportal_ftp_server_filename_prefix_chat = 'chat_';
 
 const mutex = new Mutex();
 
-/**
- * GPortal FTP server credentials with a timeout time of 60 seconds in case the server is busy or slow. 
- */
-const gportal_ftp_config = {
-    host: process.env.gportal_ftp_hostname,
-    port: process.env.gportal_ftp_hostname_port,
-    user: process.env.gportal_ftp_username,
-    password: process.env.gportal_ftp_password,
-    connTimeout: 600000,
-    keepAlive: 10000
-};
-
 let gportal_log_file_ftp_client = undefined;
 
 var expressServer = express();
-
-const web_socket_generator = new WebSocketGenerator();
 /**
  * Initial configuration to enable express to use Mongodb as a storage location for session information
  */
@@ -170,11 +151,6 @@ const gportal_ftp_server_log_interval_seconds = {
 * This Queue holds all of the user commands, queued in order so that users have their commands executed at the desired time
 */
 const user_command_queue = new Queue();
-
-/** 
-* Traditional logging system to log errors and other messages
-*/
-const message_logger = new Logger();
 
 /**
  * A class instance which holds a function that hits the Battlemetrics server API
@@ -344,11 +320,9 @@ the total connection attempt wait time.
 x tries = x * 5 seconds
 
 retryCount is used to indicate how many times the ftp connection has attempted to reconnect
-maxRetries is used to indicate the maximum number of retry attempts that will be performed before the connection attempts to GPortal are halted 
 retryDelay is used to indicate how many milliseconds to wait before attempting to establish a new connection
 */
 let retryCount = 0;
-const maxRetries = 5; // Maximum number of retry attempts
 const retryDelay = 5000; // Initial delay between retries in milliseconds
 
 /**
@@ -366,7 +340,19 @@ maxRetries is used to indicate the maximum number of retry attempts that will be
 retryDelay is used to indicate how many milliseconds to wait before attempting to establish a new connection
  * @returns nothing if an FTP connection cannot be made to GPortal within 5 attempts
  */
-export async function establishFtpConnectionToGportal() {
+export async function establishFtpConnectionToGportal(ftp_server_data) {
+    /**
+    GPortal FTP server credentials with a timeout time of 60 seconds in case the server is busy or slow. 
+    */
+    gportal_ftp_config = {
+        host: ftp_server_data.ftp_server_host,
+        port: ftp_server_data.ftp_server_port,
+        user: ftp_server_data.ftp_server_user,
+        password: ftp_server_data.ftp_server_password,
+        connTimeout: 600000,
+        keepAlive: 10000
+    };
+
     gportal_log_file_ftp_client = new FTPClient();
     gportal_log_file_ftp_client.removeAllListeners();
     
@@ -391,7 +377,7 @@ export async function establishFtpConnectionToGportal() {
         });
         gportal_log_file_ftp_client.connect(gportal_ftp_config);
     }).catch(error => {
-        console.log('An error occurred, attempting to retry connection...');
+        console.log(`An error has occurred when attempting to establish a connection to the FTP server: ${error}`);
         message_logger.logError(`Retrying connection in ${delay / 1000} seconds...`);
         retryConnection();
     });
@@ -416,6 +402,15 @@ function retryConnection() {
  * @returns {Array} An array containing object(s) in the following format: {steam_id: string, player_message: string}
  */
 async function readAndFormatGportalFtpServerLoginLog(request, response) {
+    let stream = null;
+    let ftp_login_log_file_bulk_contents = '';
+    let ftp_login_log_file_processed_contents_string_array = undefined;
+    let received_chat_login_messages = [];
+    let file_contents_steam_ids_array = [];
+    let file_contents_steam_name_array = [];
+    let file_contents_steam_ids = undefined;
+    let file_contents_steam_messages = undefined;
+
     try {
         const files = await new Promise((resolve, reject) => {
             gportal_log_file_ftp_client.list(gportal_ftp_server_target_directory, (error, files) => {
@@ -441,7 +436,7 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
 
         const file_path = `${gportal_ftp_server_target_directory}${matching_files[0].name}`;
 
-        const stream = await new Promise((resolve, reject) => {
+        stream = await new Promise((resolve, reject) => {
             gportal_log_file_ftp_client.get(file_path, (error, stream) => {
                 if (error) {
                     message_logger.logError(`The ftp login file was present in GPortal, but could not be fetched: ${error}`);
@@ -451,14 +446,6 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
                 }
             });
         });
-
-        let ftp_login_log_file_bulk_contents = '';
-        let ftp_login_log_file_processed_contents_string_array;
-        let received_chat_login_messages = [];
-        let file_contents_steam_ids_array = [];
-        let file_contents_steam_name_array = [];
-        let file_contents_steam_ids;
-        let file_contents_steam_messages;
 
         await new Promise((resolve, reject) => {
             stream.on('data', (chunk) => {
@@ -498,7 +485,7 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
                             file_contents_steam_ids_array = Object.values(file_contents_steam_ids);
                             file_contents_steam_name_array = Object.values(file_contents_steam_messages);
                     }
-                    scum_ftp_log_login_messages = received_chat_login_messages;
+
                     for (let i = 0; i < file_contents_steam_ids_array.length; i++) {
                         user_steam_ids[file_contents_steam_ids_array[i]] = file_contents_steam_name_array[i];
                     }
@@ -530,8 +517,6 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
                 insertSteamUsersIntoDatabase(Object.keys(user_steam_ids), Object.values(user_steam_ids));
         
                 teleportNewPlayersToLocation(user_steam_ids);
-
-                received_chat_login_messages = [];
               
                 resolve();
             });
@@ -540,7 +525,13 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
     } catch (error) {
         message_logger.logError(`Error processing the GPortal FTP login log file: ${error}`);
         response.status(500).json({ error: 'Failed to process files' });
-    } 
+    } finally {
+        if (stream) {
+            stream.close();
+            stream = null;
+        }
+        received_chat_login_messages = [];
+    }
 }
 /**
  * This function determines if players joining the server are new. If so, they are teleported to a specific area on the map. 
@@ -595,6 +586,7 @@ async function teleportNewPlayersToLocation(online_users) {
  * @returns {Array} An array containing object(s) in the following format: {steam_id: string, player_message: string}
  */
 async function readAndFormatGportalFtpServerChatLog(request, response) {
+    let stream = undefined;
     try {
         /**
          * Fetch a list of all the files in the specified directory on GPortal. In this instance, we fetch all of the files from
@@ -633,7 +625,7 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
          * From the list of chat files retrieved with the date appended to the file name, fetch the file name with the most recent appended date
          */
         const file_path = `${gportal_ftp_server_target_directory}${matching_files[0].name}`;
-        const stream = await new Promise((resolve, reject) => {
+        stream = await new Promise((resolve, reject) => {
             gportal_log_file_ftp_client.get(file_path, (error, stream) => {
                 if (error) {
                     message_logger.logError(`The file is present in GPortal, but can not be fetched: ${error} `);
@@ -729,6 +721,10 @@ async function readAndFormatGportalFtpServerChatLog(request, response) {
         message_logger.logError(`Error when processing the SCUM chat log files: ${error}`);
         response.status(500).json({ error: 'Failed to process files' });
     } finally {
+        if (stream) {
+            stream.close();
+            stream = null;
+        }
         received_chat_messages = [];
     }
 }
@@ -918,6 +914,7 @@ async function insertSteamUsersIntoDatabase(steam_user_ids_array, steam_user_nam
  */
 const verifyCredentialsCallback = async (email, password, done) => {
     let bot_user_data = undefined;
+
     try {
         bot_user_data = await bot_repository.getBotDataByEmail(email);
     } catch (error) {
@@ -951,8 +948,6 @@ const verifyCredentialsCallback = async (email, password, done) => {
 
     const valid_user_account = validatePassword(password, bot_user_password, bot_user_salt);
 
-    const websocket = web_socket_generator.createWebSocketConnection(bot_user_guild_id);
-
     const user = {
         username: bot_user_username,
         email: bot_user_email,
@@ -971,7 +966,6 @@ const verifyCredentialsCallback = async (email, password, done) => {
         x_coordinate: bot_user_spawn_x_coordinate,
         y_coordinate: bot_user_spawn_y_coordinate,
         z_coordinate: bot_user_spawn_z_coordinate,
-        websocket: websocket
     };
 
     // custom_logger.writeLogToAzureContainer(
@@ -1044,7 +1038,7 @@ web_socket_server.on('upgrade', (request, socket, head) => {
 web_socket_server_instance.on('connection', function(websocket, request) {
 
     websocket.on('message', function(message) { 
-
+        
     });
 
     websocket.on('close', function() {
@@ -1398,6 +1392,8 @@ client_instance.on('guildCreate', async (guild) => {
     let bot_discord_information = undefined;
     const bot_id = client_instance.user.id;
     const guild_id = guild.id;
+    const guild_name = guild.name;
+    cache.set(guild_name, guild_id);
     try {
         bot_discord_information = bot_repository.getBotDataByGuildId(guild.id);
         await registerInitialSetupCommands(bot_token, bot_id, guild_id);
@@ -1777,16 +1773,6 @@ async function enqueueCommand(user_chat_message_object) {
     user_command_queue.enqueue(user_chat_message_object);
     await setProcessQueueMutex();
 }
-
-// process.on('uncaughtException', (error) => {
-//     message_logger.logError(error);
-// });
-
-
-// process.on('exit', (error) => {
-//     message_logger.logError(`Process exited with code: ${error}`);
-// });
-
 
 /**
  * This function iterates through all of the SCUM in-game chat messages starting with '!' recorded into the gportal chat log into a queue in preparation 
