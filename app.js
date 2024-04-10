@@ -57,6 +57,7 @@ const user_repository = new UserRepository();
 const bot_repository = new BotRepository();
 const message_logger = new Logger();
 const cache = new Cache();
+const user_intervals = new Map();
 /**
  * The following regex string is for steam ids associated with a steam name specifically for the login log file. 
  * They are saved as a 17-digit number (e.g. 12345678912345678)
@@ -401,7 +402,7 @@ function retryConnection() {
  * @param {any} response An HTTP response object which holds the query results obtained from the FTP server
  * @returns {Array} An array containing object(s) in the following format: {steam_id: string, player_message: string}
  */
-async function readAndFormatGportalFtpServerLoginLog(request, response) {
+async function readAndFormatGportalFtpServerLoginLog(request, response, discord_login_channel_id) {
     let stream = null;
     let ftp_login_log_file_bulk_contents = '';
     let ftp_login_log_file_processed_contents_string_array = undefined;
@@ -559,8 +560,7 @@ async function teleportNewPlayersToLocation(online_users) {
             user_steam_id = user_first_join_results.user_steam_id;
             
             try {
-                myEmitter.emit('newUserJoinedServer', user_steam_id);
-                await sendNewPlayerLoginMessagesToDiscord(player_ipv4_addresses, user_steam_id, discord_scum_game_first_time_logins_chat);
+                myEmitter.emit('newUserJoinedServer', player_ipv4_addresses, user_steam_id, discord_scum_game_first_time_logins_chat);
             } catch (error) {
                 console.error(`An error has occurred sending the new player login messages to discord: ${error}`);
             }
@@ -1150,17 +1150,17 @@ function sendPlayerMessagesToDiscord(discord_scum_game_chat_messages, discord_ch
 }
 
 function sendPlayerLoginMessagesToDiscord(discord_scum_game_login_messages, discord_channel) {
-    if (discord_scum_game_login_messages === undefined) {
+    if (!discord_scum_game_login_messages) {
         message_logger.logError(`The scum in game log in messages could not be fetched and are undefined`);
         return;
     };
 
-    if (discord_channel === undefined) {
+    if (!discord_channel) {
         message_logger.logError(`The Discord channel for logging player logins could not be reached and is undefined`);
         return;
     };
 
-    if (discord_scum_game_login_messages !== undefined) {
+    if (discord_scum_game_login_messages) {
         if (!arraysEqual(previous_player_login_messages, discord_scum_game_login_messages)) {
             previous_player_login_messages = discord_scum_game_login_messages.slice();
         /*
@@ -1181,23 +1181,24 @@ function sendPlayerLoginMessagesToDiscord(discord_scum_game_login_messages, disc
 }
 
 async function sendNewPlayerLoginMessagesToDiscord(player_ipv4_addresses, user_steam_id, discord_channel) {
-    if (player_ipv4_addresses === undefined) {
+    if (!player_ipv4_addresses) {
         message_logger.logError(`The SCUM log in messages could not be fetched and are undefined`);
         return;
     };
-    if (discord_channel === undefined) {
+    if (!discord_channel) {
         message_logger.logError(`The Discord channel for logging new player log in messages could not be fetched and is undefined`);
         return;
     }
-    if (player_ipv4_addresses !== undefined) {
+    if (player_ipv4_addresses) {
         if (!arraysEqual(previous_player_ipv4_addresses, player_ipv4_addresses)) {
             previous_player_ipv4_addresses = player_ipv4_addresses.slice();
         /*
-        * If the previous login log messages and the new login log messages have not changed, we do not need to process the login log over again
+        If the previous login log messages and the new login log messages have not changed, we do not need to process the login log over again
         First, fetch all of the steam ids acquired from gportal's ftp login file. Because we want to display player data, we must 
         use both the steam and a third-party API to fetch information based on their steam account id and their IPv4 address. 
         */ 
             steam_web_api_player_info.setPlayerSteamId(user_steam_id);
+
             for (let i = 0; i < player_ipv4_addresses.length; i++) { 
                 ipApi_player_info.setPlayerIpAddress(player_ipv4_addresses[i]);
                 player_info = await ipApi_player_info.fetchJsonApiDataFromIpApiDotCom();
@@ -1402,11 +1403,11 @@ client_instance.on('guildCreate', async (guild) => {
     const bot_id = client_instance.user.id;
     const guild_id = guild.id;
     const guild_name = guild.name;
-    cache.set(guild_name, guild_id);
+
     try {
-        bot_discord_information = bot_repository.getBotDataByGuildId(guild.id);
         await registerInitialSetupCommands(bot_token, bot_id, guild_id);
-        // await createBotCategoryAndChannels(guild);
+        await createBotCategoryAndChannels(guild);
+        bot_discord_information = bot_repository.getBotDataByGuildId(guild.id);
     } catch (error) {
         throw new Error(error);
     }
@@ -1422,6 +1423,8 @@ client_instance.on('guildCreate', async (guild) => {
     const discord_channel_for_logins = guild.channels.cache.get(discord_channel_id_for_logins);
     const discord_channel_for_new_joins = guild.channels.cache.get(discord_channel_id_for_new_player_joins);
     const discord_channel_for_server_info = guild.channels.cache.get(discord_channel_id_for_server_info_button);
+
+    
     
         /**
          * 
@@ -1484,10 +1487,52 @@ client_instance.on('guildCreate', async (guild) => {
         //     content: "Click the button below to get server information",
         //     components: [button_row]
         // });
-        
-        myEmitter.on('newUserJoinedServer', (steam_id) => {
-            sendNewPlayerLoginMessagesToDiscord(player_ipv4_addresses, steam_id, discord_scum_game_first_time_logins_chat)
+});
+
+myEmitter.on('newUserJoinedServer', (player_ipv4_addresses, steam_id, discord_scum_game_first_time_logins_chat) => {
+    sendNewPlayerLoginMessagesToDiscord(player_ipv4_addresses, steam_id, discord_scum_game_first_time_logins_chat)
+});
+
+myEmitter.on("botCollectionChanged", async function() {
+    const database_users = await bot_repository.getAllBotData();
+
+    for (const database_user of database_users) {
+        const guild_id = database_user.guild_id;
+
+        if (user_intervals.has(`game-server-online-interval-${guild_id}`)) {
+            clearInterval(user_intervals.get(`game-server-online-interval-${guild_id}`));
+            user_intervals.delete(`game-server-online-interval-${guild_id}`);
+        }
+
+        if (user_intervals.has(`ftp-log-files-interval-${guild_id}`)) {
+            clearInterval(user_intervals.get(`ftp-log-files-interval-${guild_id}`));
+            user_intervals.delete(`ftp-log-files-interval-${guild_id}`);
+        }
+
+        if (user_intervals.has(`discord-log-interval-${guild_id}`)) {
+            clearInterval(user_intervals.get(`discord-log-interval-${guild_id}`));
+            user_intervals.delete(`discord-log-interval-${guild_id}`);
+        }
+
+        const game_server_online_interval = setInterval(function() {
+            checkTcpConnectionToServer();
+            checkIfGameServerOnline();
+        }, gportal_ftp_server_log_interval_seconds["60"]);
+
+        const read_ftp_log_files_interval = setInterval(function() {
+            readAndFormatGportalFtpServerLoginLog();
+            handleIngameSCUMChatMessages();
         });
+
+        const discord_log_messages_interval = setInterval(function() {
+            sendPlayerMessagesToDiscord(player_chat_messages_sent_inside_scum, database_user.scum_ingame_chat_channel_id);
+            sendPlayerLoginMessagesToDiscord(player_ftp_log_login_messages, database_user.scum_ingame_logins_channel_id);
+        }, gportal_ftp_server_log_interval_seconds["30"]);
+    }
+
+    user_intervals.set(`game-server-online-interval-${guild_id}`, game_server_online_interval);
+    user_intervals.set(`ftp-log-files-interval-${guild_id}`, read_ftp_log_files_interval);
+    user_intervals.set(`discord-log-interval-${guild_id}`, discord_log_messages_interval);
 });
 
 client_instance.on(Events.InteractionCreate, async interaction => {
@@ -1588,6 +1633,7 @@ client_instance.on(Events.InteractionCreate, async interaction => {
   });
 
 async function createBotCategoryAndChannels(guild) {
+    const discord_channel_ids = {};
     try {
         const category_creation_response = await guild.channels.create({
             name: `Chat monitor bot`,
@@ -1595,26 +1641,39 @@ async function createBotCategoryAndChannels(guild) {
         });
 
         const channel_names = [
-            "In game messages",
-            "Log ins and log outs",
-            "New player joins",
-            "Server battlemetrics link",
-            "Server info button"
+            "In_game_messages",
+            "Logins_and_logouts",
+            "New_player_joins",
+            "Server_battlemetrics_link",
+            "Server_info_button"
         ];
 
-        for (const channel_name of channel_names) {
+        const mongodb_channel_names = [
+            "discord_ingame_chat_channel_id",
+            "discord_logins_chat_channel_id",
+            "discord_new_player_chat_channel_id",
+            "discord_battlemetrics_server_id",
+            "discord_server_info_button_channel_id"
+        ];
+
+        for (let i = 0; i < channel_names.length; i++) {
+            const channel_name = channel_names[i];
             if (channel_name) {
-                await guild.channels.create({
+                const created_channel = await guild.channels.create({
                     name: `${channel_name}`,
                     type: ChannelType.GuildText,
                     parent: category_creation_response.id
                 });
+                const mongodb_channel_name = mongodb_channel_names[i];
+                discord_channel_ids[mongodb_channel_name] = created_channel.id;
             }
         }
+
+        bot_repository.createBotDiscordData(guild.id, discord_channel_ids);
     } catch (error) {
         console.error(`There was an error when setting up the bot channels. Please inform the server administrator of this error: ${error}`);
         throw new Error(`There was an error when setting up the bot channels. Please inform the server administrator of this error: ${error}`);
-    }
+    } 
 }
 
 async function registerInitialSetupCommands(bot_token, bot_id, guild_id) {

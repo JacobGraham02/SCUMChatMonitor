@@ -1,8 +1,8 @@
 import { randomUUID } from 'crypto';
 import DatabaseConnectionManager from './DatabaseConnectionManager.js';
-const database_connection_manager = new DatabaseConnectionManager();
 import dotenv from 'dotenv';
 dotenv.config();
+const database_connection_manager = new DatabaseConnectionManager();
 
 export default class BotRepository {
 
@@ -241,6 +241,22 @@ export default class BotRepository {
         } catch (error) {
             console.error(`There was an error when attempting to retrieve the bot data by email. Please inform the server administrator of this error: ${error}`);
             throw new Error(`There was an error when attempting to retrieve the bot data by email. Please inform the server administrator of this error: ${error}`);
+        } finally {
+            await this.releaseConnectionSafely(database_connection);
+        }
+    }
+
+    async getAllBotData() {
+        const database_connection = await database_connection_manager.getConnection();
+
+        try {
+            const bot_user_collection = database_connection.collection('bot');
+            
+            const bot_users = await bot_user_collection.find().toArray();
+            
+            return bot_users;
+        } catch (error) {
+            throw new Error(`There was an error when attempting to retrieve all bot user data. Please inform the server administrator of the following error: ${error}`);
         } finally {
             await this.releaseConnectionSafely(database_connection);
         }
