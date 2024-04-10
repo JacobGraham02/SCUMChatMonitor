@@ -1019,8 +1019,6 @@ expressServer.use('/', indexRouter);
 expressServer.use('/admin', adminRouter);
 expressServer.use('/api/', apiExecutableRecompilation);
 
-const client_websocket_connections = new Map();
-
 const web_socket_server = http.createServer(expressServer);
 
 const web_socket_server_instance = new WebSocketServer({
@@ -1043,17 +1041,20 @@ web_socket_server_instance.on('connection', function(websocket, request) {
     const websocket_id = queryParameters.get('websocket_id');
     websocket.id = websocket_id;
     
-    client_websocket_connections.set(websocket_id, websocket);
+    cache.set(`websocket_${websocket_id}`, websocket);
 
     websocket.on('message', function(message) { 
 
     });
 
-    websocket.on('close', function() {
-        
+    websocket.on('error', function(error) {
+        console.error(`Web socket error: ${error}`);
     });
 
-    websocket.send(`Welcome to an empty web socket, user`);
+    websocket.on('close', function() {
+        cache.delete(`websocket_${websocket_id}`);
+        console.log(`The web socket with id ${websocket.id} was closed`);
+    });
 });
 
 expressServer.post('/login', passport.authenticate('local', {
@@ -1080,11 +1081,11 @@ passport.serializeUser(function (user, done) {
 
 passport.deserializeUser(async (guildId, done) => {
     try {
-        const repositoryUser = await bot_repository.getBotDataByGuildId(guildId);
+        const repository_user = await bot_repository.getBotDataByGuildId(guildId);
 
-        if (repositoryUser) {
+        if (repository_user) {
             // User data found in repository, store in cache and return
-            return done(null, repositoryUser);
+            return done(null, repository_user);
         } else {
             // User not found in repository, return false
             return done(null, false);

@@ -1,10 +1,13 @@
 import { Router } from 'express';
-var router = Router();
+import { validatePassword } from '../modules/hashAndValidatePassword.js';
 import BotRepository from '../database/MongoDb/BotRepository.js';
 import Logger from '../utils/Logger.js';
+import Cache from '../utils/Cache.js';
+import WebSocket from 'ws';
+var router = Router();
 const botRepository = new BotRepository();
 const logger = new Logger();
-import { validatePassword } from '../modules/hashAndValidatePassword.js';
+const cache = new Cache();
 
 function isLoggedIn(request, response, next) {
     if (request.isAuthenticated()) {
@@ -14,7 +17,7 @@ function isLoggedIn(request, response, next) {
     }
 }
 
-router.post('/login', async function(request, response) {
+router.post('/createwebsocket', async function(request, response) {
     const { email, password } = request.body;
 
     try {
@@ -65,6 +68,15 @@ router.get('/command/:commandname', isLoggedIn, async (request, response) => {
 
 router.get(['/login-success', '/'], isLoggedIn, function(request, response) {
     try {
+        const guild_id = request.user.guild_id;
+        const websocket = cache.get(`websocket_${guild_id}`);
+        if (websocket && websocket.readyState === WebSocket.OPEN) {
+            const message = JSON.stringify({
+                action: 'DataSync',
+                data: 'This is a test data sync in the admin index page route'
+            });
+            websocket.send(message);
+        }
         response.render('admin/index', { user: request.user, currentPage: '/admin/', title: `Admin dashboard` });
     } catch (error) {
         console.error(`There was an error when attempting to load the admin index file after logging in. Please inform the server administrator of this error or try again: ${error}`);
@@ -218,6 +230,10 @@ router.post('/setspawncoordinates', async (request, response) => {
 
 router.post('/setdiscordchannelids', async (request, response) => {
     const request_user_id = request.user.guild_id;
+    const websocket_connection = request.user.websocket;
+
+    console.log(`The websocket connection is:`);
+    console.log(websocket_connection);
 
     const discord_server_channel_ids_object = {
         guild_id: request_user_id,

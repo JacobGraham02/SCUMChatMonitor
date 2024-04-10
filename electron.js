@@ -20,13 +20,6 @@ function createWindow() {
         },
     });
 
-    // const websocket = createWebSocketConnection();
-
-    // websocket.on('message', function(message) {
-    //     console.log(`Received message from server`);
-    //     console.log(message);
-    // });
-
     // Load the index page of your app from your Express server.
     mainWindow.loadURL('http://localhost:8080');
 
@@ -42,20 +35,9 @@ function createWindow() {
 async function createWebSocketConnection(websocket_id) {
     const ws = new WebSocket(`ws://localhost:8080?websocket_id=${encodeURIComponent(websocket_id)}`);
 
-    ws.on('open', () => {
-        ws.send('Hello from client!');
-    });
-
-    ws.on('message', (event) => {
-        console.log('Message from server:', event.data);
-    });
-
-    ws.on('error', (error) => {
-        console.error('WebSocket error:', error);
-    });
-
-    ws.on('close', () => {
-        console.log('WebSocket connection closed');
+    ws.on('message', (data) => {
+        const message = JSON.parse(data);
+        console.log(`Test message data: ${message.data}`);
     });
 
     return ws;
@@ -76,13 +58,13 @@ app.whenReady().then(() => {
 app.whenReady().then(() => {
     ipcMain.handle('checkUserLogin', async (event, { email, password }) => {
         try {
-            const response = await fetch("http://localhost:8080/admin/login", {
+            const response = await fetch("http://localhost:8080/admin/createwebsocket", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
             });
             const response_data = await response.json();
-            return response_data.success;
+            return response_data;
         } catch (error) {
             console.error(`Error during login: ${error}`);
             return false; 

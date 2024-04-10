@@ -3,7 +3,7 @@ export default class Cache {
 
     constructor() {
         if (Cache.instance) {
-            return Logger.instance;
+            return Cache.instance;
         } else {
             Cache.instance = this;
         }
@@ -12,7 +12,7 @@ export default class Cache {
     /**
      * Sets a value in the cache with no expiration time
      * @param {string} key 
-     * @param {string} value 
+     * @param {any} value 
      */
     set(key, value) {
         this.data_cache.set(key, value);
@@ -24,10 +24,21 @@ export default class Cache {
      * @returns the guild id of a user, or undefined if one does not exist
      */
     get(key) {
-        const guild_id = this.data_cache.get(key);
-        if (guild_id) {
-            return guild_id;
+        const cache_data = this.data_cache.get(key);
+        if (cache_data) {
+            return cache_data;
         }
         return undefined;
+    }
+
+    /**
+     * Deletes a key and value based on the key
+     * @param {any} key 
+     */
+    delete(key) {
+        const cache_data = this.data_cache.get(key);
+        if (cache_data) {
+            return this.data_cache.delete(key);
+        }
     }
 }
