@@ -54,11 +54,13 @@ export default class BotRepository {
         const database_connection = await database_connection_manager.getConnection();
         console.log(discord_server_data.guild_id);
         const new_discord_data_document = {
+            scum_bot_commands_channel_id: discord_server_data.discord_bot_commands_channel_id,
             scum_ingame_chat_channel_id: discord_server_data.discord_ingame_chat_channel_id,
             scum_ingame_logins_channel_id: discord_server_data.discord_logins_chat_channel_id,
             scum_new_player_joins_channel_id: discord_server_data.discord_new_player_chat_channel_id,
             scum_battlemetrics_server_id: discord_server_data.discord_battlemetrics_server_id,
             scum_server_info_channel_id: discord_server_data.discord_server_info_button_channel_id,
+            scum_server_online_channel_id: discord_server_data.discord_server_online_channel_id
         };
 
         try {
