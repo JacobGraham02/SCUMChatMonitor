@@ -628,6 +628,10 @@ async function readAndFormatGportalFtpServerLoginLog(guild_id) {
  * @param {any} online_users a Map containing the key-value pairs of user steam id and user steam name
  */
 async function teleportNewPlayersToLocation(player_ipv4_addresses, online_users, guild_id) { 
+    const bot_user = await bot_repository.getBotDataByGuildId(guild_id);
+    const bot_user_x_coordinate = bot_user.x_coordinate;
+    const bot_user_y_coordinate = bot_user.y_coordinate;
+    const bot_user_z_coordinate = bot_user.z_coordinate;
     /**
      * Iterate over each key in the Map online_users. Each key in the Map is the steam id of the user
      */
@@ -642,7 +646,7 @@ async function teleportNewPlayersToLocation(player_ipv4_addresses, online_users,
         */
         const user_first_join_results = await user_repository.findUserByIdIfFirstServerJoin(key);
         if (user_first_join_results) {
-            user_steam_id = user_first_join_results.user_steam_id;
+            const user_steam_id = user_first_join_results.user_steam_id;
             
             try {
                 myEmitter.emit('newUserJoinedServer', player_ipv4_addresses, user_steam_id, channel_for_new_joins);
@@ -658,7 +662,7 @@ async function teleportNewPlayersToLocation(player_ipv4_addresses, online_users,
             await sleep(60000);
 
             try {
-                await enqueueCommand(`#Teleport -129023.125 -91330.055 36830.551 ${user_steam_id}`);
+                await enqueueCommand(`#Teleport ${bot_user_x_coordinate} ${bot_user_y_coordinate} ${bot_user_z_coordinate} ${user_steam_id}`, guild_id);
             } catch (error) {
                 message_logger.writeLogToAzureContainer(
                     `ErrorLogs`,
@@ -886,99 +890,6 @@ function stopCheckLocalServerTimeInterval(guild_id) {
 }
 
 /**
- * This is the sequence of operations which executes after the server restarts, and the bot must log back into the server.
- * The program detects if the server has restarted by checking for a specific TCP connection to the game server. Because the game server on SCUM has a static IP address and port,
- * we can use the Windows command 'netstat -an' to check for existing connections on the computer and see if our target IP address exists in the list. 
- * await sleep(N) is an asynchronous operation used to block any further processing of this function until after N milliseconds.
- * You can convert milliseconds to seconds by dividing N / 1000 (80000 milliseconds / 1000 milliseconds = 8 seconds).
- * The SCUM game interface has a 'continue' button to join the server you were last on, so this operation moves to there. 
- */
-async function reinitializeBotOnServer(guild_id) {
-    message_logger.writeLogToAzureContainer(
-        `InfoLogs`,
-        `The scum bot monitor is offline. Attempting to log the bot back in to the server`,
-        guild_id,
-        `${guild_id}-info-logs`
-    )
-    await sleep(5000);
-    moveMouseToPressOkForMessage(guild_id);
-    await sleep(100000);
-    pressMouseLeftClickButton(guild_id);
-    await sleep(5000);
-    moveMouseToContinueButtonXYLocation(guild_id);
-    await sleep(10000);
-    pressMouseLeftClickButton(guild_id);
-    await sleep(20000);
-    pressCharacterKeyT(guild_id);
-    await sleep(20000);
-    pressTabKey(guild_id);
-    await sleep(5000);
-    message_logger.writeLogToAzureContainer(
-        `InfoLogs`,
-        `The scum bot monitor has been activated and is ready to use`,
-        guild_id,
-        `${guild_id}-info-logs`
-    )
-    await sleep(5000);
-    await enqueueCommand('Scum bot has been activated and is ready to use');
-}
-
-/**
- * Executes a Windows powershell command to simulate a user moving the cursor to a specific (X, Y) location on screen. This is an asynchronous operation.
- */
-async function moveMouseToContinueButtonXYLocation(guild_id) {
-    const x_cursor_position = 466;
-    const y_cursor_position = 619;
-    const command = `powershell.exe -command "Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class P { [DllImport(\\"user32.dll\\")] public static extern bool SetCursorPos(int x, int y); }'; [P]::SetCursorPos(${x_cursor_position}, ${y_cursor_position})"`;
-    exec(command, (error) => {
-        if (error) {
-            message_logger.writeLogToAzureContainer(
-                `ErrorLogs`,
-                `Error when moving the mouse to x 470 and y 550: ${error}`,
-                guild_id,
-                `${guild_id}-error-logs`
-            );
-        }
-    });
-}
-
-/**
- * Executes a Windows powershell command to simulate a user moving the cursor to a specific (X, Y) location on screen. This is an asynchronous operation.
- */
-async function moveMouseToPressOkForMessage(guild_id) {
-    const x_cursor_position = 958;
-    const y_cursor_position = 536;
-    const command = `powershell.exe -command "Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class P { [DllImport(\\"user32.dll\\")] public static extern bool SetCursorPos(int x, int y); }'; [P]::SetCursorPos(${x_cursor_position}, ${y_cursor_position})"`;
-    exec(command, (error) => {
-        if (error) {
-            message_logger.writeLogToAzureContainer(
-                `ErrorLogs`,
-                `Error when moving the mouse to x 958 and y 536: ${error}`,
-                guild_id,
-                `${guild_id}-error-logs`
-            );
-        }
-    });
-}
-
-/**
- * Executes a Windows powershell command to simulate a left mouse button click. This is as asynchronous operation.
- */
-function pressMouseLeftClickButton(guild_id) {
-    const command = `powershell.exe -command "Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class P { [DllImport(\\"user32.dll\\")] public static extern void mouse_event(int dwFlags, int dx, int dy, int dwData, int dwExtraInfo); }'; $leftDown = 0x0002; $leftUp = 0x0004; [P]::mouse_event($leftDown, 0, 0, 0, 0); [P]::mouse_event($leftUp, 0, 0, 0, 0);"`;
-    exec(command, (error) => {
-        if (error) {
-            message_logger.writeLogToAzureContainer(
-                `ErrorLogs`,
-                `Error when left clicking the mouse: ${error}`,
-                guild_id,
-                `${guild_id}-error-logs`
-            );
-        } 
-    });
-}
-
-/**
  * The function checkLocalServerTime runs once every minute, checking the current time relative to the time on the time clock on the target machine. Once the current time
  * fetched by the bot is 5:40 am, a warning message will be announced on the server informing users of a pending server restart in (6:00 - N), where N is the current time.
  * For example, if the current time is 5:40 am, 6:00 am - 5:40 am will result in 0:20. Therefore, the bot will announce on the server a restart in 20 minutes.
@@ -998,7 +909,7 @@ async function checkLocalServerTime() {
         };
 
         if (server_restart_messages[current_minute]) {
-            await enqueueCommand(`#Announce ${server_restart_messages[current_minute]}`);
+            await enqueueCommand(`#Announce ${server_restart_messages[current_minute]}`, guild_id);
         }
     }
 }
@@ -1240,7 +1151,10 @@ web_socket_server_instance.on('connection', function(websocket, request) {
     cache.set(`websocket_${websocket_id}`, websocket);
 
     websocket.on('message', function(message) { 
-
+        const json_message = JSON.parse(message);
+        if (json_message.action === "pressEnter") {
+            pressEnterKey();
+        }
     });
 
     websocket.on('error', function(error) {
@@ -1461,7 +1375,13 @@ function checkTcpConnectionToServer(guild_id, discord_scum_game_chat_messages) {
             }
             discord_scum_game_chat_messages.send(`${message_for_discord_chat}`);
         } else {
-            reinitializeBotOnServer(guild_id);
+            const websocket = cache.get(`websocket_${guild_id}`);
+            if (websocket && websocket.readyState === WebSocket.OPEN) {
+                websocket.send(JSON.stringify({
+                    action: `reinitializeBot`,
+                    guild_id: guild_id
+                }));
+            }
         }
     });
 }
@@ -1905,164 +1825,9 @@ async function registerInitialSetupCommands(bot_token, bot_id, guild_id) {
     }
 }
 
-/**
- * Uses the Windows powershell command 'System.Windows.Forms.Clipboard]::SetText() to copy some text to the system clipboard
- * In the else clause, there is a debug log message if you want to uncomment that for development purposes
- * @param {string} text A string of text which will be copied to the system clipboard 
- */
-function copyToClipboard(text) {
-    const command = `powershell.exe -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Clipboard]::SetText('${text.replace(/'/g, "''")}')"`
-    exec(command, (error) => {
-        if (error) {
-            message_logger.writeLogToAzureContainer(
-                `ErrorLogs`, 
-                `There was an error copying contents to the clipboard`, 
-                guild_id, 
-                `${guild_id}-error-logs`
-            );
-        } 
-    });
-}
-
-/**
- * Uses the Windows powershell command '[System.Windows.Forms.SendKeys]::SendWait('^v') to simulate a key press sequence that pastes text.
- * In this application specifically, this function pastes text into the active window, which is SCUM.exe. 
- * If you are using this function in sequence with other ones which use powershell, you must use the sleep() function in between powershell uses so the system can 
- * change states appropriately and not cause bottlenecks. 
- */
-function pasteFromClipboard() {
-    const command = `powershell.exe -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('^v')"`
-    exec(command, (error) => {
-        if (error) {
-            message_logger.writeLogToAzureContainer(
-                `ErrorLogs`, 
-                `There was an error when pasting contents from the clipboard: ${error}`, 
-                guild_id, 
-                `${guild_id}-error-logs`
-            );
-        } 
-    });
-}
-
-/**
- * Uses the Windows powershell command '[System.Windows.Forms.SendKeys]::SendWait('{TAB}') to simulate a tab key press on the active window. In this case, the active
- * window is SCUM.exe. The tab key switches channels between 'Local', 'Global', 'Admin', and 'Squad'. Currently, this function is not in use and is here for your convenience. 
- * If you are using this function in sequence with other ones which use powershell, you must use the sleep() function in between powershell uses so the system can 
- * change states appropriately and not cause bottlenecks. 
- */
-function pressTabKey() {
-    const command = `powershell.exe -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('{TAB}')"`;
-    exec(command, (error) => {
-        if (error) {
-            message_logger.writeLogToAzureContainer(
-                `ErrorLogs`, 
-                `There was an error when pressing the tab key: ${error}`, 
-                guild_id, 
-                `${guild_id}-error-logs`
-            );
-        } 
-    });
-}
-
-/**
- * Uses the Windows powershell command '[System.Windows.Forms.SendKeys]::SendWait('t') to simulate a 't' character key press on the active window. 
- * In this case, the active window is SCUM.exe. The t character brings actives the in-game chat menu if it is not already active. 
- * If you are using this function in sequence with other ones which use powershell, you must use the sleep() function in between powershell uses so the system can 
- * change states appropriately and not cause bottlenecks. 
- */
-function pressCharacterKeyT() {
-    const command = `powershell.exe -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('t')`;
-    exec(command, (error) => {
-        if (error) {
-            message_logger.writeLogToAzureContainer(
-                `ErrorLogs`, 
-                `There was an error when pressing the t character key: ${error}`, 
-                guild_id, 
-                `${guild_id}-error-logs`
-            );
-        } 
-    });
-}
-
-/**
- * Uses the Windows powershell command '[System.Windows.Forms.SendKeys]::SendWait('{BACKSPACE}') to simulate a backspace key press on the active window. 
- * In this case, the active window is SCUM.exe. The backspace key will execute immediately after pressCharacterT(), erasing the 't' character from chat if the chat window
- * is already active. 
- * If you are using this function in sequence with other ones which use powershell, you must use the sleep() function in between powershell uses so the system can 
- * change states appropriately and not cause bottlenecks. 
- */
-function pressBackspaceKey() {
-    const command = `powershell.exe -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('{BACKSPACE}')`;
-    exec(command, (error) => {
-        if (error) {
-            message_logger.writeLogToAzureContainer(
-                `ErrorLogs`, 
-                `There was an error when pressing the backspace key`, 
-                guild_id, 
-                `${guild_id}-error-logs`
-            );
-        } 
-    });
-}
-
-/**
- * Uses the Windows powershell command '[System.Windows.Forms.SendKeys]::SendWait('{Enter}') to simulate an 'enter' character key press on the active window. 
- * In this case, the active window is SCUM.exe. The enter key sends a message in chat when pressed. 
- * If you are using this function in sequence with other ones which use powershell, you must use the sleep() function in between powershell uses so the system can 
- * change states appropriately and not cause bottlenecks. 
- */
-function pressEnterKey() {
-    const command = `powershell.exe -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('{Enter}')`;
-    exec(command, (error) => {
-        if (error) {
-            message_logger.writeLogToAzureContainer(
-                `ErrorLogs`, 
-                `There was an error when pressing the enter key`, 
-                guild_id, 
-                `${guild_id}-error-logs`
-            );
-        } 
-    });
-}
-
-/**
- * An asynchronous function which pauses the execution of the application for a specified number of milliseconds. This is required when you are using Windows powershell
- * to prevent bottlenecks, slowdowns, or other abnormal system operations. 
- * In this instance, a promise is an operation that will prevent further execution of code. 
- * @param {number} milliseconds The total number of milliseconds to halt the application execution for.
- * @returns Returns a promise that will resolve itself after a certain number of milliseconds. 
- */
-function sleep(milliseconds) {
-    return new Promise((resolve) => setTimeout(resolve, milliseconds));
-}
-
-/**
- * This function utilizes all of the above utility functions that interact with Windows via powershell. As mentioned, each time on of those functions are used, 
- * an 'await sleep()' blocker must be used for system stability. 
- * @param {string} command A string value containing the SCUM command to run in-game
- * @returns if the system cannot detect the SCUM process currently running, the function will cease execution. 
- */
-async function runCommand(command) {
-    const scumProcess = exec('powershell.exe -c "Add-Type -TypeDefinition \'using System; using System.Runtime.InteropServices; public class User32 { [DllImport(\"user32.dll\")] public static extern bool SetForegroundWindow(IntPtr hWnd); }\'"');
-    if (!scumProcess) {
-        return;
-    }  
-    await sleep(500);
-    copyToClipboard(command);
-    await sleep(500);
-    pressCharacterKeyT();
-    await sleep(500);
-    pressBackspaceKey();
-    await sleep(500);
-    pasteFromClipboard();
-    await sleep(500);
-    pressEnterKey();
-    await sleep(500);
-}
-
-async function enqueueCommand(user_chat_message_object) {
+async function enqueueCommand(user_chat_message_object, guild_id) {
     user_command_queue.enqueue(user_chat_message_object);
-    await setProcessQueueMutex();
+    await setProcessQueueMutex(guild_id);
 }
 
 /**
@@ -2087,14 +1852,14 @@ async function handleIngameSCUMChatMessages(guild_id) {
      * For each command that has been extracted from the chat log, place the command in a queue for execution
      */
     for (let i = 0; i < ftp_server_chat_log.length; i++) {
-        await enqueueCommand(ftp_server_chat_log[i]);
+        await enqueueCommand(ftp_server_chat_log[i], guild_id);
     }
 }
 
-async function setProcessQueueMutex() {
+async function setProcessQueueMutex(guild_id) {
     mutex
         .runExclusive(async () => {
-            await processQueueIfNotProcessing();
+            await processQueueIfNotProcessing(guild_id);
         })
         .then(() => {
 
@@ -2111,7 +1876,7 @@ async function setProcessQueueMutex() {
         })
 }
 
-async function processQueueIfNotProcessing(user_chat_object) {
+async function processQueueIfNotProcessing(user_chat_object, guild_id) {
     while (user_command_queue.size() > 0) { 
         /**
          * After a command has finished execution in the queue, shift the values one spot to remove the command which has been executed. Extract the command 
@@ -2123,7 +1888,6 @@ async function processQueueIfNotProcessing(user_chat_object) {
         user_chat_message_object is a key value pair. If the value for that key is undefined, continue to the next element. 
         */
         if (user_chat_message_object.value === undefined) { 
-            await runCommand(user_chat_object);
             continue;
         }
 
@@ -2164,7 +1928,7 @@ async function processQueueIfNotProcessing(user_chat_object) {
         if (command_name === 'welcomepack') {
             const welcome_pack_cost = user_account.user_welcome_pack_cost;
              if (user_account_balance < welcome_pack_cost) {
-                 await enqueueCommand(`${client_ingame_chat_name} you do not have enough money to use your welcome pack again. Use the command /balance to check your balance`);
+                 await enqueueCommand(`${client_ingame_chat_name} you do not have enough money to use your welcome pack again. Use the command /balance to check your balance`, guild_id);
                  continue;
              } else {
                  await user_repository.updateUserWelcomePackUsesByOne(user_account.user_steam_id);
@@ -2173,7 +1937,7 @@ async function processQueueIfNotProcessing(user_chat_object) {
         }
 
         if (user_account_balance < bot_item_package.package_cost) {
-            await enqueueCommand(`${client_ingame_chat_name}, you do not have enough money to use this package. Use the command /balance to check your balance.`);
+            await enqueueCommand(`${client_ingame_chat_name}, you do not have enough money to use this package. Use the command /balance to check your balance.`, guild_id);
             continue;
         }
         /**
@@ -2187,9 +1951,31 @@ async function processQueueIfNotProcessing(user_chat_object) {
         /**
          * Open the chat menu by pressing the 'T' key. If the chat is already open, press the 'Backspace key to get rid of the hanging 'T' character
          */
-        for (let i = 0; i < bot_package_items.length; ++i) {
-            await runCommand(bot_package_items[i]);
-        } 
+        // for (let i = 0; i < bot_package_items.length; ++i) {
+        //     sendCommandToClient(bot_package_items[i], guild_id);
+            
+        // } 
+        sendCommandToClient(bot_package_items, guild_id);
+    }
+}
+
+function sendCommandToClient(bot_package_items_array, websocketId) {
+
+    const websocket = cache.get(`websocket_${websocketId}`);
+
+    if (websocket && websocket.readyState === WebSocket.OPEN) {
+        websocket.send(JSON.stringify({
+            action: `runCommand`,
+            package_items: bot_package_items_array,
+            guild_id: websocketId
+        }));
+    } else {
+        message_logger.writeLogToAzureContainer(
+            `ErrorLogs`,
+            `The websocket to send commands to execute back to the client either does not exist or is not open`,
+            `${websocketId}`,
+            `${websocketId}-error-logs`
+        );
     }
 }
 

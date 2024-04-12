@@ -97,7 +97,6 @@ export default class Logger {
         // Get the current date in ISO format to use in the blob file name
         const current_iso_date = this.getCurrentDateISO();
         const blob_file_name = `${guildId}-${current_iso_date}-${logName}.log`;
-        // const blob_file_name = `test.log`;
 
         // Create BlobServiceClient from the connection string
         const blob_service_client = BlobServiceClient.fromConnectionString(storage_account_connection);

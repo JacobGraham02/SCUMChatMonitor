@@ -17,6 +17,22 @@ function isLoggedIn(request, response, next) {
     }
 }
 
+router.post('/logdata', async function(request, response) {
+    const { log_type, message, guild_id, file_type } = request.body;
+
+    try {
+        await logger.writeLogToAzureContainer(
+            `${log_type}`,
+            `${message}`,
+            `${guild_id}`,
+            `${guild_id}-${file_type}`
+        );
+        response.status(200).json({ success: true, message: `The log data has been written to the specified log file successfully`});
+    } catch (error) {
+        response.status(500).json({ success: false, message: `Failed to write data to the specified log file: ${error}`});
+    }
+});
+
 router.post('/createwebsocket', async function(request, response) {
     const { email, password } = request.body;
 
