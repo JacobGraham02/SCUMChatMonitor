@@ -160,11 +160,11 @@ export default class UserRepository {
         }
     }
 
-    async createUser(user_steam_name, user_steam_id) {
+    async createUser(user_steam_name, user_steam_id, guild_id) {
         const database_connection = await database_connection_manager.getConnection();
         try {
-            const user_collection = database_connection.collection('Users');
-
+            const user_collection = database_connection.collection(`users_${guild_id}`);
+    
             const new_user_document = {
                 user_steam_name: user_steam_name,
                 user_steam_id: user_steam_id,
@@ -173,13 +173,14 @@ export default class UserRepository {
                 user_joining_server_first_time: 0,
                 user_money: 0
             };
-
+    
+            // Use updateOne with $setOnInsert and upsert: true to ensure only new users are added
             await user_collection.updateOne(
                 { user_steam_id: user_steam_id },
                 { $setOnInsert: new_user_document },
-                { upsert: true }  
+                { upsert: true }
             );
-
+    
         } catch (error) {
             console.error(`Error creating user: ${error}`);
             throw new Error(`Error creating user: ${error}`);
@@ -230,10 +231,10 @@ export default class UserRepository {
         }
     }
 
-    async updateUserAccountBalance(user_steam_id, user_account_update_value) {
+    async updateUserAccountBalance(user_steam_id, user_account_update_value, guild_id) {
         const database_connection = await database_connection_manager.getConnection();
         try {
-            const user_collection_result = database_connection.collection('Users');
+            const user_collection_result = database_connection.collection(`${guild_id}_users`);
             const user_update_result = await user_collection_result.updateOne({ user_steam_id: user_steam_id }, { $inc: { user_money: user_account_update_value } });
             return user_update_result.modifiedCount > 0;
         } catch (error) {

@@ -1,12 +1,12 @@
 import { exec } from 'child_process';
 export default class CheckTcpConnection {
 
-    constructor(game_server_remote_address, game_server_remote_port, message_logger) {
+    game_server_address;
+    game_server_port;
+
+    constructor(game_server_remote_address, game_server_remote_port) {
         this.game_server_address = game_server_remote_address;
         this.game_server_port = game_server_remote_port;
-        this.logger = message_logger;
-        this.address = '';
-        this.port = 0;
     };
 
     /**
@@ -16,11 +16,6 @@ export default class CheckTcpConnection {
      */
     checkWindowsHasTcpConnectionToGameServer(callback) {
         exec('netstat -an', (error, stdout, stderr) => {
-            if (error) {
-                this.logger.logError(`There was an error when attempting to look for the game server IP address and port from netstat list. Error: ${stderr}`);
-                callback(false);
-                return;
-            }
             const target_connection_string = `${this.game_server_address}:${this.game_server_port}`;
             const target_connection_string_regex = new RegExp(target_connection_string);
             if (target_connection_string_regex.test(stdout)) {
@@ -38,11 +33,6 @@ export default class CheckTcpConnection {
      */
     checkWindowsCanPingGameServer(callback) {
         exec(`ping ${this.game_server_address}`, (error, stdout, stderr) => {
-            if (error) {
-                this.logger.logError(`There was an error when attempting to ping the game server IP address. Error: ${error}`);
-                callback(false);
-                return;
-            }
             const target_ping_reply_string = `Reply from ${this.game_server_address}:`;
             const target_ping_reply_string_regex = new RegExp(target_ping_reply_string);
             if (target_ping_reply_string_regex.test(stdout)) {
