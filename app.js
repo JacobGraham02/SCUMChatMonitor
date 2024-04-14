@@ -24,7 +24,6 @@ import myEmitter from './utils/EventEmitter.js'
 import Queue from './utils/Queue.js'
 import Logger from './utils/Logger.js';
 import ServerInfoCommand from './api/battlemetrics/ServerInfoCommand.js';
-import CheckTcpConnection from './utils/CheckTcpConnection.js';
 import { hashPassword, validatePassword } from './modules/hashAndValidatePassword.js';
 import UserRepository from './database/MongoDb/UserRepository.js';
 import BotRepository from './database/MongoDb/BotRepository.js';
@@ -803,19 +802,6 @@ function startFtpFileProcessingIntervalChatLog(guild_id) {
     user_intervals.set(`ftp_chat_file_interval_${guild_id}`, ftp_chat_file_interval);
 }
 
-function startCheckTcpConnectionToServerInterval(guild_id, channel_for_server_info) {
-    if (user_intervals.has(`check_tcp_connection_to_server_${guild_id}`)) {
-        clearInterval(user_intervals.get(`check_tcp_connection_to_server_${guild_id}`));
-        user_intervals.delete(`check_tcp_connection_to_server_${guild_id}`);
-    }
-
-    const startCheckTcpConnectionToServerInterval = setInterval(function() {
-        checkTcpConnectionToServer(guild_id, channel_for_server_info);
-    }, gportal_ftp_server_log_interval_seconds["60"]);
-
-    user_intervals.set(`check_tcp_connection_to_server_${guild_id}`, startCheckTcpConnectionToServerInterval);
-}
-
 /**
  * Start an interval of reading login log messages from gportal which repeats every 15 seconds. Clear any previously-set intervals
  */
@@ -1247,46 +1233,10 @@ async function sendNewPlayerLoginMessagesToDiscord(player_ipv4_addresses, user_s
     }
 }
 
-function checkTcpConnectionToServer(guild_id, discord_server_online_messages) {
-    const tcp_connection_checker = cache.get(`tcp_connection_checker_${guild_id}`);
-
-    if (!tcp_connection_checker) {
-        message_logger.writeLogToAzureContainer(
-            `ErrorLogs`,
-            `The TCP connection check to the server could not be performed for ${guild_id}`,
-            `${guild_id}`,
-            `${guild_id}-error-logs`
-        );
-        return;
-    }
-
-    let message_for_discord_chat = '';
-    tcp_connection_checker.checkWindowsHasTcpConnectionToGameServer((game_connection_exists) => {
-        if (game_connection_exists) {
-            message_for_discord_chat = 'The bot is online and connected to the SCUM server';
-            if (!ftp_connection_client) {
-                message_for_discord_chat = 'The bot is having FTP connection issues';
-            }
-            discord_server_online_messages.send(`${message_for_discord_chat}`);
-        } else {
-            const websocket = cache.get(`websocket_${guild_id}`);
-            if (websocket && websocket.readyState === WebSocket.OPEN) {
-                websocket.send(JSON.stringify({
-                    action: `reinitializeBot`,
-                    guild_id: guild_id
-                }));
-            }
-        }
-    });
-}
-
 function startServerFunctionalityIntervals(guild_id, ftp_server_data) {
-    const channel_for_server_info = cache.get(`discord_channel_for_server_info_${guild_id}`);
-
     startFtpFileProcessingIntervalLoginLog(guild_id);
     startFtpFileProcessingIntervalChatLog(guild_id);
     establishFtpConnectionToGportal(guild_id, ftp_server_data);
-    startCheckTcpConnectionToServerInterval(guild_id, channel_for_server_info);
     startCheckLocalServerTimeInterval(guild_id);
 }
 
@@ -1297,23 +1247,10 @@ function stopServerFunctionalityIntervals(guild_id) {
 }
 
 function checkIfGameServerOnline(guild_id, ftp_server_data, game_server_ip, game_server_port, bot_status) {
-    const tcp_connection_checker = cache.get(`tcp_connection_checker_${guild_id}`);
-
-    if (!tcp_connection_checker) {
-        message_logger.writeLogToAzureContainer(
-            `ErrorLogs`,
-            `The TCP connection check to the server could not be performed for ${guild_id}`,
-            `${guild_id}`,
-            `${guild_id}-error-logs`
-        );
-        return;
-    }
-
-    sendBotEnableOrDisable(bot_status, guild_id, game_server_ip, game_server_port, ftp_server_data);
+    botEnabledOrDisabled(bot_status, guild_id, game_server_ip, game_server_port, ftp_server_data);
 }
 
-function sendBotEnableOrDisable(bot_status, websocketId, game_server_ip, game_server_port, ftp_server_data) {
-
+function botEnabledOrDisabled(bot_status, websocketId, game_server_ip, game_server_port, ftp_server_data) {
     const websocket = cache.get(`websocket_${websocketId}`);
 
     if (websocket && websocket.readyState === WebSocket.OPEN) {
@@ -1334,7 +1271,6 @@ function sendBotEnableOrDisable(bot_status, websocketId, game_server_ip, game_se
         );
     }
 }
-
 
 /**
  * The discord API triggers an event called 'ready' when the discord bot is ready to respond to commands and other input. 
@@ -1415,8 +1351,6 @@ client_instance.on('interactionCreate',  async (interaction) => {
                 const ftp_server_username = database_user.ftp_server_username;
                 const game_server_address = database_user.game_server_ipv4_address;
                 const game_server_port = database_user.game_server_port;
-        
-                const tcp_connection_checker = new CheckTcpConnection(game_server_address, game_server_port);
         
                 const user_command_queue = new Queue();
         
