@@ -29,11 +29,7 @@ export default class BotRepository {
             bot_email: bot_information.bot_email,
             guild_id: bot_information.guild_id,
         };
-    
-        if (!bot_information.bot_id) {
-            new_bot_document.bot_id = randomUUID();
-        }
-    
+
         try {
             const bot_collection = database_connection.collection('bot');
     
@@ -52,15 +48,12 @@ export default class BotRepository {
 
     async createBotDiscordData(discord_server_data) {
         const database_connection = await database_connection_manager.getConnection();
-        console.log(discord_server_data.guild_id);
         const new_discord_data_document = {
             scum_bot_commands_channel_id: discord_server_data.discord_bot_commands_channel_id,
             scum_ingame_chat_channel_id: discord_server_data.discord_ingame_chat_channel_id,
             scum_ingame_logins_channel_id: discord_server_data.discord_logins_chat_channel_id,
             scum_new_player_joins_channel_id: discord_server_data.discord_new_player_chat_channel_id,
-            scum_battlemetrics_server_id: discord_server_data.discord_battlemetrics_server_id,
             scum_server_info_channel_id: discord_server_data.discord_server_info_button_channel_id,
-            scum_server_online_channel_id: discord_server_data.discord_server_online_channel_id
         };
 
         try {
@@ -68,6 +61,28 @@ export default class BotRepository {
 
             await bot_discord_data_collection.updateOne(
                 { guild_id: discord_server_data.guild_id },
+                { $set: new_discord_data_document },
+                { upsert: true }
+            );
+        } catch (error) {
+            console.error(`There was an error when attempting to insert Discord channel id(s) into the bot. Please inform the server administrator of this error: ${error}`);
+            throw new Error(`There was an error when attempting to insert Discord channel id(s) into the bot. Please inform the server administrator of this error: ${error}`);
+        } finally {
+            await this.releaseConnectionSafely(database_connection);
+        }
+    }
+
+    async createBotBattlemetricsData(battlemetrics_server_info) {
+        const database_connection = await database_connection_manager.getConnection();
+        const new_discord_data_document = {
+            scum_battlemetrics_server_id: battlemetrics_server_info.discord_battlemetrics_server_id
+        };
+
+        try {
+            const bot_discord_data_collection = database_connection.collection('bot');
+
+            await bot_discord_data_collection.updateOne(
+                { guild_id: battlemetrics_server_info.guild_id },
                 { $set: new_discord_data_document },
                 { upsert: true }
             );
@@ -103,7 +118,7 @@ export default class BotRepository {
             await this.releaseConnectionSafely(database_connection);
         }
     }
-    
+
     async createBotFtpServerData(ftp_server_data) {
         const database_connection = await database_connection_manager.getConnection();
         const new_ftp_server_data_document = {

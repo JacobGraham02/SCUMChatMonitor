@@ -18,7 +18,7 @@ import { Strategy as LocalStrategy } from 'passport-local';
 import fs from 'fs';
 import FTPClient from 'ftp';
 import MongoStore from 'connect-mongo';
-import { Client, Collection, GatewayIntentBits, REST, Routes, Events, ChannelType } from 'discord.js';
+import { Client, Collection, GatewayIntentBits, REST, Routes, Events, ChannelType, ButtonBuilder, ButtonStyle, ActionRowBuilder } from 'discord.js';
 import { EmbedBuilder } from 'discord.js';
 import myEmitter from './utils/EventEmitter.js'
 import Queue from './utils/Queue.js'
@@ -222,7 +222,7 @@ async function determinePlayerLoginSessionMoney(guild_id, logs) {
 }
 
 async function createNewFtpClient(guild_id, ftp_server_data) {
-    gportal_ftp_config = {
+    const gportal_ftp_config = {
         host: ftp_server_data.ftp_server_host,
         port: ftp_server_data.ftp_server_port,
         user: ftp_server_data.ftp_server_user,
@@ -279,15 +279,12 @@ async function createNewFtpClient(guild_id, ftp_server_data) {
 }
 
 export async function establishFtpConnectionToGportal(guild_id, ftp_server_data) {
-    /**
-    GPortal FTP server credentials with a timeout time of 60 seconds in case the server is busy or slow. 
-    */
-    const ftp_server_configuration = cache.get(`ftp_server_configuration_${guild_id}`);
+    const ftp_client = cache.get(`ftp_server_configuration_${guild_id}`);
 
-    if (!ftp_server_configuration) {
+    if (!ftp_client) {
         const ftp_connection_client = createNewFtpClient(guild_id, ftp_server_data);
         cache.set(`ftp_server_configuration_${guild_id}`, ftp_connection_client);
-    } 
+    }
 }
 
 /**
@@ -947,7 +944,7 @@ const verifyCredentialsCallback = async (email, password, done) => {
         z_coordinate: bot_user_spawn_z_coordinate,
     };
 
-    custom_logger.writeLogToAzureContainer(
+    message_logger.writeLogToAzureContainer(
         `InfoLogs`, 
         `The user with guild id ${bot_user_guild_id} with username ${bot_user_username} has just logged in`,
         `${bot_user_guild_id}`,
@@ -1001,11 +998,14 @@ web_socket_server_instance.on('connection', function(websocket, request) {
     
     cache.set(`websocket_${websocket_id}`, websocket);
 
+    console.log(websocket);
+
     websocket.on('message', function(message) { 
         const json_message = JSON.parse(message);
         if (json_message.action === "pressEnter") {
             pressEnterKey();
         }
+
         if (json_message.action === "statusUpdate" && json_message.connectedToServer && json_message.serverOnline) {
             const json_message_guild_id = json_message.guild_id;
             const json_message_ftp_server_data = json_message.ftp_server_data;
@@ -1246,18 +1246,13 @@ function stopServerFunctionalityIntervals(guild_id) {
     stopCheckLocalServerTimeInterval(guild_id);
 }
 
-function checkIfGameServerOnline(guild_id, ftp_server_data, game_server_ip, game_server_port, bot_status) {
-    botEnabledOrDisabled(bot_status, guild_id, game_server_ip, game_server_port, ftp_server_data);
-}
-
-function botEnabledOrDisabled(bot_status, websocketId, game_server_ip, game_server_port, ftp_server_data) {
-    const websocket = cache.get(`websocket_${websocketId}`);
+function checkIfGameServerOnline(bot_status, guild_id, ftp_server_data, game_server_ip, game_server_port) {
+    const websocket = cache.get(`websocket_${guild_id}`);
 
     if (websocket && websocket.readyState === WebSocket.OPEN) {
         websocket.send(JSON.stringify({
             action: `${bot_status}`,
-            package_items: bot_package_items_array,
-            guild_id: websocketId,
+            guild_id: guild_id,
             game_server_ip: game_server_ip,
             game_server_port: game_server_port,
             ftp_server_data: ftp_server_data,
@@ -1265,7 +1260,7 @@ function botEnabledOrDisabled(bot_status, websocketId, game_server_ip, game_serv
     } else {
         message_logger.writeLogToAzureContainer(
             `ErrorLogs`,
-            `The websocket to send commands to execute back to the client either does not exist or is not open`,
+            `The websocket to senable or disable the bot either does not exist or is not open`,
             `${websocketId}`,
             `${websocketId}-error-logs`
         );
@@ -1283,53 +1278,6 @@ client_instance.on('ready', () => {
 });
 
 /**
- * Checks if the contents of arrayOne is equal arrayTwo, and the length of arrayOne is equal to arrayTwo
- * We only have to iterate over one array to check the contents of both because the arrays being equal naturally assumes that they are both the 
- * same length with the same contents
- * @param {Array} arrayOne
- * @param {Array} arrayTwo
- * @returns
- */
-function arraysEqual(arrayOne, arrayTwo) { 
-    if (arrayOne.length !== arrayTwo.length) {
-        return false;
-    }
-    for (let i = 0; i < arrayOne.length; i++){
-        if (arrayOne[i] !== arrayTwo[i]) return false;
-    }
-    return true;
-}
-
-async function loadCommandFilesIntoCollection(guild_id) {
-    client_instance.commands = new Collection();
-    client_instance.discord_commands = new Collection();
-
-    const commands_folder_path = path.join(__dirname, "../commands/discordcommands");
-    const filtered_commands_files = fs
-        .readdirSync(commands_folder_path)
-        .filter((file) => file !== "deploy-commands.js" && file.endsWith(".js"));
-
-    for (const command_file of filtered_commands_files) {
-        const command_file_path = path.join(commands_folder_path, command_file);
-        try {
-            const commandModule = await import(command_file_path); // Dynamic import for ES Module
-            const command_object = commandModule.default(); // Assuming default export is a function that returns the command object
-            client_instance.commands.set(command_object.data.name, commandModule);
-            client_instance.discord_commands.set(command_object.data.name, command_object);
-        } catch (error) {
-            message_logger.writeLogToAzureContainer(
-                `ErrorLogs`,
-                `There was an error when attempting to import the bot command file ${command_file}: ${error}`,
-                guild_id,
-                `${guild_id}`
-            )
-            throw error;
-        }
-    }
-}
-
-
-/**
 * When the discord API triggers the interactionCreate event, an asynchronous function is executed with the interaction passed in as a parameter value. 
 * If the interaction is not a command, the function does not continue executing.
 * @param {any} interaction 
@@ -1338,8 +1286,6 @@ async function loadCommandFilesIntoCollection(guild_id) {
 // cache.set(`battlemetrics_server_info_instance_${guild_id}`, battlemetrics_server_info_instance);
 client_instance.on('interactionCreate',  async (interaction) => {
     if (interaction.isButton()) {
-        const battlemetrics_server_info = cache.get(`battlemetrics_server_info_instance_${interaction.guild.id}`);
-
         if (interaction.customId === `enablebotbutton`) {
             const database_users = await bot_repository.getAllBotData();
 
@@ -1360,22 +1306,15 @@ client_instance.on('interactionCreate',  async (interaction) => {
                     ftp_server_password: ftp_server_password,
                     ftp_server_port: ftp_server_port
                 };
-                
-                const websocket = cache.get(`websocket_${interaction.guild.id}`);
-                if (websocket && websocket.readyState === WebSocket.OPEN) {
-                    websocket.send(JSON.stringify({
-                        action: `enablebot`,
-                        guild_id: interaction.guild.id
-                    }));
-                }
-                cache.set(`tcp_connection_checker_${guild_id}`, tcp_connection_checker);
+
                 cache.set(`user_command_queue_${guild_id}`, user_command_queue);
         
-                checkIfGameServerOnline(guild_id, ftp_server_data, game_server_address, game_server_port, `enabled`);
+                checkIfGameServerOnline(`enabled`, guild_id, ftp_server_data, game_server_address, game_server_port);
             }
         }
 
         if (interaction.customId === `serverinformationbutton`) {
+            const battlemetrics_server_info = cache.get(`battlemetrics_server_info_instance_${interaction.guild.id}`);
             const battlemetrics_server_data_object = await battlemetrics_server_info.fetchJsonApiDataFromBattlemetrics();
             const battlemetrics_server_json_data = battlemetrics_server_data_object.data.attributes;
             const battlemetrics_server_id = battlemetrics_server_json_data.id;
@@ -1474,36 +1413,19 @@ client_instance.on('guildCreate', async (guild) => {
     }
 
     if (bot_discord_information) {
-        const discord_channel_id_for_chat = bot_information.discord_ingame_chat_channel_id;
-        const discord_channel_id_for_logins = bot_information.discord_logins_chat_channel_id;
-        const discord_channel_id_for_new_player_joins = bot_information.discord_new_player_chat_channel_id;
-        const discord_channel_id_for_server_info_button = bot_information.discord_server_info_button_channel_id;
-        const discord_channel_id_for_server_online = bot_information.discord_server_online_channel_id;
-        const discord_channel_id_for_bot_commands = bot_information.discord_bot_commands_channel_id;
+        const discord_channel_id_for_chat = bot_discord_information.scum_ingame_chat_channel_id;
+        const discord_channel_id_for_logins = bot_discord_information.scum_ingame_logins_channel_id;
+        const discord_channel_id_for_new_player_joins = bot_discord_information.scum_new_player_joins_channel_id;
+        const discord_channel_id_for_server_info_button = bot_discord_information.scum_server_info_channel_id;
+        const discord_channel_id_for_server_online = bot_discord_information.scum_server_online_channel_id;
+        const discord_channel_id_for_bot_commands = bot_discord_information.scum_bot_commands_channel_id;
 
-        const teleport_command_prefix = bot_information.command_prefix;
-        const teleport_command_x_coordinate = bot_information.x_coordinate;
-        const teleport_command_y_coordinate = bot_information.y_coordinate;
-        const teleport_command_z_coordinate = bot_information.z_coordinate;
+        const battlemetrics_server_id = bot_discord_information.scum_battlemetrics_server_id;
 
-        const discord_channel_for_chat = guild.channels.cache.get(discord_channel_id_for_chat);
-        const discord_channel_for_logins = guild.channels.cache.get(discord_channel_id_for_logins);
-        const discord_channel_for_new_joins = guild.channels.cache.get(discord_channel_id_for_new_player_joins);
-        const discord_channel_for_server_info = guild.channels.cache.get(discord_channel_id_for_server_info_button);
-        const discord_channel_for_bot_commands = guild.channels.cache.get(discord_channel_id_for_server_online);
-        const discord_channel_for_server_online = guild.channels.cache.get(discord_channel_id_for_bot_commands);
-
-        cache.set(`discord_channel_for_chat_${guild_id}`, discord_channel_for_chat);
-        cache.set(`discord_channel_for_logins_${guild_id}`, discord_channel_for_logins);
-        cache.set(`discord_channel_for_new_joins_${guild_id}`, discord_channel_for_new_joins);
-        cache.set(`discord_channel_for_server_info_${guild_id}`, discord_channel_for_server_info);
-        cache.set(`discord_channel_for_bot_commands_${guild_id}`, discord_channel_for_bot_commands);
-        cache.set(`discord_channel_for_server_online_${guild_id}`, discord_channel_for_server_online);
-        
-        cache.set(`teleport_command_prefix_${guild_id}`, teleport_command_prefix);
-        cache.set(`teleport_command_x_coordinate_${guild_id}`, teleport_command_x_coordinate);
-        cache.set(`teleport_command_y_coordinate_${guild_id}`, teleport_command_y_coordinate);
-        cache.set(`teleport_command_z_coordinate_${guild_id}`, teleport_command_z_coordinate);
+        const teleport_command_prefix = bot_discord_information.command_prefix;
+        const teleport_command_x_coordinate = bot_discord_information.x_coordinate;
+        const teleport_command_y_coordinate = bot_discord_information.y_coordinate;
+        const teleport_command_z_coordinate = bot_discord_information.z_coordinate;
 
         const server_info_button = new ButtonBuilder()
     	.setCustomId('serverinformationbutton')
@@ -1524,11 +1446,43 @@ client_instance.on('guildCreate', async (guild) => {
             .addComponents(server_info_button)
             .addComponents(enable_bot_button)
             .addComponents(disable_bot_button)
-        
-        discord_channel_for_server_info.send({
-            content: "Click one of the buttons below to control the bot",
-            components: [button_row]
-        });
+
+        if (battlemetrics_server_id) {
+            const battlemetrics_server_info_instance = new ServerInfoCommand(battlemetrics_server_id);
+            cache.set(`battlemetrics_server_info_instance_${guild_id}`, battlemetrics_server_info_instance);
+        }
+        if (discord_channel_id_for_chat) {
+            const discord_channel_for_chat = guild.channels.cache.get(discord_channel_id_for_chat);
+            cache.set(`discord_channel_for_chat_${guild_id}`, discord_channel_for_chat);
+        }
+        if (discord_channel_id_for_logins) {
+            const discord_channel_for_logins = guild.channels.cache.get(discord_channel_id_for_logins);
+            cache.set(`discord_channel_for_logins_${guild_id}`, discord_channel_for_logins);
+        }
+        if (discord_channel_id_for_new_player_joins) {
+            const discord_channel_for_new_joins = guild.channels.cache.get(discord_channel_id_for_new_player_joins);
+            cache.set(`discord_channel_for_new_joins_${guild_id}`, discord_channel_for_new_joins);
+        }
+        if (discord_channel_id_for_server_info_button) {
+            const discord_channel_for_server_info = guild.channels.cache.get(discord_channel_id_for_server_info_button);
+            discord_channel_for_server_info.send({
+                content: "Click one of the buttons below to control the bot",
+                components: [button_row]
+            });
+            cache.set(`discord_channel_for_server_info_${guild_id}`, discord_channel_for_server_info);
+        }
+        if (discord_channel_id_for_server_online) {
+            const discord_channel_for_server_online = guild.channels.cache.get(discord_channel_id_for_bot_commands);
+            cache.set(`discord_channel_for_server_online_${guild_id}`, discord_channel_for_server_online);
+        }
+        if (discord_channel_id_for_bot_commands) {
+            const discord_channel_for_bot_commands = guild.channels.cache.get(discord_channel_id_for_server_online);
+            cache.set(`discord_channel_for_bot_commands_${guild_id}`, discord_channel_for_bot_commands);
+        }
+        cache.set(`teleport_command_prefix_${guild_id}`, teleport_command_prefix);
+        cache.set(`teleport_command_x_coordinate_${guild_id}`, teleport_command_x_coordinate);
+        cache.set(`teleport_command_y_coordinate_${guild_id}`, teleport_command_y_coordinate);
+        cache.set(`teleport_command_z_coordinate_${guild_id}`, teleport_command_z_coordinate);
     }
 });
 
@@ -1562,35 +1516,30 @@ client_instance.on(Events.InteractionCreate, async interaction => {
                 throw new Error(`There was an error when attempting to create a bot for you. Please inform the server administrator of this error: ${error}`);
             }
         } 
-        else if (interaction.customId === `channelIdsInputModal`) {
-            const ingame_chat_channel_id = interaction.fields.getTextInputValue(`ingameChatChannelInput`);
-            const logins_chat_channel_id = interaction.fields.getTextInputValue(`loginsChannelInput`);
-            const new_player_joins_channel_id = interaction.fields.getTextInputValue(`newPlayerJoinsChannelInput`);
+
+        else if (interaction.customId === `battlemetricsServerIdModal`) {
             const battlemetrics_server_id = interaction.fields.getTextInputValue(`battlemetricsServerInput`);
             const battlemetrics_server_info_instance = new ServerInfoCommand(battlemetrics_server_id);
-            const server_info_button_channel_id = interaction.fields.getTextInputValue(`serverInfoButtonInput`);
             cache.set(`battlemetrics_server_info_instance_${guild_id}`, battlemetrics_server_info_instance);
 
             const battlemetrics_server_info = cache.get(`battlemetrics_server_info_instance_${guild_id}`);
+
             if (!battlemetrics_server_info) {
-                cache.set(`battlemetrics_server_info_instance_${guild_id}`);
+                cache.set(`battlemetrics_server_info_instance_${guild_id}`, battlemetrics_server_info_instance);
             }
 
-            const discord_channel_ids = {
-                discord_ingame_chat_channel_id: ingame_chat_channel_id,
-                discord_logins_chat_channel_id: logins_chat_channel_id,
-                discord_new_player_chat_channel_id: new_player_joins_channel_id,
-                discord_batlemetrics_server_id: battlemetrics_data_channel_id,
-                discord_server_info_button_channel_id: server_info_button_channel_id,
+            const server_battlemetrics_data = {
+                discord_battlemetrics_server_id: battlemetrics_server_id,
                 guild_id: guild_id
             }
 
             try {
-                await bot_repository.createBotDiscordData(discord_channel_ids);
+                await bot_repository.createBotBattlemetricsData(server_battlemetrics_data);
             } catch (error) {
                 throw new Error(`There was an error when attempting to update your bot with Discord channel data. Please inform the server administrator of this error: ${error}`);
             }
         } 
+
         else if (interaction.customId === `gameServerInputModal`) {
             const ipv4_address = interaction.fields.getTextInputValue(`ipv4AddressInput`);
             const port = interaction.fields.getTextInputValue(`portInput`);
@@ -1614,10 +1563,10 @@ client_instance.on(Events.InteractionCreate, async interaction => {
             const password = interaction.fields.getTextInputValue(`passwordInput`);
 
             const ftp_server_data = {
-                server_hostname: ipv4_address,
-                server_port: port,
-                server_username: username,
-                server_password: password,
+                ftp_server_hostname: ipv4_address,
+                ftp_server_port: port,
+                ftp_server_username: username,
+                ftp_server_password: password,
                 guild_id: guild_id
             }
 
@@ -1630,18 +1579,18 @@ client_instance.on(Events.InteractionCreate, async interaction => {
   
       if (interaction.customId === `userDataInputModal`) {
         await interaction.reply({content: `Your submission for creating new user data with your bot was successful`, ephemeral: true});
-      } else if (interaction.customId === `channelIdsInputModal`) {
-        await interaction.reply({content: `Your submission for creating new channel ids with your bot was successful`, ephemeral: true});
+      } else if (interaction.customId === `battlemetricsServerIdModal`) {
+        await interaction.reply({content: `Your submission for creating a new battlemetrics server id with your bot was successful`, ephemeral: true});
       } else if (interaction.customId === `gameServerInputModal`) {
         await interaction.reply({content: `Your submission for creating new game server data with your bot was successful`, ephemeral: true});
-      } else if (interaction.customid === `ftpServerInputModal`) {
+      } else if (interaction.customId === `ftpServerInputModal`) {
         await interaction.reply({content: `Your submission for creating new ftp server data with your bot was successful`, ephemeral: true});
       }
     }
   });
 
 async function createBotCategoryAndChannels(guild) {
-    const discord_channel_ids = {};
+    let discord_channel_ids = [];
     try {
         const category_creation_response = await guild.channels.create({
             name: `Chat monitor bot`,
@@ -1675,11 +1624,12 @@ async function createBotCategoryAndChannels(guild) {
                     parent: category_creation_response.id
                 });
                 const mongodb_channel_name = mongodb_channel_names[i];
+                discord_channel_ids["guild_id"] = guild.id;
                 discord_channel_ids[mongodb_channel_name] = created_channel.id;
             }
         }
 
-        bot_repository.createBotDiscordData(guild.id, discord_channel_ids);
+        bot_repository.createBotDiscordData(discord_channel_ids);
     } catch (error) {
         console.error(`There was an error when setting up the bot channels. Please inform the server administrator of this error: ${error}`);
         throw new Error(`There was an error when setting up the bot channels. Please inform the server administrator of this error: ${error}`);

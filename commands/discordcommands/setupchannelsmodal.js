@@ -22,35 +22,8 @@ export default function() {
             }
 
             const modal = new ModalBuilder()
-                .setCustomId(`channelIdsInputModal`)
-                .setTitle(`Enter channel id data below where each id contains 19 numbers from 0 to 9`)
-
-            const ingameChatIdInput = new TextInputBuilder()
-                .setCustomId(`ingameChatChannelInput`)
-                .setLabel(`Game chat channel id`)
-                .setRequired(true)
-                .setMinLength(19)
-                .setMaxLength(19)
-                .setPlaceholder(`5893640123478915762`)
-                .setStyle(TextInputStyle.Short)
-
-            const loginsIdInput = new TextInputBuilder()
-                .setCustomId(`loginsChannelInput`)
-                .setLabel(`Game log ins and log outs channel id`)
-                .setRequired(true)
-                .setMinLength(19)
-                .setMaxLength(19)
-                .setPlaceholder(`5893640123478915762`)
-                .setStyle(TextInputStyle.Short)
-
-            const newPlayerJoinsIdInput = new TextInputBuilder()
-                .setCustomId(`newPlayerJoinsChannelInput`)
-                .setLabel(`Game new player joins channel id`)
-                .setRequired(true)
-                .setMinLength(19)
-                .setMaxLength(19)
-                .setPlaceholder(`5893640123478915762`)
-                .setStyle(TextInputStyle.Short)
+                .setCustomId(`battlemetricsServerIdModal`)
+                .setTitle(`Enter battlemetrics server id below:`)
 
             const battlemetricsServerIdInput = new TextInputBuilder()
                 .setCustomId(`battlemetricsServerInput`)
@@ -59,41 +32,16 @@ export default function() {
                 .setPlaceholder(`24767557`)
                 .setStyle(TextInputStyle.Short)
 
-            const serverInfoButtonIdInput = new TextInputBuilder()
-                .setCustomId(`serverInfoButtonInput`)
-                .setLabel(`Game server information button channel id`)
-                .setRequired(true)
-                .setMinLength(19)
-                .setMaxLength(19)
-                .setPlaceholder(`5893640123478915762`)
-                .setStyle(TextInputStyle.Short)
-
             if (bot_data) {
-                if (bot_data.scum_ingame_chat_channel_id) {
-                    ingameChatIdInput.setValue(bot_data.scum_ingame_chat_channel_id);
-                }
-                if (bot_data.scum_ingame_logins_channel_id) {
-                    loginsIdInput.setValue(bot_data.scum_ingame_logins_channel_id);
-                }
-                if (bot_data.scum_new_player_joins_channel_id) {
-                    newPlayerJoinsIdInput.setValue(bot_data.scum_new_player_joins_channel_id);
-                }
                 if (bot_data.scum_battlemetrics_server_id) {
                     battlemetricsServerIdInput.setValue(bot_data.scum_battlemetrics_server_id);
                 }
-                if (bot_data.scum_server_info_channel_id) {
-                    serverInfoButtonIdInput.setValue(bot_data.scum_server_info_channel_id);
-                }
             }
         
-            const secondActionRow = new ActionRowBuilder().addComponents(ingameChatIdInput);
-            const thirdActionRow = new ActionRowBuilder().addComponents(loginsIdInput);
-            const fourthActionRow = new ActionRowBuilder().addComponents(newPlayerJoinsIdInput);
-            const fifthActionRow = new ActionRowBuilder().addComponents(battlemetricsServerIdInput);
-            const sixthActionRow = new ActionRowBuilder().addComponents(serverInfoButtonIdInput);
+            const firstActionRow = new ActionRowBuilder().addComponents(battlemetricsServerIdInput);
 
 
-            modal.addComponents(secondActionRow, thirdActionRow, fourthActionRow, fifthActionRow, sixthActionRow);
+            modal.addComponents(firstActionRow);
             
             try {
                 await interaction.showModal(modal);

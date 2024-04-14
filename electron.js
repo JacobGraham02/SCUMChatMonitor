@@ -39,7 +39,6 @@ async function createWebSocketConnection(websocket_id) {
 
     websocket.on('message', async (message) => {
         const json_message_data = JSON.parse(message);
-        console.log(`Test message data: ${message.data}`);
         if (json_message_data.action === `runCommand` && json_message_data.package_items && json_message_data.guild_id) {
             try {
                 if (Array.isArray(json_message_data.package_items)) {
@@ -68,6 +67,17 @@ async function createWebSocketConnection(websocket_id) {
 
             const game_server_ip = json_message_data.game_server_ip;
             const game_server_port = json_message_data.game_server_port;
+            // const ftp_server_host = json_message_data.ftp_server_data.ftp_server_host;
+            // const ftp_server_username = json_message_data.ftp_server_data.ftp_server_username;
+            // const ftp_server_password = json_message_data.ftp_server_data.ftp_server_password;
+            // const ftp_server_port = json_message_data.ftp_server_data.ftp_server_port;
+
+            // const ftp_server_data = {
+            //     ftp_server_host: ftp_server_host,
+            //     ftp_server_username: ftp_server_username,
+            //     ftp_server_password: ftp_server_password,
+            //     ftp_server_port: ftp_server_port
+            // }
 
             const check_server_online_and_bot_connected_interval = setInterval(async function() {
                 try {
@@ -98,7 +108,7 @@ async function createWebSocketConnection(websocket_id) {
         && json_message_data.game_server_ip && json_message_data.game_server_port
         && json_message_data.ftp_server_data && json_message_data.channel_for_server_info) {
             if (intervals.has(`enable_game_server_checks_interval`)) {
-                clearInterval(user_intervals.get(`enable_game_server_checks_interval`));
+                clearInterval(intervals.get(`enable_game_server_checks_interval`));
                 intervals.delete(`enable_game_server_checks_interval`);
             }
         }
@@ -122,6 +132,7 @@ async function createWebSocketConnection(websocket_id) {
 * @returns {Promise<boolean>} A promise that resolves to a boolean indicating the connection status.
 */
 async function checkWindowsHasTcpConnectionToGameServer(game_server_address, game_server_port) {
+    console.log(`Windows is connected to game server`);
     return new Promise((resolve, reject) => {
         exec(`netstat -an | find "${game_server_address}:${game_server_port}"`, (error, stdout, stderr) => {
             if (error) reject(error);
@@ -136,8 +147,9 @@ async function checkWindowsHasTcpConnectionToGameServer(game_server_address, gam
 * @param {boolean} callback 
 */
 async function checkWindowsCanPingGameServer(game_server_address) {
+    console.log(`Windows can ping game server`);
     return new Promise((resolve, reject) => {
-        exec(`ping -n 1 ${game_server_address}`, (error, stdout, stderr) => {
+        exec(`ping ${game_server_address}`, (error, stdout, stderr) => {
             if (error) reject(error);
             resolve(stdout.includes('Reply from ' + game_server_address));
         });
