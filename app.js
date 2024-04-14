@@ -15,7 +15,6 @@ import session from 'express-session';
 import crypto from 'crypto';
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
-import { exec } from 'child_process';
 import fs from 'fs';
 import FTPClient from 'ftp';
 import MongoStore from 'connect-mongo';
@@ -1021,6 +1020,17 @@ web_socket_server_instance.on('connection', function(websocket, request) {
         if (json_message.action === "pressEnter") {
             pressEnterKey();
         }
+        if (json_message.action === "statusUpdate" && json_message.connectedToServer && json_message.serverOnline) {
+            const json_message_guild_id = json_message.guild_id;
+            const json_message_ftp_server_data = json_message.ftp_server_data;
+
+            startServerFunctionalityIntervals(json_message_guild_id, json_message_ftp_server_data)
+        } 
+        if (json_message.action === "statusUpdate" && !(json_message.connectedToServer || json_message.serverOnline)) {
+            const json_message_guild_id = json_message.guild_id;
+            
+            stopServerFunctionalityIntervals(json_message_guild_id);
+        }
     });
 
     websocket.on('error', function(error) {
@@ -1270,7 +1280,23 @@ function checkTcpConnectionToServer(guild_id, discord_server_online_messages) {
     });
 }
 
-function checkIfGameServerOnline(guild_id, ftp_server_data) {
+function startServerFunctionalityIntervals(guild_id, ftp_server_data) {
+    const channel_for_server_info = cache.get(`discord_channel_for_server_info_${guild_id}`);
+
+    startFtpFileProcessingIntervalLoginLog(guild_id);
+    startFtpFileProcessingIntervalChatLog(guild_id);
+    establishFtpConnectionToGportal(guild_id, ftp_server_data);
+    startCheckTcpConnectionToServerInterval(guild_id, channel_for_server_info);
+    startCheckLocalServerTimeInterval(guild_id);
+}
+
+function stopServerFunctionalityIntervals(guild_id) {
+    stopFileProcessingIntervalChatLog(guild_id);
+    stopFileProcessingIntervalLoginLog(guild_id);
+    stopCheckLocalServerTimeInterval(guild_id);
+}
+
+function checkIfGameServerOnline(guild_id, ftp_server_data, game_server_ip, game_server_port, bot_status) {
     const tcp_connection_checker = cache.get(`tcp_connection_checker_${guild_id}`);
 
     if (!tcp_connection_checker) {
@@ -1283,19 +1309,32 @@ function checkIfGameServerOnline(guild_id, ftp_server_data) {
         return;
     }
 
-    tcp_connection_checker.checkWindowsCanPingGameServer((game_server_online) => {
-        if (game_server_online) {
-            startFtpFileProcessingIntervalLoginLog(guild_id);
-            startFtpFileProcessingIntervalChatLog(guild_id);
-            establishFtpConnectionToGportal(guild_id, ftp_server_data);
-            startCheckLocalServerTimeInterval(guild_id);
-        } else {
-            stopFileProcessingIntervalChatLog(guild_id);
-            stopFileProcessingIntervalLoginLog(guild_id);
-            stopCheckLocalServerTimeInterval(guild_id);
-        }
-    });
+    sendBotEnableOrDisable(bot_status, guild_id, game_server_ip, game_server_port, ftp_server_data);
 }
+
+function sendBotEnableOrDisable(bot_status, websocketId, game_server_ip, game_server_port, ftp_server_data) {
+
+    const websocket = cache.get(`websocket_${websocketId}`);
+
+    if (websocket && websocket.readyState === WebSocket.OPEN) {
+        websocket.send(JSON.stringify({
+            action: `${bot_status}`,
+            package_items: bot_package_items_array,
+            guild_id: websocketId,
+            game_server_ip: game_server_ip,
+            game_server_port: game_server_port,
+            ftp_server_data: ftp_server_data,
+        }));
+    } else {
+        message_logger.writeLogToAzureContainer(
+            `ErrorLogs`,
+            `The websocket to send commands to execute back to the client either does not exist or is not open`,
+            `${websocketId}`,
+            `${websocketId}-error-logs`
+        );
+    }
+}
+
 
 /**
  * The discord API triggers an event called 'ready' when the discord bot is ready to respond to commands and other input. 
@@ -1360,9 +1399,49 @@ async function loadCommandFilesIntoCollection(guild_id) {
 * @param {any} interaction 
 * @returns ceases execution of the function if the interaction is not a command, if the user sent the message in the wrong channel, or if the user cannot use this command
 */
+// cache.set(`battlemetrics_server_info_instance_${guild_id}`, battlemetrics_server_info_instance);
 client_instance.on('interactionCreate',  async (interaction) => {
     if (interaction.isButton()) {
-        if (interaction.customId === 'serverinformationbutton') {
+        const battlemetrics_server_info = cache.get(`battlemetrics_server_info_instance_${interaction.guild.id}`);
+
+        if (interaction.customId === `enablebotbutton`) {
+            const database_users = await bot_repository.getAllBotData();
+
+            for (const database_user of database_users) {
+                const guild_id = database_user.guild_id;
+                const ftp_server_ip = database_user.ftp_server_ip;
+                const ftp_server_password = database_user.ftp_server_password;
+                const ftp_server_port = database_user.ftp_server_port;
+                const ftp_server_username = database_user.ftp_server_username;
+                const game_server_address = database_user.game_server_ipv4_address;
+                const game_server_port = database_user.game_server_port;
+        
+                const tcp_connection_checker = new CheckTcpConnection(game_server_address, game_server_port);
+        
+                const user_command_queue = new Queue();
+        
+                const ftp_server_data = {
+                    ftp_server_host: ftp_server_ip,
+                    ftp_server_username: ftp_server_username,
+                    ftp_server_password: ftp_server_password,
+                    ftp_server_port: ftp_server_port
+                };
+                
+                const websocket = cache.get(`websocket_${interaction.guild.id}`);
+                if (websocket && websocket.readyState === WebSocket.OPEN) {
+                    websocket.send(JSON.stringify({
+                        action: `enablebot`,
+                        guild_id: interaction.guild.id
+                    }));
+                }
+                cache.set(`tcp_connection_checker_${guild_id}`, tcp_connection_checker);
+                cache.set(`user_command_queue_${guild_id}`, user_command_queue);
+        
+                checkIfGameServerOnline(guild_id, ftp_server_data, game_server_address, game_server_port, `enabled`);
+            }
+        }
+
+        if (interaction.customId === `serverinformationbutton`) {
             const battlemetrics_server_data_object = await battlemetrics_server_info.fetchJsonApiDataFromBattlemetrics();
             const battlemetrics_server_json_data = battlemetrics_server_data_object.data.attributes;
             const battlemetrics_server_id = battlemetrics_server_json_data.id;
@@ -1451,7 +1530,13 @@ client_instance.on('guildCreate', async (guild) => {
         await createBotCategoryAndChannels(guild);
         bot_discord_information = await bot_repository.getBotDataByGuildId(guild.id);
     } catch (error) {
-        throw new Error(error);
+        message_logger.writeLogToAzureContainer(
+            `ErrorLogs`,
+            `There was an error when registering initial bot set up commands and creating the Discord bot category and text channels: ${error}`,
+            `${guild_id}`,
+            `${guild_id}-error-logs`
+        )
+        return;
     }
 
     if (bot_discord_information) {
@@ -1490,12 +1575,24 @@ client_instance.on('guildCreate', async (guild) => {
     	.setCustomId('serverinformationbutton')
     	.setLabel('View server info')
     	.setStyle(ButtonStyle.Success);
-    
+
+        const enable_bot_button = new ButtonBuilder()
+        .setCustomId('enablebotbutton')
+        .setLabel(`Enable scum bot`)
+        .setStyle(ButtonStyle.Success);
+
+        const disable_bot_button = new ButtonBuilder()
+        .setCustomId('disablebotbutton')
+        .setLabel(`Disable scum bot`)
+        .setStyle(ButtonStyle.Success);
+        
         const button_row = new ActionRowBuilder()
-            .addComponents(server_info_button);
+            .addComponents(server_info_button)
+            .addComponents(enable_bot_button)
+            .addComponents(disable_bot_button)
         
         discord_channel_for_server_info.send({
-            content: "Click the button below to get server information",
+            content: "Click one of the buttons below to control the bot",
             components: [button_row]
         });
     }
@@ -1503,39 +1600,6 @@ client_instance.on('guildCreate', async (guild) => {
 
 myEmitter.on('newUserJoinedServer', (player_ipv4_addresses, steam_id, discord_channel_for_new_joins) => {
     sendNewPlayerLoginMessagesToDiscord(player_ipv4_addresses, steam_id, discord_channel_for_new_joins)
-});
-
-myEmitter.on("botUserAdded", async function() {
-    const database_users = await bot_repository.getAllBotData();
-
-    for (const database_user of database_users) {
-        const guild_id = database_user.guild_id;
-        const ftp_server_ip = database_user.ftp_server_ip;
-        const ftp_server_password = database_user.ftp_server_password;
-        const ftp_server_port = database_user.ftp_server_port;
-        const ftp_server_username = database_user.ftp_server_username;
-        const game_server_address = database_user.game_server_ipv4_address;
-        const game_server_port = database_user.game_server_port;
-
-        const tcp_connection_checker = new CheckTcpConnection(game_server_address, game_server_port);
-
-        const user_command_queue = new Queue();
-
-        const ftp_server_data = {
-            ftp_server_host: ftp_server_ip,
-            ftp_server_username: ftp_server_username,
-            ftp_server_password: ftp_server_password,
-            ftp_server_port: ftp_server_port
-        };
-        
-        cache.set(`tcp_connection_checker_${guild_id}`, tcp_connection_checker);
-        cache.set(`user_command_queue_${guild_id}`, user_command_queue);
-        const channel_for_server_info = cache.get(`discord_channel_for_server_info_${guild_id}`);
-
-        startCheckTcpConnectionToServerInterval(guild_id, channel_for_server_info);
-
-        checkIfGameServerOnline(guild_id, ftp_server_data);
-    }
 });
 
 client_instance.on(Events.InteractionCreate, async interaction => {

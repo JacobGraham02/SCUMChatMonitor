@@ -1,6 +1,5 @@
 import { config } from 'dotenv';
 config({ path: '.env' });
-
 import { MongoClient, ServerApiVersion } from 'mongodb';
 import { createPool } from 'generic-pool';
 
@@ -25,34 +24,10 @@ export default class DatabaseConnectionManager {
                 version: ServerApiVersion.v1,
             }
         });
-        const collectionsToWatch = [
-            {
-                $match: {
-                    $or: [
-                        {
-                            'ns.coll': 'bot',
-                            $or: [
-                                { operationType: 'insert' },
-                                { operationType: 'update' },
-                            ],
-                        },
-                        {
-                            'ns.coll': 'bot_packages',
-                            $or: [
-                                { operationType: 'insert' },
-                                { operationType: 'update' },
-                            ]
-                        },
-                        {
-                            'ns.coll': 'Users'
-                        }
-                    ]
-                }
-            }
-        ];
+
         await this.mongo_client.connect();
         const database = this.mongo_client.db(this.database_name);
-        const changeStream = database.watch(collectionsToWatch);
+        const changeStream = database.watch()
 
         changeStream.on("change", async (change) => {
             const mongodb_connection = await this.getConnection();
@@ -60,27 +35,9 @@ export default class DatabaseConnectionManager {
                 const filter = { _id: change.documentKey._id };
                 const updated_welcome_pack_cost_document = { $inc: { user_welcome_pack_cost: 100 } };
                 await mongodb_connection.collection(this.users_database_collection).updateOne(filter, updated_welcome_pack_cost_document);
-
-                if (mongodb_connection) {
-                    this.releaseConnection(mongodb_connection);
-                }
             }
-
-            if (change.ns.coll === 'bot') {
-                myEmitter.emit("botUserAdded");
-                if (mongodb_connection) {
-                    this.releaseConnection(mongodb_connection);
-                }
-            }
-
-            if (change.ns.coll === 'bot_packages') {
-                myEmitter.emit("botPackageCollectionChanged");
-                if (mongodb_connection) {
-                    this.releaseConnection(mongodb_connection);
-                }
-            }
-        });
-    }
+        })
+    };
 
     async initializeDatabaseConnectionPool() {
         const poolFactory = {

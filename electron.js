@@ -4,6 +4,8 @@ import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { exec } from 'child_process';
+const intervals = new Map();
+const cache = new Map();
 
 let mainWindow;
 
@@ -50,9 +52,54 @@ async function createWebSocketConnection(websocket_id) {
         }
         if (json_message_data.action === `reinitializeBot` && json_message_data.guild_id) {
             try {
-                await reinitializeBotOnServer(json_message_data.guild_id, websocket_id);
+                const botInitializedOnServer = await reinitializeBotOnServer(json_message_data.guild_id, websocket_id);
+                websocket.send(JSON.stringify({
+                    action: `botinitialized`,
+                    guild_id: json_message_data.guild_id,
+                    botinitialized: botInitializedOnServer
+                }));
             } catch (error) {
                 console.error(`There was an error when attempting to reinitialize the bot on the SCUM server: ${error}`);
+            }
+        }
+        if (json_message_data.action === `enabled` && json_message_data.guild_id 
+        && json_message_data.game_server_ip && json_message_data.game_server_port
+        && json_message_data.ftp_server_data) {
+
+            const game_server_ip = json_message_data.game_server_ip;
+            const game_server_port = json_message_data.game_server_port;
+
+            const check_server_online_and_bot_connected_interval = setInterval(async function() {
+                try {
+                    const isConnectedToServer = await checkWindowsHasTcpConnectionToGameServer(game_server_ip, game_server_port);
+                    const isServerOnline = await checkWindowsCanPingGameServer(game_server_ip);
+        
+                    // Send response back through WebSocket
+                    websocket.send(JSON.stringify({
+                        action: 'statusUpdate',
+                        guild_id: json_message_data.guild_id,
+                        ftp_server_data: json_message_data.ftp_server_data,
+                        connectedToServer: isConnectedToServer,
+                        serverOnline: isServerOnline
+                    }));
+                } catch (error) {
+                    websocket.send(JSON.stringify({
+                        action: 'error',
+                        guild_id: json_message_data.guild_id,
+                        message: 'Failed to check server status'
+                    }));
+                }
+            }, 60000);
+
+            intervals.set(`enable_game_server_checks_interval`, check_server_online_and_bot_connected_interval);
+        }
+
+        if (json_message_data.action === `disabled` && json_message_data.guild_id
+        && json_message_data.game_server_ip && json_message_data.game_server_port
+        && json_message_data.ftp_server_data && json_message_data.channel_for_server_info) {
+            if (intervals.has(`enable_game_server_checks_interval`)) {
+                clearInterval(user_intervals.get(`enable_game_server_checks_interval`));
+                intervals.delete(`enable_game_server_checks_interval`);
             }
         }
     });
@@ -66,6 +113,35 @@ async function createWebSocketConnection(websocket_id) {
     });
 
     return websocket;
+}
+
+/**
+* This function uses the native Windows command prompt shell to execute the command 'netstat -an' to fetch a list of current connections.
+* It checks if the computer is connected to the game server IP address, which helps ensure the bot keeps trying to rejoin the game server if disconnected. 
+* The function now returns a Promise that resolves to true if connected, or false otherwise.
+* @returns {Promise<boolean>} A promise that resolves to a boolean indicating the connection status.
+*/
+async function checkWindowsHasTcpConnectionToGameServer(game_server_address, game_server_port) {
+    return new Promise((resolve, reject) => {
+        exec(`netstat -an | find "${game_server_address}:${game_server_port}"`, (error, stdout, stderr) => {
+            if (error) reject(error);
+            resolve(stdout.includes(game_server_address + ':' + game_server_port));
+        });
+    });
+}
+
+/**
+* This function uses the native Windows command prompt shell to execute a 'ping' command that will test to see if the game server is in an operational state.
+* Because the game server restarts every day at approximately 18:00, we must ping the server to see if the server is online before doing anything on the server. 
+* @param {boolean} callback 
+*/
+async function checkWindowsCanPingGameServer(game_server_address) {
+    return new Promise((resolve, reject) => {
+        exec(`ping -n 1 ${game_server_address}`, (error, stdout, stderr) => {
+            if (error) reject(error);
+            resolve(stdout.includes('Reply from ' + game_server_address));
+        });
+    });
 }
 
 /**
@@ -110,33 +186,38 @@ async function runCommand(commandsArray, websocket_id) {
  * The SCUM game interface has a 'continue' button to join the server you were last on, so this operation moves to there. 
  */
 async function reinitializeBotOnServer(websocket_id) {
-    await sendLogData (
-        `InfoLogs`,
-        `The scum bot monitor is offline. Attempting to log the bot back in to the server`,
-        websocket_id,
-        `${websocket_id}-info-logs`
-    );
-    await sleep(5000);
-    moveMouseToPressOkForMessage(websocket_id);
-    await sleep(100000);
-    pressMouseLeftClickButton(websocket_id);
-    await sleep(5000);
-    moveMouseToContinueButtonXYLocation(websocket_id);
-    await sleep(10000);
-    pressMouseLeftClickButton(websocket_id);
-    await sleep(20000);
-    pressCharacterKeyT(websocket_id);
-    await sleep(20000);
-    pressTabKey(websocket_id);
-    await sleep(5000);
-    await sendLogData (
-        `InfoLogs`,
-        `The scum bot monitor has been activated and is ready to use`,
-        websocket_id,
-        `${websocket_id}-info-logs`
-    )
-    await sleep(5000);
-    await enqueueCommand('Scum bot has been activated and is ready to use', guild_id);
+    try {
+        await sendLogData (
+            `InfoLogs`,
+            `The scum bot monitor is offline. Attempting to log the bot back in to the server`,
+            websocket_id,
+            `${websocket_id}-info-logs`
+        );
+        await sleep(5000);
+        moveMouseToPressOkForMessage(websocket_id);
+        await sleep(100000);
+        pressMouseLeftClickButton(websocket_id);
+        await sleep(5000);
+        moveMouseToContinueButtonXYLocation(websocket_id);
+        await sleep(10000);
+        pressMouseLeftClickButton(websocket_id);
+        await sleep(20000);
+        pressCharacterKeyT(websocket_id);
+        await sleep(20000);
+        pressTabKey(websocket_id);
+        await sleep(5000);
+        await sendLogData (
+            `InfoLogs`,
+            `The scum bot monitor has been activated and is ready to use`,
+            websocket_id,
+            `${websocket_id}-info-logs`
+        )
+        await sleep(5000);
+        await enqueueCommand('Scum bot has been activated and is ready to use', guild_id);
+    } catch (error) {
+        return false;
+    }
+    return true;
 }
 
 /**
