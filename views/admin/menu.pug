@@ -35,6 +35,10 @@ mixin menu(user, currentPage)
       a(href='/admin/gameserverdata'
       title='A link to go to the game server data page that the bot will read from to access your SCUM server'
       class=(currentPage === '/admin/gameserverdata' ? 'active' : '')) Game server data
+    li  
+      a(href='/admin/logfiles'
+      title='A link to view all of the log files for your SCUM server'
+      class=(currentPage === '/admin/logfiles' ? 'active' : '')) Log files
     -} else {
       h1#user_administrator_name_heading Welcome, anonymous!
     -}
@@ -43,15 +47,5 @@ mixin menu(user, currentPage)
       form#global_site_navigation_logout_form(action='/logout' method='POST')
        button#gui_bot_web_interface_logout_button(type="submit") Log out
 
-  script.
-    document.addEventListener('DOMContentLoaded', function() {
-      const menuBtn = document.querySelector('#menu-btn'); 
-      menuBtn.addEventListener('change', function() {
-          if (this.checked) {
-              document.body.style.overflow = 'hidden';
-          } else {
-              document.body.style.overflow = 'auto';
-          }
-      });
-    });
+  script(src="/javascripts/header_menu.js")
 

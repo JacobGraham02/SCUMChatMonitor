@@ -49,7 +49,7 @@ router.get('/botcallback', async function(request, response, next) {
     response.send('Authentication successful! You can close this tab');
 });
 
-router.get('/login', function (request, response, next) {
+router.get('/login', async function (request, response, next) {
     response.render('login', { title: "Login page", user: request.user });
 }); 
 

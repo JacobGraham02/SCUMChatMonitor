@@ -1,0 +1,13 @@
+mixin largemodal
+    div.modal.fade#logFileModal(tabindex="-1", role="dialog", aria-labelledby="logFileModalLabel", aria-hidden="true")
+        div.modal-dialog.modal-xl(role="document")
+            div.modal-content
+                div.modal-header
+                    h5.modal-title#logFileModalLabel Log File Content
+                    button.close(type="button", data-dismiss="modal", aria-label="Close")
+                        span(aria-hidden="true") &times;
+                div.modal-body
+                    pre#logFileContents
+                div.modal-footer
+                    a.btn.btn-primary#downloadButton(href="#" download) Download
+                    button.btn.btn-secondary(type="button", data-dismiss="modal") Close

@@ -1,5 +1,6 @@
 
 export default class PlayerInfoCommand {
+    player_ip_address;
 
     setPlayerIpAddress(ipv4_address) {
         this.player_ip_address = ipv4_address;

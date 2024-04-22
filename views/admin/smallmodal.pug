@@ -1,0 +1,13 @@
+mixin smallModal
+    div.modal.fade#submitFormModal(tabindex="-1", role="dialog", aria-labelledby="submitFormModalLabel", aria-hidden="true")
+        div.modal-dialog(role="document")
+            div.modal-content
+                div.modal-header
+                    h5.modal-title#submitFormModalLabel Submit form confirmation
+                    button.close(type="button", data-dismiss="modal", aria-label="Close")
+                        span(aria-hidden="true") &times;
+                div.modal-body
+                    pre#submitModalContent Are you sure you want to submit this form?
+                div.modal-footer
+                    a.btn.btn-primary#submitButton(href="#") Submit
+                    button.btn.btn-secondary(type="button", data-dismiss="modal") Cancel

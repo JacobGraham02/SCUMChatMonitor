@@ -1,0 +1,48 @@
+extends layout
+
+block variables
+    - var page_title= title
+
+include menu
+include largemodal
+
+block header
+    header#header.header 
+        +menu(user, currentPage)
+
+block content(user)
+    main#log_files_page
+        +largemodal
+        h1 Log files
+
+        section#log_files_container
+            section#info_log_files
+                article#info_log_file_article
+                    h2 Info log files
+                    if (info_log_files) 
+                        for log_file in info_log_files 
+                            a(href="#" class="log-file-link" data-toggle="modal" data-target="#logFileModal" data-log-name=log_file.name data-log-content=log_file.content)= log_file.name
+
+            section#error_log_files
+                article#error_log_file_article
+                    h2 Error log files
+                    if (error_log_files)
+                        for error_file in error_log_files
+                            a(href="#" class="log-file-link" data-toggle="modal" data-target="#logFileModal" data-log-name=error_file.name data-log-content=error_file.content)= error_file.name
+
+            section#chat_log_files
+                article#command_log_file_article
+                    h2 Chat log files
+                    if (chat_log_files) 
+                        for chat_file in chat_log_files
+                            a(href="#" class="log-file-link" data-toggle="modal" data-target="#logFileModal" data-log-name=chat_file.name data-log-content=chat_file.content)= chat_file.name
+
+            section#login_and_logout_log_file
+                article#login_and_logout_log_file_article
+                    h2 Login and logout log files
+                    if (login_and_logout_log_files)
+                        for login_and_logout_file in login_and_logout_log_files 
+                            a(href="#" class="log-file-link" data-toggle="modal" data-target="#logFileModal" data-log-name=login_and_logout_file.name data-log-content=login_and_logout_file.content)= login_and_logout_file.name
+
+    script(src="/javascripts/load_modal_contents.js")
+

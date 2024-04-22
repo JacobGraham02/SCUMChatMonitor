@@ -1,9 +1,13 @@
 import { Router } from 'express';
-var router = Router();
-import { join } from 'path';
-import { exec } from 'child_process';
+import { validatePassword } from '../modules/hashAndValidatePassword.js';
 import BotRepository from '../database/MongoDb/BotRepository.js';
+import Logger from '../utils/Logger.js';
+import Cache from '../utils/Cache.js';
+import WebSocket from 'ws';
+var router = Router();
 const botRepository = new BotRepository();
+const logger = new Logger();
+const cache = new Cache();
 
 function isLoggedIn(request, response, next) {
     if (request.isAuthenticated()) {
@@ -13,12 +17,54 @@ function isLoggedIn(request, response, next) {
     }
 }
 
+router.post('/logdata', async function(request, response) {
+    const { log_type, message, guild_id, file_type } = request.body;
+
+    try {
+        await logger.writeLogToAzureContainer(
+            `${log_type}`,
+            `${message}`,
+            `${guild_id}`,
+            `${guild_id}-${file_type}`
+        );
+        response.status(200).json({ success: true, message: `The log data has been written to the specified log file successfully`});
+    } catch (error) {
+        response.status(500).json({ success: false, message: `Failed to write data to the specified log file: ${error}`});
+    }
+});
+
+router.post('/createwebsocket', async function(request, response) {
+    const { email, password } = request.body;
+
+    try {
+        const repository_user = await botRepository.getBotDataByEmail(email);
+
+        if (repository_user) {
+            const user_password = repository_user.bot_password;
+            const user_salt = repository_user.bot_salt;
+            const is_valid_account = validatePassword(password, user_password, user_salt);
+            
+            if (is_valid_account) {
+                const user_id = repository_user.guild_id;
+                response.json({ success: true, message: `Login successful`, bot_id: user_id});
+            } else {
+                response.status(401).json({ success: false, message: `Invalid credentials` });
+            }
+        } else {
+            response.status(401).json({ success: false, message: `Invalid credentials` });
+        }
+    } catch (error) {
+        console.error(`Login error: ${error}`);
+        response.status(500).json({success: false, message: "An error occurred during login."})
+    }
+});
+
 router.get('/newcommand', isLoggedIn, function(request, response) {
     try {
         response.render('admin/new_command', { user: request.user, title: `New bot package` });
     } catch (error) {
         console.error(`There was an error when attempting to load the admin new command page. Please inform the server administrator of this error or try again: ${error}`);
-        response.render('admin/new_command', { user: request.user, info_message: `There was an Internal Server Error when attempting to load the admin index file after logging in. Please inform the server administrator of this error or try again: ${error}`, show_alert: true });
+        response.render('admin/new_command', { user: request.user, title: `New bot package` });
     }
 });
 
@@ -27,21 +73,30 @@ router.get('/command/:commandname', isLoggedIn, async (request, response) => {
     try {
         const package_data = await botRepository.getBotPackageFromName(package_name); 
 
-        response.render('admin/command', { user: request.user, package: package_data });
+        response.render('admin/command', { user: request.user, package: package_data, title: `${package_name}` });
         
     } catch (error) {
         console.error(`Error fetching command data: ${error}`);
-        response.render('admin/command', { user: request.user, info_message: `There was an internal server error when attempting to load the admin command file after logging in. Please inform the server administrator of this error or try again: ${error}`, show_alert: true});
+        response.render('admin/command', { user: request.user, title: `${package_name}`});
     }
 });
 
 
 router.get(['/login-success', '/'], isLoggedIn, function(request, response) {
     try {
-        response.render('admin/index', { user: request.user, currentPage: '/admin/' });
+        const guild_id = request.user.guild_id;
+        const websocket = cache.get(`websocket_${guild_id}`);
+        if (websocket && websocket.readyState === WebSocket.OPEN) {
+            const message = JSON.stringify({
+                action: 'DataSync',
+                data: 'This is a test data sync in the admin index page route'
+            });
+            websocket.send(message);
+        }
+        response.render('admin/index', { user: request.user, currentPage: '/admin/', title: `Admin dashboard` });
     } catch (error) {
         console.error(`There was an error when attempting to load the admin index file after logging in. Please inform the server administrator of this error or try again: ${error}`);
-        response.render('admin/index', { user: request.user, info_message: `There was an Internal Server Error when attempting to load the admin index file after logging in. Please inform the server administrator of this error or try again: ${error}`, show_alert: true });
+        response.render('admin/index', { user: request.user, currentPage: '/admin/', title: `Admin dashboard` });
     }
 });
 
@@ -95,7 +150,7 @@ router.get(['/commands'], isLoggedIn, async (request, response) => {
     const commands = current_page_packages;
 
     response.render('admin/command_list', {
-        title: 'Admin Dashboard', 
+        title: 'Bot commands', 
         commands, 
         current_page_of_commands: current_page_number, 
         total_command_files: bot_package.length, 
@@ -107,10 +162,10 @@ router.get(['/commands'], isLoggedIn, async (request, response) => {
 
 router.get('/discordchannelids', (request, response) => {
     try {
-        response.render('admin/discord_channel_ids', { user: request.user, title: `Discord channel ids`, currentPage: '/admin/discordchannelids' });
+        response.render('admin/discord_channel_ids', { user: request.user, title: `Discord channel ids`, currentPage: '/admin/discordchannelids', title:`Discord channel ids` });
     } catch (error) {
         console.error(`There was an error when attempting to retrieve the page that allows you to change the Discord channel data. Please inform the server administrator of this error: ${error}`);
-        response.render('admin/discord_channel_ids', { user: request.user, title: `Discord channel ids`, info_message: `There was an Internal Server Error when attempting to retrieve the page that allows you to change the Discord channel data. Please inform the server administrator of this error: ${error}`, show_alert: true});
+        response.render('admin/discord_channel_ids', { user: request.user, title: `Discord channel ids`, title:`Discord channel ids` });
     }
 });
 
@@ -119,27 +174,41 @@ router.get('/ftpserverdata', (request, response) => {
         response.render('admin/ftp_server_data', { user: request.user, title: `FTP server data`, currentPage: '/admin/ftpserverdata'});
     } catch (error) {
         console.error(`There was an error when attempting to retrieve the page that allows you to change the FTP server data. Please inform the server administrator of this error: ${error}`);
-        response.render('admin/ftp_server_data', { user: request.user, info_message: `There was an Internal Server Error when attempting to retrieve the page that allows you to change the FTP server data. Please inform the server administrator of this error: ${error}`, show_alert: true });
+        response.render('admin/ftp_server_data', { user: request.user, title: `FTP server data` });
     }
 });
 
 router.get('/gameserverdata', (request, response) => {
     try {
-        response.render('admin/game_server_data', { user: request.user, currentPage: '/admin/gameserverdata'});
+        response.render('admin/game_server_data', { user: request.user, currentPage: '/admin/gameserverdata', title: `Game server data` });
     } catch (error) {
         console.error(`There was an error when attempting to retrieve the page that allows you to set game server data`);
-        response.render('admin/game_server_data', { user: request.user, info_message: `There was an error`});
+        response.render('admin/game_server_data', { user: request.user, info_message: `There was an error`, title: `Game server data` });
     }
 });
 
 router.get('/spawncoordinates', (request, response) => {
     try {
-        response.render('admin/new_player_join_coordinates', { user: request.user, currentPage: '/admin/spawncoordinates' });
+        response.render('admin/new_player_join_coordinates', { user: request.user, currentPage: '/admin/spawncoordinates', title: `Spawn zone coordinates`});
     } catch (error) {
         console.error(`There was an error when attempting to retrieve the page that allows you to set the spawn location of players. Please inform the server administrator of this error: ${error}`);
-        response.render('admin/new_player_join_coordinates', { user: request.user });
+        response.render('admin/new_player_join_coordinates', { user: request.user, currentPage: `/admin/spawncoordinates`, title: `Spawn zone coordinates`});
     }
 });
+
+router.get('/logfiles', async (request, response) => {
+    const user_guild_id = request.user.guild_id;
+    const info_log_files_blob = await logger.readAllLogsFromAzureContainer(`${user_guild_id}-info-logs`);
+    const error_log_files_blob = await logger.readAllLogsFromAzureContainer(`${user_guild_id}-error-logs`);
+    const chat_log_files_blob = await logger.readAllLogsFromAzureContainer(`${user_guild_id}-chat-logs`);
+    const logins_log_files_blob = await logger.readAllLogsFromAzureContainer(`${user_guild_id}-login-logs`);
+    try {
+        response.render('admin/logs_page', { user: request.user, info_log_files: info_log_files_blob, error_log_files: error_log_files_blob, chat_log_files: chat_log_files_blob, login_and_logout_log_files: logins_log_files_blob, currentPage: '/admin/logfiles', title: `Log files`});
+    } catch (error) {
+        console.error(`There was an error when attempting to retrieve the page that allows you to view your log files. Please inform the server administrator of this error: ${error}`);
+        response.render('admin/logs_page', { user: request.user, currentPage: `/admin/logfiles`, title: `Log files`});
+    }
+}); 
 
 router.post('/setftpserverdata', async (request, response) => {
     const request_user_id = request.user.guild_id;
@@ -152,9 +221,9 @@ router.post('/setftpserverdata', async (request, response) => {
     }
     try {
         await botRepository.createBotFtpServerData(ftp_server_data_object);
-        response.render('admin/ftp_server_data', { user: request.user, info_message: `You have successfully created new FTP server credentials`, show_alert: true });
+        response.render('admin/ftp_server_data', { user: request.user, alert_title: `Successfully updated FTP server credentials`, alert_description: `You have successfully updated your FTP server credentials`, show_submit_modal: true });
     } catch (error) {
-        response.render('admin/ftp_server_data', { user: request.user, info_message: `There was an error when attempting to update the ftp server data in the bot database document ${error}`});
+        response.render('admin/ftp_server_data', { user: request.user, alert_title: `Error updating FTP server credentials`, alert_description: `Please try submitting this form again or contacting the site administrator if you believe this is an error: ${error}`, show_error_modal: true });
     }
 });
 
@@ -169,14 +238,18 @@ router.post('/setspawncoordinates', async (request, response) => {
     }
     try {
         await botRepository.createBotTeleportNewPlayerCoordinates(coordinates_object);
-        response.render('admin/new_player_join_coordinates', { user: request.user });
+        response.render('admin/new_player_join_coordinates', { user: request.user, alert_title: `Successfully updated spawn zone coordinates`, alert_description: `You have successfully changed the coordinates for the new player spawn zone`, show_submit_modal: true });
     } catch (error) {
-        response.render('admin/new_player_join_coordinates', { user: request.user, info_message: `There was an error` });
+        response.render('admin/new_player_join_coordinates', { user: request.user, alert_info: `Error updating spawn zone coordinates`, alert_description: `Please try submitting this form again or contacting the site administrator if you believe this is an error: ${error}`, show_error_modal: true });
     }
 });
 
 router.post('/setdiscordchannelids', async (request, response) => {
     const request_user_id = request.user.guild_id;
+    const websocket_connection = request.user.websocket;
+
+    console.log(`The websocket connection is:`);
+    console.log(websocket_connection);
 
     const discord_server_channel_ids_object = {
         guild_id: request_user_id,
@@ -188,10 +261,10 @@ router.post('/setdiscordchannelids', async (request, response) => {
     };
     try {
         await botRepository.createBotDiscordData(discord_server_channel_ids_object);
-        response.render('admin/index', { user: request.user, alert_info: `Successfully changed the Discord channel ids associated with the bot`, show_alert: true });
+        response.render('admin/discord_channel_ids', { user: request.user, alert_title: `Successfully changed Discord channel ids`, alert_description: `You have successfully changed the Discord channel ids associated with the bot`, show_submit_modal: true });
     } catch (error) {
         console.error(`There was an error when attempting to update discord channel ids in the bot database document: ${error}`);
-        response.render('admin/discord_channel_ids', { user: request.user, alert_info: `An Internal Server Error occurred when attempting to update the Discord chat channel ids. Please try submitting this form again or contact the site administrator if you believe this is an error: ${error}`});
+        response.render('admin/discord_channel_ids', { user: request.user, alert_title: `Error changing Discord channel ids`, alert_description: `Please try submitting this form again or contact the site administrator if you believe this is an error: ${error}`, show_error_modal: true});
     }
 });
 
@@ -204,10 +277,10 @@ router.post('/setgameserverdata', async (request, response) => {
     }
     try {
         await botRepository.createBotGameServerData(game_server_data);
-        response.render('admin/game_server_data', { user: request.user, alert_info: `Successfully changed the game server IP address and port number`, show_alert: true})
+        response.render('admin/game_server_data', { user: request.user, alert_title: `Successfully submitted changes`, alert_description: `You have successfully changed the game server IPv4 address and port number`, show_submit_modal: true})
     } catch (error) {
         console.error(`There was an error when attempting to update the game server IP address and port number: ${error}`);
-        response.render('admin/game_server_data', { user: request.user, alert_info: `An Internal Server Error occurred when attempting to update the game server IP address and port number. Please try submitting this form again or contact the site administrator if you believe this is an error: ${error}`, show_alert: true})
+        response.render('admin/game_server_data', { user: request.user, alert_title: `Error submitting changes`, alert_description: `Please try submitting this form again or contact the server administrator if you believe this is an error: ${error}`, show_error_modal: true})
     }
 });
 
@@ -230,9 +303,9 @@ router.post('/botcommand/new', isLoggedIn, async (request, response, next) => {
 
     try {
         // await botRepository.createBotItemPackage(1, new_bot_package);
-        response.render('admin/new_command', { user: request.user, page_title:`Create new command`, info_message: `You have successfully created a new item package`, show_alert: true });
+        response.render('admin/new_command', { user: request.user, page_title:`Create new command`, alert_title: `Successfuly created new package`, alert_description: `You have successfully created a new item package and registered it with your bot`, show_submit_modal: true });
     } catch (error) {
-        response.render('admin/new_command', { user: request.user, page_title:`Error`, info_message: `An error has occurred! Please inform the server administrator of this error or try creating another command: ${error}`, show_alert: true});
+        response.render('admin/new_command', { user: request.user, page_title:`Error`, alert_title: `Error creating new package`, alert_description: `Please try submitting this form again or contact the server administrator if you believe this is an error: ${error}`, show_error_modal: true});
     }
 });
 
