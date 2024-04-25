@@ -65,21 +65,12 @@ async function createWebSocketConnection(websocket_id) {
         && json_message_data.game_server_ip && json_message_data.game_server_port
         && json_message_data.ftp_server_data) {
 
-            const game_server_ip = json_message_data.game_server_ip;
-            const game_server_port = json_message_data.game_server_port;
-            // const ftp_server_host = json_message_data.ftp_server_data.ftp_server_host;
-            // const ftp_server_username = json_message_data.ftp_server_data.ftp_server_username;
-            // const ftp_server_password = json_message_data.ftp_server_data.ftp_server_password;
-            // const ftp_server_port = json_message_data.ftp_server_data.ftp_server_port;
-
-            // const ftp_server_data = {
-            //     ftp_server_host: ftp_server_host,
-            //     ftp_server_username: ftp_server_username,
-            //     ftp_server_password: ftp_server_password,
-            //     ftp_server_port: ftp_server_port
-            // }
-
             const check_server_online_and_bot_connected_interval = setInterval(async function() {
+                const game_server_ip = json_message_data.game_server_ip;
+                const game_server_port = json_message_data.game_server_port;
+                const ftp_server_data = json_message_data.ftp_server_data;
+                const guild_id = json_message_data.guild_id;
+
                 try {
                     const isConnectedToServer = await checkWindowsHasTcpConnectionToGameServer(game_server_ip, game_server_port);
                     const isServerOnline = await checkWindowsCanPingGameServer(game_server_ip);
@@ -87,8 +78,8 @@ async function createWebSocketConnection(websocket_id) {
                     // Send response back through WebSocket
                     websocket.send(JSON.stringify({
                         action: 'statusUpdate',
-                        guild_id: json_message_data.guild_id,
-                        ftp_server_data: json_message_data.ftp_server_data,
+                        guild_id: guild_id,
+                        ftp_server_data: ftp_server_data,
                         connectedToServer: isConnectedToServer,
                         serverOnline: isServerOnline
                     }));
