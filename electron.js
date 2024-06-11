@@ -73,6 +73,7 @@ async function createWebSocketConnection(websocket_id) {
                 try {
                     const isConnectedToServer = await checkWindowsHasTcpConnectionToGameServer(game_server_data.game_server_ipv4, game_server_data.game_server_port);
                     const isServerOnline = await checkWindowsCanPingGameServer(game_server_data.game_server_ipv4);
+                    const localTimeISO = getLocalTimeInISO8601Format();
         
                     // Send response back through WebSocket
                     websocket.send(JSON.stringify({
@@ -80,7 +81,8 @@ async function createWebSocketConnection(websocket_id) {
                         guild_id: guild_id,
                         ftp_server_data: ftp_server_data,
                         connectedToServer: isConnectedToServer,
-                        serverOnline: isServerOnline
+                        serverOnline: isServerOnline,
+                        localTime: localTimeISO
                     }));
                 } catch (error) {
                     websocket.send(JSON.stringify({
@@ -113,6 +115,11 @@ async function createWebSocketConnection(websocket_id) {
     });
 
     return websocket;
+}
+
+function getLocalTimeInISO8601Format() {
+    const current_date = new Date();
+    return current_date.toISOString();
 }
 
 /**

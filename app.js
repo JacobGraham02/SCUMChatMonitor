@@ -761,11 +761,15 @@ function stopCheckLocalServerTimeInterval(guild_id) {
  * For example, if the current time is 5:40 am, 6:00 am - 5:40 am will result in 0:20. Therefore, the bot will announce on the server a restart in 20 minutes.
  * This occurs when the time is calculated as 20 minutes, 10 minutes, 5 minutes, and one minute. 
  */
-async function checkLocalServerTime() {
-    const currentDateTime = new Date();
-    const current_hour = currentDateTime.getHours(); 
 
-    if (current_hour === 5 || current_hour === 18) {
+cache.set(`restart_time_${json_message_guild_id}`, current_date_hours);
+
+async function checkLocalServerTime(guild_id) {
+    const currentDateTime = new Date();
+    const current_hour = currentDateTime.getHours();
+    const current_client_hours = cache.get(`restart_time_${guild_id}`);
+
+    if (current_hour === current_client_hours) {
         const current_minute = currentDateTime.getMinutes();
         const server_restart_messages = {
             40: 'Server restart in 20 minutes',
@@ -999,9 +1003,16 @@ web_socket_server_instance.on('connection', function(websocket, request) {
             pressEnterKey();
         }
 
-        if (json_message.action === "statusUpdate" && json_message.connectedToServer && json_message.serverOnline) {
+        if (json_message.action === "statusUpdate" && json_message.ftp_server_data && json_message.connectedToServer 
+            && json_message.serverOnline && json_message.localTime) {
+
             const json_message_guild_id = json_message.guild_id;
             const json_message_ftp_server_data = json_message.ftp_server_data;
+            const json_message_iso8601_time = json_message.localTime;
+
+            const current_date_hours = new Date(json_message_iso8601_time).getHours();
+
+            cache.set(`restart_time_${json_message_guild_id}`, current_date_hours);
 
             await establishFtpConnectionToGportal(json_message_guild_id, json_message_ftp_server_data);
                 
@@ -1010,6 +1021,8 @@ web_socket_server_instance.on('connection', function(websocket, request) {
             // handleIngameSCUMChatMessages(json_message_guild_id);
     
             // checkLocalServerTime(json_message_guild_id);
+
+            checkLocalServerTime(json_message_guild_id);
 
             botConnectedToGameServer(json_message_guild_id);
         } 
