@@ -578,7 +578,7 @@ async function readAndFormatGportalFtpServerChatLog(guild_id) {
                 }
             });
         });
-        
+
         /**
          * Based on the log files that we obtained from querying the FTP server, we must filter the chat log files based on a filename prefix and 
          * sort by date. To obtain the chat logs, we must filter by the file name 'chat_'+most_recent_date', as the file name is 'chat_'+Date+'.log'
@@ -762,7 +762,6 @@ function stopCheckLocalServerTimeInterval(guild_id) {
  * This occurs when the time is calculated as 20 minutes, 10 minutes, 5 minutes, and one minute. 
  */
 async function checkLocalServerTime() {
-    console.log("Check local server time");
     const currentDateTime = new Date();
     const current_hour = currentDateTime.getHours(); 
 
@@ -1003,7 +1002,6 @@ web_socket_server_instance.on('connection', function(websocket, request) {
         if (json_message.action === "statusUpdate" && json_message.connectedToServer && json_message.serverOnline) {
             const json_message_guild_id = json_message.guild_id;
             const json_message_ftp_server_data = json_message.ftp_server_data;
-            console.log("Status update");
 
             await establishFtpConnectionToGportal(json_message_guild_id, json_message_ftp_server_data);
                 
@@ -1147,9 +1145,7 @@ function sendPlayerMessagesToDiscord(scum_game_chat_messages, discord_channel, g
                 .setTimestamp()
                 .setFooter({ text: 'Scum Monitor Man', iconURL: 'https://i.imgur.com/dYtjF3w.png' });
             discord_channel.send({ embeds: [embedded_message] });
-        } else {
-            console.log("scum ingame chat is not valid. not sending to discord channel");
-        }
+        } 
     }
 }
 
@@ -1348,7 +1344,6 @@ client_instance.on('interactionCreate', async (interaction) => {
     const guild_id = interaction.guild.id;
     if (interaction.isButton()) {
         if (interaction.customId === `enablebotbutton`) {
-            console.log('Enable button clicked');
             try {
                 bot_discord_information = await bot_repository.getBotDataByGuildId(guild_id);
             } catch (error) {
@@ -1411,7 +1406,6 @@ client_instance.on('interactionCreate', async (interaction) => {
         const user_data = await bot_repository.getBotDataByGuildId(guild_id);
 
         if (user_data) {
-            console.log("user data is good");
             const ftp_server_data = {
                 ftp_server_host: user_data.ftp_server_ip,
                 ftp_server_username: user_data.ftp_server_username,
@@ -1789,7 +1783,6 @@ async function handleIngameSCUMChatMessages(guild_id) {
     console.log("Handle ingame scum chat messages");
     /**
      * Fetch the data from the resolved promise returned by readAndFormatGportalFtpServerChatLog. This contains all of the chat messages said on the server. 
-     *console.log('Ftp server chat log is: ' + ftp_server_chat_log);
     */
     const ftp_server_chat_log = await readAndFormatGportalFtpServerChatLog(guild_id);
 
