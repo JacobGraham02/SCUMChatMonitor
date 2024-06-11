@@ -29,14 +29,14 @@ export default class DatabaseConnectionManager {
         const database = this.mongo_client.db(this.database_name);
         const changeStream = database.watch()
 
-        changeStream.on("change", async (change) => {
-            const mongodb_connection = await this.getConnection();
-            if (change.ns.coll === 'Users' && 'user_welcome_pack' in change.updateDescription.updatedFields) {
-                const filter = { _id: change.documentKey._id };
-                const updated_welcome_pack_cost_document = { $inc: { user_welcome_pack_cost: 100 } };
-                await mongodb_connection.collection(this.users_database_collection).updateOne(filter, updated_welcome_pack_cost_document);
-            }
-        })
+        // changeStream.on("change", async (change) => {
+        //     const mongodb_connection = await this.getConnection();
+        //     if (change.ns.coll === 'Users' && 'user_welcome_pack' in change.updateDescription.updatedFields) {
+        //         const filter = { _id: change.documentKey._id };
+        //         const updated_welcome_pack_cost_document = { $inc: { user_welcome_pack_cost: 100 } };
+        //         await mongodb_connection.collection(this.users_database_collection).updateOne(filter, updated_welcome_pack_cost_document);
+        //     }
+        // })
     };
 
     async initializeDatabaseConnectionPool() {

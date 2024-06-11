@@ -5,7 +5,6 @@ import { fileURLToPath } from 'url';
 import path from 'path';
 import { exec } from 'child_process';
 const intervals = new Map();
-const cache = new Map();
 
 let mainWindow;
 
@@ -61,19 +60,19 @@ async function createWebSocketConnection(websocket_id) {
                 console.error(`There was an error when attempting to reinitialize the bot on the SCUM server: ${error}`);
             }
         }
-        if (json_message_data.action === `enabled` && json_message_data.guild_id 
-        && json_message_data.game_server_ip && json_message_data.game_server_port
-        && json_message_data.ftp_server_data) {
+        if (json_message_data.action === `enable` && json_message_data.guild_id 
+        && json_message_data.ftp_server_data && json_message_data.game_server_data) {
+
+            console.log("Enable bot button in electron is triggered");
 
             const check_server_online_and_bot_connected_interval = setInterval(async function() {
-                const game_server_ip = json_message_data.game_server_ip;
-                const game_server_port = json_message_data.game_server_port;
+                const game_server_data = json_message_data.game_server_data;
                 const ftp_server_data = json_message_data.ftp_server_data;
                 const guild_id = json_message_data.guild_id;
 
                 try {
-                    const isConnectedToServer = await checkWindowsHasTcpConnectionToGameServer(game_server_ip, game_server_port);
-                    const isServerOnline = await checkWindowsCanPingGameServer(game_server_ip);
+                    const isConnectedToServer = await checkWindowsHasTcpConnectionToGameServer(game_server_data.game_server_ipv4, game_server_data.game_server_port);
+                    const isServerOnline = await checkWindowsCanPingGameServer(game_server_data.game_server_ipv4);
         
                     // Send response back through WebSocket
                     websocket.send(JSON.stringify({
