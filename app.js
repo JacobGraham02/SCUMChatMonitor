@@ -1136,7 +1136,7 @@ function sendPlayerMessagesToDiscord(scum_game_chat_messages, discord_channel, g
     };
 
     for (let i = 0; i < scum_game_chat_messages.length; i++) {
-        if (typeof scum_game_chat_messages[i] === 'string' && scum_game_chat_messages[i].trim()) {
+        if (typeof scum_game_chat_messages[i] === 'string' && scum_game_chat_messages[i].trim() && !scum_game_chat_messages.includes(`Game version:`)) {
             const embedded_message = new EmbedBuilder()
                 .setColor(0x299bcc)
                 .setTitle('In game chat')
