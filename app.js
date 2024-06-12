@@ -314,165 +314,6 @@ function retryConnection(guild_id, ftp_server_data) {
  * @param {any} response An HTTP response object which holds the query results obtained from the FTP server
  * @returns {Array} An array containing object(s) in the following format: {steam_id: string, player_message: string}
  */
-// async function readAndFormatGportalFtpServerLoginLog(guild_id, ftp_client) {
-//     let stream = null;
-//     let ftp_login_log_file_bulk_contents = '';
-//     let ftp_file_processed_contents_string_array = [];
-//     let received_chat_login_messages = [];
-//     let file_contents_steam_ids_array = [];
-//     let file_contents_steam_name_array = [];
-//     let file_contents_steam_ids = [];
-//     let file_contents_steam_messages = [];
-//     let player_ipv4_addresses = [];
-//     let user_steam_ids = {};
-//     let last_line_processed = cache.get(`last_line_processed_${guild_id}`) || 0;
-//     let ftp_file_bulk_contents = '';
-//     console.log(`Last line processed is: ${last_line_processed}`);
-
-//     try {
-//         const files = await new Promise((resolve, reject) => {
-//             ftp_client.list(gportal_ftp_server_target_directory, async (error, files) => {
-//                 if (error) {
-//                     await message_logger.writeLogToAzureContainer(
-//                         `ErrorLogs`, 
-//                         `There was an error when attempting to retrieve the login files from GPortal FTP server: ${error}`, 
-//                         guild_id, 
-//                         `${guild_id}-error-logs`
-//                     );
-//                     reject('Failed to retrieve file listing');
-//                 } else {
-//                     resolve(files);
-//                 }
-//             });
-//         });
-
-//         const matching_files = files
-//             .filter(file => file.name.startsWith(gportal_ftp_server_filename_prefix_login))
-//             .sort((file_one, file_two) => file_two.date - file_one.date);
-
-//         if (matching_files.length === 0) {
-//             await message_logger.writeLogToAzureContainer(
-//                 `ErrorLogs`, 
-//                 `No files were found that started with the prefix ${gportal_ftp_server_filename_prefix_login}`, 
-//                 guild_id, 
-//                 `${guild_id}-error-logs`
-//             );
-//             return;
-//         }
-
-//         const file_path = `${gportal_ftp_server_target_directory}${matching_files[0].name}`;
-
-//         stream = await new Promise((resolve, reject) => {
-//             ftp_client.get(file_path, async (error, stream) => {
-//                 if (error) {
-//                     await message_logger.writeLogToAzureContainer(
-//                         `ErrorLogs`, 
-//                         `The FTP file was present in GPortal, but could not be fetched: ${error}`, 
-//                         guild_id, 
-//                         `${guild_id}-error-logs`
-//                     );
-//                     reject(new Error(`The ftp login file was present in GPortal, but could not be fetched. ${error}`));
-//                 } else {
-//                     resolve(stream);
-//                 }
-//             });
-//         });
-
-//         await new Promise((resolve, reject) => {
-//             stream.on('data', (chunk) => {
-
-//                 const processed_chunk = chunk.toString().replace(/\u0000/g, '');
-//                 ftp_file_bulk_contents += processed_chunk;
-//                 ftp_file_processed_contents_string_array = ftp_file_bulk_contents.split('\n');
-
-//                 // Set the initial processed line if not set yet
-//                 if (last_line_processed === 0) {
-//                     last_line_processed = ftp_file_processed_contents_string_array.length;
-//                 }
-
-//                 // Process only new lines
-//                 for (let i = last_line_processed; i < ftp_file_processed_contents_string_array.length; i++) {
-//                     // Process and cache new content
-//                     const currentLine = ftp_file_processed_contents_string_array[i];
-//                     received_chat_login_messages.push(currentLine);
-
-//                     // Extract IPV4 address
-//                     const ipv4_match = currentLine.match(ipv4_address_regex);
-//                     if (ipv4_match && ipv4_match.length > 0) {
-//                         const ipv4_address = ipv4_match[0].substring(1); // Remove the leading '
-//                         player_ipv4_addresses.push(ipv4_address);
-//                     }
-
-//                     // Extract steam IDs and messages
-//                     const steam_id_match = currentLine.match(login_log_steam_id_regex);
-//                     const steam_name_match = currentLine.match(login_log_steam_name_regex);
-//                     if (steam_id_match && steam_name_match) {
-//                         const steam_id = steam_id_match[0];
-//                         const steam_name = steam_name_match[0];
-//                         user_steam_ids[steam_id] = steam_name;
-//                     }
-//                 }
-
-//                 last_line_processed = ftp_file_processed_contents_string_array.length; // Update last processed line
-//                 cache.set(`last_line_processed_${guild_id}`, last_line_processed);
-//             });
-
-//             stream.on('end', async () => {
-//                 cache.set(`received_chat_login_messages_${guild_id}`, received_chat_login_messages);
-//                 cache.set(`player_ipv4_addresses_${guild_id}`, player_ipv4_addresses);
-//                 cache.set(`user_steam_ids_${guild_id}`, user_steam_ids);
-
-//                 // Calculate current content hash
-//                 const current_file_contents_hash = crypto.createHash('md5').update(ftp_file_bulk_contents).digest('hex');
-//                 // Check if the hash differs from the previous one
-//                 const previous_login_file_hash = cache.get(`current_login_log_hash_${guild_id}`);
-//                 if (current_file_contents_hash === previous_login_file_hash) {
-//                     return;
-//                 }
-//                 cache.set(`player_ftp_log_login_messages_${guild_id}`, ftp_file_processed_contents_string_array);
-
-//                 // Process new content and update cache
-//                 await processAndCacheNewContent(guild_id);
-
-//                 cache.set(`current_login_log_hash_${guild_id}`, current_file_contents_hash);
-
-//                 resolve();
-//             });
-
-//             stream.on('error', reject);
-//         });
-//     } catch (error) {
-//         await message_logger.writeLogToAzureContainer(
-//             `ErrorLogs`, 
-//             `There was an error when processing the GPortal FTP login log file: ${error}`, 
-//             guild_id, 
-//             `${guild_id}-error-logs`
-//         );
-//     } finally {
-//         if (stream) {
-//             stream = null;
-//         }
-//     }
-// }
-    
-// async function processAndCacheNewContent(guild_id) {
-//     // Call helper functions to perform specific actions
-//     const cached_player_login_messages = cache.get(`player_ftp_log_login_messages_${guild_id}`);
-//     const channel_for_new_joins = cache.get(`discord_channel_for_new_joins_${guild_id}`);
-//     const channel_for_joins = cache.get(`discord_channel_for_logins_${guild_id}`);
-//     const player_login_messages = cache.get(`received_chat_login_messages_${guild_id}`);
-//     const user_steam_ids = cache.get(`user_steam_ids_${guild_id}`);
-//     const player_ipv4_addresses = cache.get(`player_ipv4_addresses_${guild_id}`);
-
-//     // determinePlayerLoginSessionMoney(guild_id, player_login_messages);
-//     // insertSteamUsersIntoDatabase(Object.keys(user_steam_ids), Object.values(user_steam_ids), guild_id);
-//     // teleportNewPlayersToLocation(player_ipv4_addresses, user_steam_ids, channel_for_new_joins);
-//     sendPlayerLoginMessagesToDiscord(
-//         cached_player_login_messages,
-//         channel_for_joins,
-//         guild_id
-//     );
-// }
 async function readAndFormatGportalFtpServerLoginLog(guild_id, ftp_client) {
     let stream = null;
     let ftp_file_bulk_contents = '';
@@ -481,8 +322,7 @@ async function readAndFormatGportalFtpServerLoginLog(guild_id, ftp_client) {
     let player_ipv4_addresses = [];
     let user_steam_ids = {};
     let last_line_processed = cache.get(`last_line_processed_${guild_id}`) || 0;
-
-    console.log(`Last line processed is: ${last_line_processed}`);
+    const channel_for_joins = cache.get(`discord_channel_for_logins_${guild_id}`);
 
     try {
         const files = await new Promise((resolve, reject) => {
@@ -579,7 +419,14 @@ async function readAndFormatGportalFtpServerLoginLog(guild_id, ftp_client) {
                 if (current_file_contents_hash === previous_login_file_hash) {
                     return;
                 }
+
                 cache.set(`player_ftp_log_login_messages_${guild_id}`, ftp_file_processed_contents_string_array);
+
+                sendPlayerLoginMessagesToDiscord(
+                    received_chat_login_messages,
+                    channel_for_joins,
+                    guild_id
+                );
 
                 // Process new content and update cache
                 await processAndCacheNewContent(guild_id);
@@ -609,7 +456,6 @@ async function processAndCacheNewContent(guild_id) {
     // Call helper functions to perform specific actions
     const cached_player_login_messages = cache.get(`player_ftp_log_login_messages_${guild_id}`);
     const channel_for_new_joins = cache.get(`discord_channel_for_new_joins_${guild_id}`);
-    const channel_for_joins = cache.get(`discord_channel_for_logins_${guild_id}`);
     const player_login_messages = cache.get(`received_chat_login_messages_${guild_id}`);
     const user_steam_ids = cache.get(`user_steam_ids_${guild_id}`);
     const player_ipv4_addresses = cache.get(`player_ipv4_addresses_${guild_id}`);
@@ -617,11 +463,6 @@ async function processAndCacheNewContent(guild_id) {
     // determinePlayerLoginSessionMoney(guild_id, player_login_messages);
     // insertSteamUsersIntoDatabase(Object.keys(user_steam_ids), Object.values(user_steam_ids), guild_id);
     // teleportNewPlayersToLocation(player_ipv4_addresses, user_steam_ids, channel_for_new_joins);
-    sendPlayerLoginMessagesToDiscord(
-        cached_player_login_messages,
-        channel_for_joins,
-        guild_id
-    );
 }
 
 /**
