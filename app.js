@@ -929,6 +929,7 @@ const verifyCredentialsCallback = async (email, password, done) => {
         x_coordinate: bot_user_spawn_x_coordinate,
         y_coordinate: bot_user_spawn_y_coordinate,
         z_coordinate: bot_user_spawn_z_coordinate,
+        bot_repository: bot_repository_instance
     };
 
     message_logger.writeLogToAzureContainer(
