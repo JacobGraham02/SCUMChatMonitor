@@ -11,6 +11,7 @@ export default class DatabaseConnectionManager {
     bot_packages_database_collection = 'bot_packages';
     pool = null;
     change_stream_for_welcome_pack_cost = null;
+    mongodb_client = undefined;
 
     constructor(database_name) {
         this.database_name = database_name;
@@ -42,15 +43,15 @@ export default class DatabaseConnectionManager {
     async initializeDatabaseConnectionPool() {
         const poolFactory = {
             create: async () => {
-                const client = new MongoClient(this.database_url, {
+                this.mongodb_client = new MongoClient(this.database_url, {
                     serverApi: {
                         version: ServerApiVersion.v1,
                         strict: true,
                         deprecationErrors: true,
                     }
                 });
-                await client.connect();
-                return client.db(this.database_name)
+                await this.mongodb_client.connect();
+                return this.mongodb_client.db(this.database_name);
             },
             destroy: async (database_instance) => {
                 await database_instance.close();
@@ -69,11 +70,30 @@ export default class DatabaseConnectionManager {
         return this.pool.acquire();
     }
 
+    async getMongoDbClientConnection() {
+        if (!this.mongodb_client) {
+            console.log("Initializing MongoDB client connection...");
+            this.mongodb_client = new MongoClient(this.database_url, {
+                serverApi: {
+                    version: ServerApiVersion.v1,
+                    strict: true,
+                    deprecationErrors: true,
+                }
+            });
+            await this.mongodb_client.connect();
+        }
+        return this.mongodb_client;
+    }
+
     /*
     * this.pool.release() function is available in the module generic-pool
     */
     async releaseConnection(connection) {
-        this.pool.release(connection);
+        if (connection && this.pool) {
+            await this.pool.release(connection);
+        } else if (connection) {
+            await connection.close();
+        }
     }
 }
 

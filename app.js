@@ -426,6 +426,11 @@ async function readAndFormatGportalFtpServerLoginLog(guild_id, ftp_client) {
                     guild_id
                 );
 
+                const database_for_users_insertion = cache.get(`bot_repository_${guild_id}`);
+                
+                insertSteamUsersIntoDatabase(Object.keys(user_steam_ids), Object.values(user_steam_ids), guild_id);
+
+
                 // Process new content and update cache
                 await processAndCacheNewContent(guild_id);
 
@@ -854,16 +859,21 @@ async function insertSteamUsersIntoDatabase(steam_user_ids_array, steam_user_nam
  *    from the database if needed.
  * 4) If the hashed and salted user submitted password matches what was found in the database, express establishes a session, stores a session key in mongodb for 
  *    persistence, and attaches the admin object to the session. 
- * @param {any} username
- * @param {any} password
+ * @param {string} username
+ * @param {string} password
  * @param {any} done
  */
 const verifyCredentialsCallback = async (email, password, done) => {
     let bot_user_data = undefined;
-    const bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
+    let bot_repository_instance = undefined;
+    console.log("Verify callback worked");
 
     try {
-        bot_user_data = await bot_repository_instance.getBotDataByEmail(email);
+        console.log("Verify callback worked 2");
+        bot_repository_instance = new BotRepository();
+        console.log("Verify callback worked 3");
+        bot_user_data = await bot_repository_instance.getBotUserByEmail(email);
+        console.log(bot_user_data);
     } catch (error) {
         message_logger.writeLogToAzureContainer(
             `ErrorLogs`,
@@ -871,6 +881,7 @@ const verifyCredentialsCallback = async (email, password, done) => {
             bot_user_data.guild_id,
             `${bot_user_data.guild_id}-error-logs`
         );
+        return done(null, false);
     }
     if (!bot_user_data) {
         message_logger.writeLogToAzureContainer(
@@ -951,9 +962,9 @@ expressServer.use(express.urlencoded({ extended: true }));
 expressServer.use(cookieParser());
 expressServer.use(express.static(path.join(__dirname, 'public')));
 
-expressServer.use((request, response, next) => {
-    request.websocket_id = cache.get(``);
-});
+// expressServer.use((request, response, next) => {
+//     request.websocket_id = cache.get(``);
+// });
 
 expressServer.use('/', indexRouter);
 expressServer.use('/admin', adminRouter);
@@ -982,6 +993,7 @@ web_socket_server_instance.on('connection', function(websocket, request) {
     websocket.id = websocket_id;
     
     cache.set(`websocket_${websocket_id}`, websocket);
+    cache.set(`websocket_id_${websocket_id}`, websocket_id);
     // cache.set(`user_repository_${websocket_id}`, new UserRepository(websocket_id));
     cache.set(`bot_repository_${websocket_id}`, new BotRepository(websocket_id));
 
@@ -1008,9 +1020,9 @@ web_socket_server_instance.on('connection', function(websocket, request) {
                 
             // readAndFormatGportalFtpServerChatLog(json_message_guild_id, gportal_log_file_ftp_client);
 
-            // readAndFormatGportalFtpServerLoginLog(json_message_guild_id, gportal_log_file_ftp_client);
+            readAndFormatGportalFtpServerLoginLog(json_message_guild_id, gportal_log_file_ftp_client);
             
-            handleIngameSCUMChatMessages(json_message_guild_id);
+            // handleIngameSCUMChatMessages(json_message_guild_id);
     
             // checkLocalServerTime(json_message_guild_id);
 
@@ -1064,7 +1076,11 @@ passport.serializeUser(function (user, done) {
 
 passport.deserializeUser(async (guildId, done) => {
     try {
-        const bot_repository_instance = cache.get(`bot_repository_${guildId}`);
+        let bot_repository_instance = cache.get(`bot_repository_${guildId}`);
+        if (!bot_repository_instance) {
+            cache.set(`bot_repository_${guildId}`, new BotRepository(guildId));
+            bot_repository_instance = cache.get(`bot_repository_${guildId}`);
+        }
         const repository_user = await bot_repository_instance.getBotDataByGuildId(guildId);
 
         if (repository_user) {
@@ -1357,6 +1373,9 @@ client_instance.on('interactionCreate', async (interaction) => {
         if (interaction.customId === `reinitializebotbutton`) {
             try {
                 await registerInitialSetupCommands(bot_token, bot_id, guild_id);
+                if (!(cache.get(`bot_repository_${guild_id}`))) {
+                    cache.set(`bot_repository_${guild_id}`, new BotRepository(guild_id));
+                }
             } catch (error) {
                 message_logger.writeLogToAzureContainer(
                     `ErrorLogs`,

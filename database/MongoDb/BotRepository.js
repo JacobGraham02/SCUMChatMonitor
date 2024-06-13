@@ -252,6 +252,29 @@ export default class BotRepository {
         }
     }
 
+    async getBotUserByEmail(email) {
+        const database_connection = await this.database_connection_manager.getMongoDbClientConnection();
+
+        try {
+            const admin_database = database_connection.db().admin()
+            const list_of_databases = await admin_database.listDatabases();
+
+            for (let databaseInfo of list_of_databases.databases) {
+                const database_name = databaseInfo.name;
+                const database = database_connection.db(database_name);
+                const collection = database.collection('bot')
+                const user = await collection.findOne({ bot_email: email});
+
+                if (user) {
+                    return user;
+                }
+            }
+        } catch (error) {
+            console.error(`There was an error when attempting to find a user associated by email: ${error}`);
+            throw new Error(`There was an error when attempting to find a user associated by email: ${error}`);
+        } 
+    }
+
     async getBotDataByEmail(bot_email) {
         const database_connection = await this.database_connection_manager.getConnection();
     
