@@ -10,8 +10,8 @@ export default function() {
         authorization_role_name: ["Bot administrator"],
 
         async execute(interaction) {
-            const bot_repository = new BotRepository();
             const guild_id = interaction.guildId;
+            const bot_repository = new BotRepository(guild_id);
             let bot_data = undefined;
 
             try {

@@ -6,14 +6,14 @@ import { createPool } from 'generic-pool';
 export default class DatabaseConnectionManager {
     database_url = process.env.mongodb_connection_string;
     database_connection_pool_size = 10;
-    database_name = process.env.mongodb_database_name;
-    users_database_collection = 'Users';
+    users_database_collection = 'users';
     bot_database_collection = 'bot';
     bot_packages_database_collection = 'bot_packages';
     pool = null;
     change_stream_for_welcome_pack_cost = null;
 
-    constructor() {
+    constructor(database_name) {
+        this.database_name = database_name;
         this.initializeDatabaseConnectionPool();
         this.initializeCollectionChangeStreams();
     }
@@ -25,9 +25,9 @@ export default class DatabaseConnectionManager {
             }
         });
 
-        await this.mongo_client.connect();
-        const database = this.mongo_client.db(this.database_name);
-        const changeStream = database.watch()
+        // await this.mongo_client.connect();
+        // const database = this.mongo_client.db(this.database_name);
+        // const changeStream = database.watch()
 
         // changeStream.on("change", async (change) => {
         //     const mongodb_connection = await this.getConnection();

@@ -52,8 +52,6 @@ const client_instance = new Client({
     ]
 });
 
-const user_repository = new UserRepository();
-const bot_repository = new BotRepository();
 const message_logger = new Logger();
 const cache = new Cache();
 const user_intervals = new Map();
@@ -474,7 +472,8 @@ async function processAndCacheNewContent(guild_id) {
  * @param {any} online_users a Map containing the key-value pairs of user steam id and user steam name
  */
 async function teleportNewPlayersToLocation(player_ipv4_addresses, online_users, channel_for_new_joins, guild_id) { 
-    const bot_user = await bot_repository.getBotDataByGuildId(guild_id);
+    const bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
+    const bot_user = await bot_repository_instance.getBotDataByEmail(guild_id);
 
     if (!bot_user) {
         return;
@@ -691,12 +690,6 @@ async function readAndFormatGportalFtpServerChatLog(guild_id, ftp_client) {
                     cache.get(`discord_channel_for_chat_${guild_id}`),
                     guild_id
                 );
-        
-                if (file_contents_steam_id_and_messages) {
-                    return file_contents_steam_id_and_messages;
-                }
-
-                resolve();
             });
             stream.on('error', (error) => {
                 message_logger.writeLogToAzureContainer(
@@ -720,6 +713,7 @@ async function readAndFormatGportalFtpServerChatLog(guild_id, ftp_client) {
             stream.close();
             stream = null;
         }
+        resolve(file_contents_steam_id_and_messages);
         received_chat_messages = [];
         cache.set(`player_chat_messages_sent_inside_scum_${guild_id}`, received_chat_messages);
     }
@@ -828,7 +822,7 @@ function stopFileProcessingIntervalChatLog(guild_id) {
  * @param {UUID} admin_bot_token A UUID that represents the bot that the user is associated with
  */
 function insertAdminUserIntoDatabase(admin_user_username, admin_user_password, admin_bot_token) {
-    const hashed_admin_user_password = hashAndValidatePassword.hashPassword(admin_user_password);
+    const hashed_admin_user_password = validatePassword.hashPassword(admin_user_password);
 
     user_repository.createAdminUser(admin_user_username, hashed_admin_user_password, admin_bot_token);
 }
@@ -850,7 +844,7 @@ async function insertSteamUsersIntoDatabase(steam_user_ids_array, steam_user_nam
     }
 }
 /**
- * verifyCallback() is a subjectively necessary function to use in all web applications when using express and passport. In this instance, verifyCallback() is the 
+ * verifyCallback() is a necessary function to use in all web applications when using express and passport. In this instance, verifyCallback() is the 
  * function that is called internally when you are storing a user object in a session after logging in. Here are the steps in sequence:
  * 1) verifyCallback first attempts to find a user by their submitted username and password
  *  1a) If a user cannot be found, the result is null. The user is not permitted to go to any pages requiring a session with a user object.
@@ -866,9 +860,10 @@ async function insertSteamUsersIntoDatabase(steam_user_ids_array, steam_user_nam
  */
 const verifyCredentialsCallback = async (email, password, done) => {
     let bot_user_data = undefined;
+    const bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
 
     try {
-        bot_user_data = await bot_repository.getBotDataByEmail(email);
+        bot_user_data = await bot_repository_instance.getBotDataByEmail(email);
     } catch (error) {
         message_logger.writeLogToAzureContainer(
             `ErrorLogs`,
@@ -937,6 +932,7 @@ const verifyCredentialsCallback = async (email, password, done) => {
     );
 
     if (valid_user_account) {
+        cache.set(`bot_repository_${bot_user_data.guild_id}`, new BotRepository(bot_user_data.guild_id));
         return done(null, user);
     } else {
         return done(null, false);
@@ -954,6 +950,10 @@ expressServer.use(express.json());
 expressServer.use(express.urlencoded({ extended: true }));
 expressServer.use(cookieParser());
 expressServer.use(express.static(path.join(__dirname, 'public')));
+
+expressServer.use((request, response, next) => {
+    request.websocket_id = cache.get(``);
+});
 
 expressServer.use('/', indexRouter);
 expressServer.use('/admin', adminRouter);
@@ -982,6 +982,8 @@ web_socket_server_instance.on('connection', function(websocket, request) {
     websocket.id = websocket_id;
     
     cache.set(`websocket_${websocket_id}`, websocket);
+    // cache.set(`user_repository_${websocket_id}`, new UserRepository(websocket_id));
+    cache.set(`bot_repository_${websocket_id}`, new BotRepository(websocket_id));
 
     websocket.on('message', async function(message) { 
         const json_message = JSON.parse(message);
@@ -1006,9 +1008,9 @@ web_socket_server_instance.on('connection', function(websocket, request) {
                 
             // readAndFormatGportalFtpServerChatLog(json_message_guild_id, gportal_log_file_ftp_client);
 
-            readAndFormatGportalFtpServerLoginLog(json_message_guild_id, gportal_log_file_ftp_client);
+            // readAndFormatGportalFtpServerLoginLog(json_message_guild_id, gportal_log_file_ftp_client);
             
-            // handleIngameSCUMChatMessages(json_message_guild_id);
+            handleIngameSCUMChatMessages(json_message_guild_id);
     
             // checkLocalServerTime(json_message_guild_id);
 
@@ -1062,7 +1064,8 @@ passport.serializeUser(function (user, done) {
 
 passport.deserializeUser(async (guildId, done) => {
     try {
-        const repository_user = await bot_repository.getBotDataByGuildId(guildId);
+        const bot_repository_instance = cache.get(`bot_repository_${guildId}`);
+        const repository_user = await bot_repository_instance.getBotDataByGuildId(guildId);
 
         if (repository_user) {
             // User data found in repository, store in cache and return
@@ -1343,14 +1346,31 @@ client_instance.on('ready', () => {
 * @param {any} interaction 
 * @returns ceases execution of the function if the interaction is not a command, if the user sent the message in the wrong channel, or if the user cannot use this command
 */
-// cache.set(`battlemetrics_server_info_instance_${guild_id}`, battlemetrics_server_info_instance);
+
 client_instance.on('interactionCreate', async (interaction) => {
     let bot_discord_information = undefined;
     const guild_id = interaction.guild.id;
+    let bot_repository_instance = undefined;
+    const bot_id = interaction.client.user.id;
+
     if (interaction.isButton()) {
+        if (interaction.customId === `reinitializebotbutton`) {
+            try {
+                await registerInitialSetupCommands(bot_token, bot_id, guild_id);
+            } catch (error) {
+                message_logger.writeLogToAzureContainer(
+                    `ErrorLogs`,
+                    `There was an error when registering initial bot set up commands and creating the Discord bot category and text channels: ${error}`,
+                    `${guild_id}`,
+                    `${guild_id}-error-logs`
+                )
+                throw new Error(error);
+            }
+        }
         if (interaction.customId === `enablebotbutton`) {
             try {
-                bot_discord_information = await bot_repository.getBotDataByGuildId(guild_id);
+                const bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
+                bot_discord_information = await bot_repository_instance.getBotDataByGuildId(guild_id);
             } catch (error) {
                 message_logger.writeLogToAzureContainer(
                     `ErrorLogs`,
@@ -1408,7 +1428,14 @@ client_instance.on('interactionCreate', async (interaction) => {
             cache.set(`teleport_command_y_coordinate_${guild_id}`, teleport_command_y_coordinate);
             cache.set(`teleport_command_z_coordinate_${guild_id}`, teleport_command_z_coordinate);
         }
-        const user_data = await bot_repository.getBotDataByGuildId(guild_id);
+
+        bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
+
+        if (!(bot_repository_instance)) {
+            cache.set(`bot_repository_${guild_id}`, new BotRepository(guild_id));
+            bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
+        }
+        const user_data = await bot_repository_instance.getBotDataByGuildId(guild_id);
 
         if (user_data) {
             const ftp_server_data = {
@@ -1486,13 +1513,22 @@ client_instance.on('interactionCreate', async (interaction) => {
  */
 client_instance.on('guildCreate', async (guild) => {
     let bot_discord_information = undefined;
+    let bot_repository_instance = undefined;
     const bot_id = client_instance.user.id;
     const guild_id = guild.id;
+    cache.set(`guild_${guild_id}`, guild_id);
+    bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
+
+    if (!bot_repository_instance) {
+        cache.set(`bot_repository_${guild_id}`, new BotRepository(guild_id));
+        bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
+    }
 
     try {
         await registerInitialSetupCommands(bot_token, bot_id, guild_id);
         await createBotCategoryAndChannels(guild);
-        bot_discord_information = await bot_repository.getBotDataByGuildId(guild.id);
+        const bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
+        bot_discord_information = await bot_repository_instance.getBotDataByGuildId(guild.id);
     } catch (error) {
         message_logger.writeLogToAzureContainer(
             `ErrorLogs`,
@@ -1516,11 +1552,16 @@ client_instance.on('guildCreate', async (guild) => {
             .setCustomId('disablebotbutton')
             .setLabel(`Disable scum bot`)
             .setStyle(ButtonStyle.Success);
+        const reinitialize_bot_button = new ButtonBuilder()
+            .setCustomId(`reinitializebotbutton`)
+            .setLabel(`Reinitialize bot`)
+            .setStyle(ButtonStyle.Success);
     
         const button_row = new ActionRowBuilder()
             .addComponents(server_info_button)
             .addComponents(enable_bot_button)
             .addComponents(disable_bot_button)
+            .addComponents(reinitialize_bot_button)
 
         const discord_channel_id_for_chat = bot_discord_information.scum_ingame_chat_channel_id;
         const discord_channel_id_for_logins = bot_discord_information.scum_ingame_logins_channel_id;
@@ -1559,7 +1600,7 @@ client_instance.on('guildCreate', async (guild) => {
                 components: [button_row]
             });
             cache.set(`discord_channel_for_server_info_${guild_id}`, discord_channel_for_server_info);
-        }
+        } 
         if (discord_channel_id_for_server_online) {
             const discord_channel_for_server_online = guild.channels.cache.get(discord_channel_id_for_server_online);
             cache.set(`discord_channel_for_server_online_${guild_id}`, discord_channel_for_server_online);
@@ -1600,7 +1641,8 @@ client_instance.on(Events.InteractionCreate, async interaction => {
             }
 
             try {
-                await bot_repository.createBot(bot_information);            
+                const bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
+                await bot_repository_instance.createBot(bot_information);            
             } catch (error) {
                 throw new Error(`There was an error when attempting to create a bot for you. Please inform the server administrator of this error: ${error}`);
             }
@@ -1623,7 +1665,8 @@ client_instance.on(Events.InteractionCreate, async interaction => {
             }
 
             try {
-                await bot_repository.createBotBattlemetricsData(server_battlemetrics_data);
+                const bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
+                await bot_repository_instance.createBotBattlemetricsData(server_battlemetrics_data);
             } catch (error) {
                 throw new Error(`There was an error when attempting to update your bot with Discord channel data. Please inform the server administrator of this error: ${error}`);
             }
@@ -1640,7 +1683,8 @@ client_instance.on(Events.InteractionCreate, async interaction => {
             }
 
             try {
-                await bot_repository.createBotGameServerData(game_server_data);
+                const bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
+                await bot_repository_instance.createBotGameServerData(game_server_data);
             } catch (error) {
                 throw new Error(`There was an error when attempting to update your bot with game server data. Please inform the server administrator of this error: ${error}`);
             }
@@ -1660,7 +1704,8 @@ client_instance.on(Events.InteractionCreate, async interaction => {
             }
 
             try {
-                await bot_repository.createBotFtpServerData(ftp_server_data);
+                const bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
+                await bot_repository_instance.createBotFtpServerData(ftp_server_data);
             } catch (error) {
                 throw new Error(`There was an error when attempting to update your bot with FTP server data. Please inform the server administrator of this error: ${error}`);
             }
@@ -1717,8 +1762,8 @@ async function createBotCategoryAndChannels(guild) {
                 discord_channel_ids[mongodb_channel_name] = created_channel.id;
             }
         }
-
-        bot_repository.createBotDiscordData(discord_channel_ids);
+        const bot_repository_instance = await cache.get(`bot_repository_${guild.id}`);
+        bot_repository_instance.createBotDiscordData(discord_channel_ids);
     } catch (error) {
         console.error(`There was an error when setting up the bot channels. Please inform the server administrator of this error: ${error}`);
         throw new Error(`There was an error when setting up the bot channels. Please inform the server administrator of this error: ${error}`);
@@ -1734,7 +1779,7 @@ async function registerInitialSetupCommands(bot_token, bot_id, guild_id) {
 
     const commands = [];
 
-    const initial_bot_commands = [`setupuser`, `setupchannels`, `setupgameserver`, `setupchannels`, `setupftpserver`];
+    const initial_bot_commands = [`setupuser`, `setupchannels`, `setupgameserver`, `setupchannels`, `setupftpserver`, `setupbotcommands`];
 
     for (const command_file of filtered_command_files) {
         const command_file_path = path.join(commands_folder_path, command_file);
@@ -1827,6 +1872,7 @@ async function setProcessQueueMutex(user_command_queue, guild_id) {
 }
 
 async function processQueueIfNotProcessing(user_command_queue, guild_id) {
+    console.log(`Process queue function executed`);
     while (user_command_queue.size() > 0) { 
         /**
          * After a command has finished execution in the queue, shift the values one spot to remove the command which has been executed. Extract the command 
@@ -1847,7 +1893,9 @@ async function processQueueIfNotProcessing(user_command_queue, guild_id) {
         Next, we have to take the key associated with the command used, which is the user's steam id
         */
         const command_name = user_chat_message_object.value[0].substring(1);
+        console.log(`Command name: ${command_name}`);
         const command_to_execute_player_steam_id = user_chat_message_object.key[0];
+        console.log(`Player steam id that is executing command: ${command_to_execute_player_steam_id}`);
 
         /**
          * Fetch the user from the database with an id that corresponds with the one associated with the executed command. After, fetch all of properties and data from the user and command
@@ -1860,7 +1908,8 @@ async function processQueueIfNotProcessing(user_command_queue, guild_id) {
         By using a string representation of the command to execute, we will fetch the command from the MongoDB database. If the command executed in game is '/test', 
         a document with the name 'test' will be searched for in MongoDB. MongoDB returns the bot_item_package as an object instead of an array of objects. 
         */
-        const bot_item_package = await bot_repository.getBotPackageFromName(command_name.toString());
+        const bot_repository_instance = await cache.get(`bot_repository_${guild_id}`);
+        const bot_item_package = await bot_repository_instance.getBotPackageFromName(command_name.toString());
         const bot_package_items = bot_item_package.package_items;
         const bot_item_package_cost = bot_item_package.package_cost;
 

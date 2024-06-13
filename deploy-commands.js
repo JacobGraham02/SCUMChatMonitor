@@ -15,9 +15,9 @@ for (const command_file of commands_files) {
     commands.push(command_object.data);
 }
 
-const rest = new REST({ version: '9' }).setToken(process.env.discord_wilson_bot_token);
+const rest = new REST({ version: '9' }).setToken(process.env.bot_token);
 
-rest.put(Routes.applicationGuildCommands(process.env.discord_wilson_bot_client_id, process.env.discord_wilson_bot_guild_id), { body: commands })
+rest.put(Routes.applicationGuildCommands(process.env.bot_client_id, process.env.bot_guild_id), { body: commands })
     .then(() => { console.log('Successfully registered application commands') })
     .catch((error) => {
         console.error(error);

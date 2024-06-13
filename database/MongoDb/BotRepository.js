@@ -2,12 +2,17 @@ import { randomUUID } from 'crypto';
 import DatabaseConnectionManager from './DatabaseConnectionManager.js';
 import dotenv from 'dotenv';
 dotenv.config();
-const database_connection_manager = new DatabaseConnectionManager();
 
 export default class BotRepository {
 
+    constructor(websocket_id) {
+        const database_name = `ScumChatMonitor_${websocket_id}`;
+        this.websocket_id = websocket_id;
+        this.database_connection_manager = new DatabaseConnectionManager(database_name);
+    }
+
     async findBotByUUID(bot_uuid) {
-        const database_connection = await database_connection_manager.getConnection();
+        const database_connection = await this.this.database_connection_manager.getConnection();
         try {
             const bot_collection = database_connection.collection('bot');
             const bot = await bot_collection.findOne({ bot_uuid: bot_uuid });
@@ -21,7 +26,7 @@ export default class BotRepository {
     }
 
     async createBot(bot_information) {
-        const database_connection = await database_connection_manager.getConnection();
+        const database_connection = await this.database_connection_manager.getConnection();
         const new_bot_document = {
             bot_username: bot_information.bot_username,
             bot_password: bot_information.bot_password_hash,
@@ -47,7 +52,7 @@ export default class BotRepository {
     }
 
     async createBotDiscordData(discord_server_data) {
-        const database_connection = await database_connection_manager.getConnection();
+        const database_connection = await this.database_connection_manager.getConnection();
         const new_discord_data_document = {
             scum_bot_commands_channel_id: discord_server_data.discord_bot_commands_channel_id,
             scum_ingame_chat_channel_id: discord_server_data.discord_ingame_chat_channel_id,
@@ -74,7 +79,7 @@ export default class BotRepository {
     }
 
     async createBotBattlemetricsData(battlemetrics_server_info) {
-        const database_connection = await database_connection_manager.getConnection();
+        const database_connection = await this.database_connection_manager.getConnection();
         const new_discord_data_document = {
             scum_battlemetrics_server_id: battlemetrics_server_info.discord_battlemetrics_server_id
         };
@@ -96,7 +101,7 @@ export default class BotRepository {
     }
 
     async createBotTeleportNewPlayerCoordinates(teleport_command) {
-        const database_connection = await database_connection_manager.getConnection();
+        const database_connection = await this.database_connection_manager.getConnection();
         const new_start_area_data_document = {
             command_prefix: teleport_command.prefix,
             x_coordinate: teleport_command.x,
@@ -121,7 +126,7 @@ export default class BotRepository {
     }
 
     async createBotFtpServerData(ftp_server_data) {
-        const database_connection = await database_connection_manager.getConnection();
+        const database_connection = await this.database_connection_manager.getConnection();
         const new_ftp_server_data_document = {
             ftp_server_ip: ftp_server_data.ftp_server_hostname,
             ftp_server_port: ftp_server_data.ftp_server_port,
@@ -146,7 +151,7 @@ export default class BotRepository {
     }
 
     async createBotGameServerData(game_server_data) {
-        const database_connection = await database_connection_manager.getConnection();
+        const database_connection = await this.database_connection_manager.getConnection();
 
         const new_bot_game_server_document = {
             game_server_ipv4_address: game_server_data.game_server_hostname_input,
@@ -170,7 +175,7 @@ export default class BotRepository {
     }
 
     async createBotItemPackage(bot_id, bot_package) {
-        const database_connection = await database_connection_manager.getConnection();
+        const database_connection = await this.database_connection_manager.getConnection();
     
         const new_bot_item_package_document = {
             bot_id: bot_id,
@@ -197,7 +202,7 @@ export default class BotRepository {
     
 
     async getBotItemPackageData(bot_id) {
-        const database_connection = await database_connection_manager.getConnection();
+        const database_connection = await this.database_connection_manager.getConnection();
         
         try {
             const bot_packages_collection = database_connection.collection('bot_packages');
@@ -214,7 +219,7 @@ export default class BotRepository {
     }
 
     async getBotPackageFromName(bot_package_name) {
-        const database_connection = await database_connection_manager.getConnection();
+        const database_connection = await this.database_connection_manager.getConnection();
 
         try {
             const bot_packages_collection = database_connection.collection('bot_packages');
@@ -231,7 +236,7 @@ export default class BotRepository {
     }
 
     async getBotDataByGuildId(guild_id) {
-        const database_connection = await database_connection_manager.getConnection();
+        const database_connection = await this.database_connection_manager.getConnection();
     
         try {
             const bot_collection = database_connection.collection('bot');
@@ -248,7 +253,7 @@ export default class BotRepository {
     }
 
     async getBotDataByEmail(bot_email) {
-        const database_connection = await database_connection_manager.getConnection();
+        const database_connection = await this.database_connection_manager.getConnection();
     
         try {
             const bot_collection = database_connection.collection('bot');
@@ -265,7 +270,7 @@ export default class BotRepository {
     }
 
     async getAllBotData() {
-        const database_connection = await database_connection_manager.getConnection();
+        const database_connection = await this.database_connection_manager.getConnection();
 
         try {
             const bot_user_collection = database_connection.collection('bot');
@@ -282,7 +287,7 @@ export default class BotRepository {
 
     async updateBotDataByGuildId(guild_id, new_bot_data) {
         try {
-            const database_connection = await database_connection_manager.getConnection();
+            const database_connection = await this.database_connection_manager.getConnection();
             
             const bot_collection = database_connection.collection('bot');
             const existing_user = await user_collection.findOne({ guild_id: guild_id });
@@ -321,7 +326,7 @@ export default class BotRepository {
     async releaseConnectionSafely(database_connection) {
         if (database_connection) {
             try {
-                await database_connection_manager.releaseConnection(database_connection);
+                await this.database_connection_manager.releaseConnection(database_connection);
             } catch (error) {
                 console.error(`An error has occurred during the execution of releaseConnectionSafely function: ${error}`);
                 throw new Error(`An error has occurred during the execution of releaseConnectionSafely function: ${error}`);
