@@ -866,14 +866,10 @@ async function insertSteamUsersIntoDatabase(steam_user_ids_array, steam_user_nam
 const verifyCredentialsCallback = async (email, password, done) => {
     let bot_user_data = undefined;
     let bot_repository_instance = undefined;
-    console.log("Verify callback worked");
 
     try {
-        console.log("Verify callback worked 2");
         bot_repository_instance = new BotRepository();
-        console.log("Verify callback worked 3");
         bot_user_data = await bot_repository_instance.getBotUserByEmail(email);
-        console.log(bot_user_data);
     } catch (error) {
         message_logger.writeLogToAzureContainer(
             `ErrorLogs`,
