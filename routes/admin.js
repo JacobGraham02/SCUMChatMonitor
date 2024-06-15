@@ -104,69 +104,75 @@ router.get(['/login-success', '/'], isLoggedIn, function(request, response) {
     }
 });
 
-router.get(['/commands'], isLoggedIn, async (request, response) => {
-    let bot_package;
+router.get(['/commands'], isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
+    let bot_packages;
     const botRepository = request.user.bot_repository;
     
     try {
-        bot_package = await botRepository.getBotItemPackagesData();
+        bot_packages = await botRepository.getBotItemPackagesData();
     } catch (error) {
         console.error(`There was an internal service error when attempting to read all the command data from MongoDB: ${error}`);
         response.status(500).json({ error: `There was an internal service error when attempting to read all the command data from MongoDB: ${error}`});
     }
-    
-    const commands_per_page = 10;
 
-    const range = request.query.range || '1&10';
-    /*
-    Destructure the above query range string to retrieve the numbers. In this instance, we would get numbers 1 and 10
-    */
-    // Split the 'range' query parameter by '&' and convert both parts to numbers
-    // This will determine the range of commands to display on the current page
-    const [start_range_number, end_range_number] = range.split('&').map(Number);
+    if (bot_packages) {
+        const commands_per_page = 10;
 
-    // Calculate the current page number based on the start range and the number of commands per page
-    const current_page_number = Math.ceil(start_range_number / commands_per_page);
+        const range = request.query.range || '1&10';
+        /*
+        Destructure the above query range string to retrieve the numbers. In this instance, we would get numbers 1 and 10
+        */
+        // Split the 'range' query parameter by '&' and convert both parts to numbers
+        // This will determine the range of commands to display on the current page
+        const [start_range_number, end_range_number] = range.split('&').map(Number);
 
-    // Calculate the total number of pages needed to display all bot packages
-    const total_number_of_pages = Math.ceil(bot_package.length / commands_per_page);
+        // Calculate the current page number based on the start range and the number of commands per page
+        const current_page_number = Math.ceil(start_range_number / commands_per_page);
 
-    // Set the number of pages to be visible in the pagination at any given time
-    const visible_pages = 3;
+        // Calculate the total number of pages needed to display all bot packages
+        const total_number_of_pages = Math.ceil(bot_packages.length / commands_per_page);
 
-    // Calculate the starting page number for pagination. Ensures it doesn't go below 1.
-    let start_page = Math.max(1, current_page_number - Math.floor(visible_pages / 2));
+        // Set the number of pages to be visible in the pagination at any given time
+        const visible_pages = 3;
 
-    // Calculate the ending page number for pagination. Ensures it doesn't go beyond the total number of pages.
-    let end_page = Math.min(total_number_of_pages, start_page + visible_pages - 1);
+        // Calculate the starting page number for pagination. Ensures it doesn't go below 1.
+        let start_page = Math.max(1, current_page_number - Math.floor(visible_pages / 2));
 
-    // Adjust the start page based on the end page to ensure the correct number of visible pages are shown.
-    // This is particularly important when navigating to the last few pages.
-    start_page = Math.max(1, end_page - visible_pages + 1); 
+        // Calculate the ending page number for pagination. Ensures it doesn't go beyond the total number of pages.
+        let end_page = Math.min(total_number_of_pages, start_page + visible_pages - 1);
 
-    // Generate the list of page numbers to be displayed in the pagination based on the start and end pages calculated.
-    const page_numbers = Array.from({ length: (end_page - start_page) + 1 }, (_, i) => i + start_page);
+        // Adjust the start page based on the end page to ensure the correct number of visible pages are shown.
+        // This is particularly important when navigating to the last few pages.
+        start_page = Math.max(1, end_page - visible_pages + 1); 
 
-    // Slice the bot_packages array to only include the packages for the current page based on the range selected.
-    const current_page_packages = bot_package.slice(start_range_number - 1, end_range_number);
+        // Generate the list of page numbers to be displayed in the pagination based on the start and end pages calculated.
+        const page_numbers = Array.from({ length: (end_page - start_page) + 1 }, (_, i) => i + start_page);
 
-    // Map the current page's packages to their package names to be displayed as command files.
-    const commands = current_page_packages;
+        // Slice the bot_packages array to only include the packages for the current page based on the range selected.
+        const current_page_packages = bot_packages.slice(start_range_number - 1, end_range_number);
 
-    response.render('admin/command_list', {
-        title: 'Bot commands', 
-        commands, 
-        current_page_of_commands: current_page_number, 
-        total_command_files: bot_package.length, 
-        page_numbers,
-        user: request.user,
-        currentPage: '/admin/command_list'
-    });
+        // Map the current page's packages to their package names to be displayed as command files.
+        const commands = current_page_packages;
+
+        response.render('admin/command_list', {
+            title: 'Bot commands', 
+            commands, 
+            current_page_of_commands: current_page_number, 
+            total_command_files: bot_packages.length, 
+            page_numbers,
+            user: request.user,
+            currentPage: '/admin/command_list'
+        });
+    } else {
+        response.render('admin/command_list', {
+            title: 'Bot commands', 
+            user: request.user,
+            currentPage: '/admin/command_list'
+        });
+    }
 });
 // getAllBotData
 router.get('/discordchannelids', isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
-    const botRepository = request.user.bot_repository;
-
     try {
         response.render('admin/discord_channel_ids', { user: request.user, title: `Discord channel ids`, currentPage: '/admin/discordchannelids', title:`Discord channel ids` });
     } catch (error) {
@@ -176,8 +182,6 @@ router.get('/discordchannelids', isLoggedIn, checkBotRepositoryInCache, async (r
 });
 
 router.get('/ftpserverdata', isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
-    const botRepository = request.user.bot_repository;
-
     try {
         response.render('admin/ftp_server_data', { user: request.user, title: `FTP server data`, currentPage: '/admin/ftpserverdata'});
     } catch (error) {
