@@ -12,7 +12,7 @@ export default class BotRepository {
     }
 
     async findBotByUUID(bot_uuid) {
-        const database_connection = await this.this.database_connection_manager.getConnection();
+        const database_connection = await this.database_connection_manager.getConnection();
         try {
             const bot_collection = database_connection.collection('bot');
             const bot = await bot_collection.findOne({ bot_uuid: bot_uuid });
@@ -346,7 +346,7 @@ export default class BotRepository {
     }
 
     async createUser(user_steam_name, user_steam_id) {
-        const database_connection = await database_connection_manager.getConnection();
+        const database_connection = await this.database_connection_manager.getConnection();
         try {
             const user_collection = database_connection.collection(`users`);
     
@@ -375,7 +375,7 @@ export default class BotRepository {
     }
 
     async updateAllUsersWithJoinedServerValueOne() {
-        const database_connection = await database_connection_manager.getConnection();
+        const database_connection = await this.database_connection_manager.getConnection();
         try {
             const user_collection_result = database_connection.collection('users');
             const user_update_result = await user_collection_result.updateMany({}, { $set: { user_joining_server_first_time: 1 } });
@@ -389,7 +389,7 @@ export default class BotRepository {
     }
 
     async updateUserWelcomePackUsesByOne(user_steam_id) {
-        const database_connection = await database_connection_manager.getConnection();
+        const database_connection = await this.database_connection_manager.getConnection();
         try {
             const user_collection_result = database_connection.collection('users');
             const user_update_result = await user_collection_result.updateOne({ user_steam_id: user_steam_id }, { $inc: { user_welcome_pack_uses: 1 } });
@@ -403,7 +403,7 @@ export default class BotRepository {
     }
 
     async findUserById(user_steam_id) {
-        const database_connection = await database_connection_manager.getConnection();
+        const database_connection = await this.database_connection_manager.getConnection();
         try {
             const user_collection = database_connection.collection('users');
             const user = await user_collection.findOne({ user_steam_id: user_steam_id });
@@ -417,7 +417,7 @@ export default class BotRepository {
     }
 
     async findUserByIdIfFirstServerJoin(user_steam_id) { 
-        const database_connection = await database_connection_manager.getConnection();
+        const database_connection = await this.database_connection_manager.getConnection();
         try {
             const user_collection = database_connection.collection('users');
             const user = await user_collection.findOne({
@@ -434,7 +434,7 @@ export default class BotRepository {
     }
 
     async findAllUsers() {
-        const database_connection = await database_connection_manager.getConnection();
+        const database_connection = await this.database_connection_manager.getConnection();
         try {
             const user_collection = database_connection.collection('users');
             const users = await user_collection.find({}).toArray();
@@ -448,7 +448,7 @@ export default class BotRepository {
     } 
 
     async updateUser(user_steam_id, user_data) {
-        const database_connection = await database_connection_manager.getConnection();
+        const database_connection = await this.database_connection_manager.getConnection();
         try {
             const user_collection_result = database_connection.collection('users');
             const user_update_result = await user_collection_result.updateOne({ user_steam_id: user_steam_id }, { $set: user_data });
@@ -462,7 +462,7 @@ export default class BotRepository {
     }
 
     async updateUserAccountBalance(user_steam_id, user_account_update_value) {
-        const database_connection = await database_connection_manager.getConnection();
+        const database_connection = await this.database_connection_manager.getConnection();
         try {
             const user_collection_result = database_connection.collection(`users`);
             const user_update_result = await user_collection_result.updateOne({ user_steam_id: user_steam_id }, { $inc: { user_money: user_account_update_value } });
@@ -476,7 +476,7 @@ export default class BotRepository {
     }
 
     async deleteUser(user_steam_id) {
-        const database_connection = await database_connection_manager.getConnection();
+        const database_connection = await this.database_connection_manager.getConnection();
         try {
             const user_collection_result = database_connection.collection('users');
             const user_deletion_result = await user_collection_result.deleteOne({ user_steam_id: user_steam_id });
