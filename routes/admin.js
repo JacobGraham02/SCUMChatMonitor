@@ -43,7 +43,7 @@ router.post('/logdata', async function(request, response) {
     }
 });
 
-router.post('/createwebsocket', async function(request, response) {
+router.post('/createwebsocket', checkBotRepositoryInCache, async function(request, response) {
     const { email, password } = request.body;
     const botRepository = request.user.bot_repository;
 
@@ -171,8 +171,8 @@ router.get(['/commands'], isLoggedIn, checkBotRepositoryInCache, async (request,
         });
     }
 });
-// getAllBotData
-router.get('/discordchannelids', isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
+
+router.get('/discordchannelids', isLoggedIn, async (request, response) => {
     try {
         response.render('admin/discord_channel_ids', { user: request.user, title: `Discord channel ids`, currentPage: '/admin/discordchannelids', title:`Discord channel ids` });
     } catch (error) {
@@ -181,7 +181,7 @@ router.get('/discordchannelids', isLoggedIn, checkBotRepositoryInCache, async (r
     }
 });
 
-router.get('/ftpserverdata', isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
+router.get('/ftpserverdata', isLoggedIn, async (request, response) => {
     try {
         response.render('admin/ftp_server_data', { user: request.user, title: `FTP server data`, currentPage: '/admin/ftpserverdata'});
     } catch (error) {
@@ -190,7 +190,7 @@ router.get('/ftpserverdata', isLoggedIn, checkBotRepositoryInCache, async (reque
     }
 });
 
-router.get('/gameserverdata', (request, response) => {
+router.get('/gameserverdata', isLoggedIn, (request, response) => {
     try {
         response.render('admin/game_server_data', { user: request.user, currentPage: '/admin/gameserverdata', title: `Game server data` });
     } catch (error) {
@@ -199,7 +199,7 @@ router.get('/gameserverdata', (request, response) => {
     }
 });
 
-router.get('/spawncoordinates', (request, response) => {
+router.get('/spawncoordinates', isLoggedIn, (request, response) => {
     try {
         response.render('admin/new_player_join_coordinates', { user: request.user, currentPage: '/admin/spawncoordinates', title: `Spawn zone coordinates`});
     } catch (error) {
@@ -208,7 +208,7 @@ router.get('/spawncoordinates', (request, response) => {
     }
 });
 
-router.get('/logfiles', async (request, response) => {
+router.get('/logfiles', isLoggedIn, async (request, response) => {
     const user_guild_id = request.user.guild_id;
     const info_log_files_blob = await logger.readAllLogsFromAzureContainer(`${user_guild_id}-info-logs`);
     const error_log_files_blob = await logger.readAllLogsFromAzureContainer(`${user_guild_id}-error-logs`);
@@ -222,7 +222,7 @@ router.get('/logfiles', async (request, response) => {
     }
 }); 
 
-router.post('/setftpserverdata', async (request, response) => {
+router.post('/setftpserverdata', isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
     const request_user_id = request.user.guild_id;
     const botRepository = request.user.bot_repository;
 
@@ -241,7 +241,7 @@ router.post('/setftpserverdata', async (request, response) => {
     }
 });
 
-router.post('/setspawncoordinates', async (request, response) => {
+router.post('/setspawncoordinates', isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
     const request_user_id = request.user.guild_id;
     const botRepository = request.user.bot_repository;
 
@@ -260,7 +260,7 @@ router.post('/setspawncoordinates', async (request, response) => {
     }
 });
 
-router.post('/setdiscordchannelids', async (request, response) => {
+router.post('/setdiscordchannelids', isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
     const request_user_id = request.user.guild_id;
     const botRepository = request.user.bot_repository;
 
@@ -281,7 +281,7 @@ router.post('/setdiscordchannelids', async (request, response) => {
     }
 });
 
-router.post('/setgameserverdata', async (request, response) => {
+router.post('/setgameserverdata', isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
     const request_user_id = request.user.guild_id;
     const botRepository = request.user.bot_repository;
 
@@ -299,7 +299,7 @@ router.post('/setgameserverdata', async (request, response) => {
     }
 });
 
-router.post('/botcommand/new', isLoggedIn, async (request, response, next) => {
+router.post('/botcommand/new', isLoggedIn, checkBotRepositoryInCache, async (request, response, next) => {
     const new_command_name = request.body.command_name;
     const new_command_description = request.body.command_description;
     const command_cost = request.body.command_cost_input;
