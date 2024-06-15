@@ -1413,8 +1413,11 @@ client_instance.on('interactionCreate', async (interaction) => {
             const teleport_command_z_coordinate = bot_discord_information.z_coordinate;
         
             if (battlemetrics_server_id) {
+                console.log("Battlemetrics server id");
                 const battlemetrics_server_info_instance = new ServerInfoCommand(battlemetrics_server_id);
                 cache.set(`battlemetrics_server_info_instance_${guild_id}`, battlemetrics_server_info_instance);
+            } else {
+                console.log("Not battlemetrics server id");
             }
             if (discord_channel_id_for_chat) {
                 const discord_channel_for_chat = interaction.guild.channels.cache.get(discord_channel_id_for_chat);
@@ -1444,6 +1447,51 @@ client_instance.on('interactionCreate', async (interaction) => {
             cache.set(`teleport_command_x_coordinate_${guild_id}`, teleport_command_x_coordinate);
             cache.set(`teleport_command_y_coordinate_${guild_id}`, teleport_command_y_coordinate);
             cache.set(`teleport_command_z_coordinate_${guild_id}`, teleport_command_z_coordinate);
+        }
+
+        if (interaction.customId === `setupdiscordchannelids`) {
+            const setupChannelsCommand = client_instance.discord_commands.get(`setupchannels`);
+            if (setupChannelsCommand) {
+                await setupChannelsCommand.execute(interaction)
+            } else {
+                await interaction.reply({content: `The command to set up Discord channels was not found`,ephemeral: true});
+            }
+        }
+
+        if (interaction.customId === `setupftpserverdata`) {
+            const setupFtpSeverCommand = client_instance.discord_commands.get(`setupftpserver`);
+            if (setupFtpSeverCommand) {
+                await setupFtpSeverCommand.execute(interaction);
+            } else {
+                await interaction.reply({content: `The command to associate FTP server data with your bot was not found`, ephemeral: true});
+            }
+        }
+
+        if (interaction.customId === `setupwebsiteuser`) {
+            const setupFtpSeverCommand = client_instance.discord_commands.get(`setupuser`);
+            if (setupFtpSeverCommand) {
+                await setupFtpSeverCommand.execute(interaction);
+            } else {
+                await interaction.reply({content: `The command to set up a website user account was not found`, ephemeral: true});
+            }
+        }
+
+        if (interaction.customId === `setupgameserver`) {
+            const setupFtpSeverCommand = client_instance.discord_commands.get(`setupgameserver`);
+            if (setupFtpSeverCommand) {
+                await setupFtpSeverCommand.execute(interaction);
+            } else {
+                await interaction.reply({content: `The command to associate the SCUM game server data with your bot was not found`, ephemeral: true});
+            }
+        }
+
+        if (interaction.customId === `setupuserspawn`) {
+            const setupFtpSeverCommand = client_instance.discord_commands.get(`setupuserspawn`);
+            if (setupFtpSeverCommand) {
+                await setupFtpSeverCommand.execute(interaction);
+            } else {
+                await interaction.reply({content: `The command to set up new player spawn coordinates in your server was not found`, ephemeral: true});
+            }
         }
 
         bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
@@ -1561,24 +1609,61 @@ client_instance.on('guildCreate', async (guild) => {
             .setCustomId('serverinformationbutton')
             .setLabel('View server info')
             .setStyle(ButtonStyle.Success);
+
         const enable_bot_button = new ButtonBuilder()
             .setCustomId('enablebotbutton')
-            .setLabel(`Enable scum bot`)
+            .setLabel(`Enable bot`)
             .setStyle(ButtonStyle.Success);
+
         const disable_bot_button = new ButtonBuilder()
             .setCustomId('disablebotbutton')
-            .setLabel(`Disable scum bot`)
-            .setStyle(ButtonStyle.Success);
+            .setLabel(`Disable bot`)
+            .setStyle(ButtonStyle.Danger);
+
         const reinitialize_bot_button = new ButtonBuilder()
             .setCustomId(`reinitializebotbutton`)
-            .setLabel(`Reinitialize bot`)
+            .setLabel(`Restart bot`)
             .setStyle(ButtonStyle.Success);
+
+        const setup_discord_channel_ids_button = new ButtonBuilder()
+            .setCustomId(`setupdiscordchannelids`)
+            .setLabel(`Register Discord channel ids`)
+            .setStyle(ButtonStyle.Primary)
+
+        const setup_ftp_server_button = new ButtonBuilder()
+            .setCustomId(`setupftpserverdata`)
+            .setLabel(`Register FTP data`)
+            .setStyle(ButtonStyle.Primary)
+
+        const setup_website_user_button = new ButtonBuilder()
+            .setCustomId(`setupwebsiteuser`)
+            .setLabel(`Register website user`)
+            .setStyle(ButtonStyle.Primary)
+
+        const setup_game_server_button = new ButtonBuilder()
+            .setCustomId(`setupgameserver`)
+            .setLabel(`Register SCUM game server data`)
+            .setStyle(ButtonStyle.Primary)
+
+        const setup_user_spawn_coordinates_button = new ButtonBuilder()
+            .setCustomId(`setupuserspawn`)
+            .setLabel(`Register user spawn coordinates`)
+            .setStyle(ButtonStyle.Primary)
     
-        const button_row = new ActionRowBuilder()
-            .addComponents(server_info_button)
-            .addComponents(enable_bot_button)
-            .addComponents(disable_bot_button)
-            .addComponents(reinitialize_bot_button)
+        const button_row_bot_controls = new ActionRowBuilder().addComponents(
+            server_info_button,
+            enable_bot_button,
+            disable_bot_button,
+            reinitialize_bot_button
+        );
+        
+        const button_row_bot_data = new ActionRowBuilder().addComponents(
+            setup_discord_channel_ids_button,
+            setup_ftp_server_button,
+            setup_website_user_button,
+            setup_game_server_button,
+            setup_user_spawn_coordinates_button
+        );
 
         const discord_channel_id_for_chat = bot_discord_information.scum_ingame_chat_channel_id;
         const discord_channel_id_for_logins = bot_discord_information.scum_ingame_logins_channel_id;
@@ -1612,9 +1697,22 @@ client_instance.on('guildCreate', async (guild) => {
         }
         if (discord_channel_id_for_server_info_button) {
             const discord_channel_for_server_info = guild.channels.cache.get(discord_channel_id_for_server_info_button);
-            discord_channel_for_server_info.send({
-                content: "Click one of the buttons below to control the bot",
-                components: [button_row]
+            await discord_channel_for_server_info.send({
+                content: `**Bot controls:**\nClick one of the buttons below to control your bot:\n\n`+
+                `**View server info:** View information about your SCUM server\n`+
+                `**Enable bot:** Enable your bot so it starts working on your SCUM server\n`+
+                `**Disable bot:** Disable your bot so it stops working on your SCUM server\n`+
+                `**Restart bot:** Restart the bot so all functionality restarts. Useful if the bot is having problems\n`,
+            components: [button_row_bot_controls]
+            });
+            await discord_channel_for_server_info.send({
+                content: `**Bot setup**:\nClick one of the buttons below to configure your bot:\n\n`+
+                `**Register Discord channel ids:**  Register the Discord channel ids in this server with your bot\n`+
+                `**Register FTP data:** Register the your server host's FTP server with your bot\n`+
+                `**Register website user:** Register a website user with your bot. This will give you access to the bot web interface\n`+
+                `**Register SCUM game server data:** Register your SCUM game server data (IPv4 address and port number) with your bot\n`+
+                `**Register user spawn coordinates:** Register new user spawn coordinates with your bot\n`,
+            components: [button_row_bot_data]
             });
             cache.set(`discord_channel_for_server_info_${guild_id}`, discord_channel_for_server_info);
         } 
@@ -1777,7 +1875,7 @@ async function createBotCategoryAndChannels(guild) {
             "Server chat",
             "Server logins and logouts",
             "New player joins",
-            "Server info button",
+            "Server info buttons",
             "Server online",
         ];
 
