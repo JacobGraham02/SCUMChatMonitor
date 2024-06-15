@@ -4,6 +4,7 @@ import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { exec } from 'child_process';
+
 const intervals = new Map();
 
 let mainWindow;
@@ -253,6 +254,10 @@ async function moveMouseToContinueButtonXYLocation(websocket_id) {
     } catch (error) {
         console.error(`Failed to move mouse to continue button location`);
     }
+}
+
+async function moveScumWindow() {
+    const scriptPath = path.join(__dirname, 'moveWindow.ps1');
 }
 
 /**
