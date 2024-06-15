@@ -1,8 +1,11 @@
 import { Router } from 'express';
 import { validatePassword } from '../modules/hashAndValidatePassword.js';
 import Logger from '../utils/Logger.js';
+import Cache from '../utils/Cache.js';
+import BotRepository from '../database/MongoDb/BotRepository.js';
 var router = Router();
 const logger = new Logger();
+const cache = new Cache();
 
 function isLoggedIn(request, response, next) {
     if (request.isAuthenticated()) {
@@ -10,6 +13,18 @@ function isLoggedIn(request, response, next) {
     } else {
         response.redirect('/login');
     }
+}
+
+function checkBotRepositoryInCache(request, response, next) {
+    const guildId = request.user.guild_id;
+    const cacheKey = `bot_repository_${guildId}`;
+
+    if (!cache.get(cacheKey)) {
+        const botRepository = new BotRepository(guildId);
+        cache.set(cacheKey, botRepository);
+    } 
+    request.user.bot_repository = cache.get(cacheKey);
+    next();
 }
 
 router.post('/logdata', async function(request, response) {
@@ -148,8 +163,10 @@ router.get(['/commands'], isLoggedIn, async (request, response) => {
         currentPage: '/admin/command_list'
     });
 });
+// getAllBotData
+router.get('/discordchannelids', isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
+    const botRepository = request.user.bot_repository;
 
-router.get('/discordchannelids', (request, response) => {
     try {
         response.render('admin/discord_channel_ids', { user: request.user, title: `Discord channel ids`, currentPage: '/admin/discordchannelids', title:`Discord channel ids` });
     } catch (error) {
@@ -158,7 +175,9 @@ router.get('/discordchannelids', (request, response) => {
     }
 });
 
-router.get('/ftpserverdata', (request, response) => {
+router.get('/ftpserverdata', isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
+    const botRepository = request.user.bot_repository;
+
     try {
         response.render('admin/ftp_server_data', { user: request.user, title: `FTP server data`, currentPage: '/admin/ftpserverdata'});
     } catch (error) {
