@@ -512,13 +512,16 @@ app.whenReady().then(() => {
         try {
             const response = await fetch("http://localhost:8080/admin/createwebsocket", {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'Accept': 'application/json'
+                },
                 body: JSON.stringify({ email, password })
             });
             const response_data = await response.json();
             return response_data;
         } catch (error) {
-            console.error(`Error during login: ${error}`);
+            throw error;
             return false; 
         }
     });

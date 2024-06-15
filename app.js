@@ -228,7 +228,7 @@ async function determinePlayerLoginSessionMoney(guild_id, logs) {
 
 async function createNewFtpClient(guild_id, ftp_server_data) {
     const gportal_ftp_config = {
-        host: ftp_server_data.ftp_server_host,
+        host: ftp_server_data.ftp_server_ip,
         port: ftp_server_data.ftp_server_port,
         user: ftp_server_data.ftp_server_username,
         password: ftp_server_data.ftp_server_password,
@@ -247,6 +247,7 @@ async function createNewFtpClient(guild_id, ftp_server_data) {
                 guild_id, 
                 `${guild_id}-info-logs`
             );
+            cache.set(`ftp_server_configuration_${guild_id}`, gportal_log_file_ftp_client);
             resolve(gportal_log_file_ftp_client);
         });
         gportal_log_file_ftp_client.on('error', (error) => {
@@ -267,7 +268,9 @@ async function createNewFtpClient(guild_id, ftp_server_data) {
             );
             retryConnection(guild_id, ftp_server_data);
         });
+
         gportal_log_file_ftp_client.connect(gportal_ftp_config);
+
     }).catch(error => {
         message_logger.writeLogToAzureContainer(
             `ErrorLogs`, 
@@ -275,16 +278,17 @@ async function createNewFtpClient(guild_id, ftp_server_data) {
             guild_id, 
             `${guild_id}-error-logs`
         );
-        retryConnection(guild_id, ftp_server_data);
     });
 }
 
 async function establishFtpConnectionToGportal(guild_id, ftp_server_data) {
-    const ftp_client = cache.get(`ftp_server_configuration_${guild_id}`);
-
-    if (!ftp_client) {
-        const ftp_connection_client = await createNewFtpClient(guild_id, ftp_server_data);
-        cache.set(`ftp_server_configuration_${guild_id}`, ftp_connection_client);
+    try {
+        const ftp_client = await createNewFtpClient(guild_id, ftp_server_data);
+        cache.set(`ftp_server_configuration_${guild_id}`, ftp_client);
+        return ftp_client;
+    } catch (error) {
+        console.error(`Failed to establish FTP connection for guild ${guild_id}: ${error}`);
+        throw error;
     }
 }
 
@@ -313,6 +317,7 @@ function retryConnection(guild_id, ftp_server_data) {
  * @returns {Array} An array containing object(s) in the following format: {steam_id: string, player_message: string}
  */
 async function readAndFormatGportalFtpServerLoginLog(guild_id, ftp_client) {
+    console.log("Gportal ftp login log");
     let stream = null;
     let ftp_file_bulk_contents = '';
     let ftp_file_processed_contents_string_array = [];
@@ -326,6 +331,7 @@ async function readAndFormatGportalFtpServerLoginLog(guild_id, ftp_client) {
         const files = await new Promise((resolve, reject) => {
             ftp_client.list(gportal_ftp_server_target_directory, async (error, files) => {
                 if (error) {
+                    throw error;
                     await message_logger.writeLogToAzureContainer(
                         `ErrorLogs`, 
                         `There was an error when attempting to retrieve the login files from GPortal FTP server: ${error}`, 
@@ -339,6 +345,7 @@ async function readAndFormatGportalFtpServerLoginLog(guild_id, ftp_client) {
             });
         });
 
+        console.log("Gportal ftp login log 2");
         const matching_files = files
             .filter(file => file.name.startsWith(gportal_ftp_server_filename_prefix_login))
             .sort((file_one, file_two) => file_two.date - file_one.date);
@@ -358,6 +365,7 @@ async function readAndFormatGportalFtpServerLoginLog(guild_id, ftp_client) {
         stream = await new Promise((resolve, reject) => {
             ftp_client.get(file_path, async (error, stream) => {
                 if (error) {
+                    throw error;
                     await message_logger.writeLogToAzureContainer(
                         `ErrorLogs`, 
                         `The FTP file was present in GPortal, but could not be fetched: ${error}`, 
@@ -371,6 +379,7 @@ async function readAndFormatGportalFtpServerLoginLog(guild_id, ftp_client) {
             });
         });
 
+        console.log("Gportal ftp login log 3");
         await new Promise((resolve, reject) => {
             stream.on('data', (chunk) => {
                 const processed_chunk = chunk.toString().replace(/\u0000/g, '');
@@ -417,7 +426,7 @@ async function readAndFormatGportalFtpServerLoginLog(guild_id, ftp_client) {
                 if (current_file_contents_hash === previous_login_file_hash) {
                     return;
                 }
-
+                console.log("Gportal ftp login log 4");
                 cache.set(`player_ftp_log_login_messages_${guild_id}`, ftp_file_processed_contents_string_array);
 
                 sendPlayerLoginMessagesToDiscord(
@@ -428,7 +437,7 @@ async function readAndFormatGportalFtpServerLoginLog(guild_id, ftp_client) {
 
                 const database_for_users_insertion = cache.get(`bot_repository_${guild_id}`);
                 
-                insertSteamUsersIntoDatabase(Object.keys(user_steam_ids), Object.values(user_steam_ids), guild_id);
+                // insertSteamUsersIntoDatabase(Object.keys(user_steam_ids), Object.values(user_steam_ids), guild_id);
 
 
                 // Process new content and update cache
@@ -442,6 +451,7 @@ async function readAndFormatGportalFtpServerLoginLog(guild_id, ftp_client) {
             stream.on('error', reject);
         });
     } catch (error) {
+        throw error;
         await message_logger.writeLogToAzureContainer(
             `ErrorLogs`, 
             `There was an error when processing the GPortal FTP login log file: ${error}`, 
@@ -718,9 +728,9 @@ async function readAndFormatGportalFtpServerChatLog(guild_id, ftp_client) {
             stream.close();
             stream = null;
         }
-        resolve(file_contents_steam_id_and_messages);
         received_chat_messages = [];
         cache.set(`player_chat_messages_sent_inside_scum_${guild_id}`, received_chat_messages);
+        return file_contents_steam_id_and_messages;
     }
 }
 
@@ -986,6 +996,8 @@ web_socket_server.on('upgrade', (request, socket, head) => {
 
 web_socket_server_instance.on('connection', function(websocket, request) {
 
+    console.log("WebSocket connection created");
+
     const queryParameters = new URL(request.url, `http://${request.headers.host}`).searchParams;
     const websocket_id = queryParameters.get('websocket_id');
     websocket.id = websocket_id;
@@ -997,12 +1009,11 @@ web_socket_server_instance.on('connection', function(websocket, request) {
 
     websocket.on('message', async function(message) { 
         const json_message = JSON.parse(message);
-        if (json_message.action === "pressEnter") {
-            pressEnterKey();
-        }
 
         if (json_message.action === "statusUpdate" && json_message.ftp_server_data && json_message.connectedToServer 
             && json_message.serverOnline && json_message.localTime) {
+
+            console.log("Test");
 
             const json_message_guild_id = json_message.guild_id;
             const json_message_ftp_server_data = json_message.ftp_server_data;
@@ -1012,21 +1023,25 @@ web_socket_server_instance.on('connection', function(websocket, request) {
 
             cache.set(`restart_time_${json_message_guild_id}`, current_date_hours);
 
-            await establishFtpConnectionToGportal(json_message_guild_id, json_message_ftp_server_data);
+            const ftp_client = await establishFtpConnectionToGportal(json_message_guild_id, json_message_ftp_server_data);
 
-            const gportal_log_file_ftp_client = cache.get(`ftp_server_configuration_${json_message_guild_id}`);
+            console.log(ftp_client);
                 
-            // readAndFormatGportalFtpServerChatLog(json_message_guild_id, gportal_log_file_ftp_client);
+            if (ftp_client) {
+                // readAndFormatGportalFtpServerChatLog(json_message_guild_id, gportal_log_file_ftp_client);
 
-            readAndFormatGportalFtpServerLoginLog(json_message_guild_id, gportal_log_file_ftp_client);
-            
-            // handleIngameSCUMChatMessages(json_message_guild_id);
-    
-            // checkLocalServerTime(json_message_guild_id);
+                readAndFormatGportalFtpServerLoginLog(json_message_guild_id, ftp_client);
+                
+                // handleIngameSCUMChatMessages(json_message_guild_id);
+        
+                // checkLocalServerTime(json_message_guild_id);
 
-            checkLocalServerTime(json_message_guild_id);
+                checkLocalServerTime(json_message_guild_id);
 
-            botConnectedToGameServer(json_message_guild_id);
+                botConnectedToGameServer(json_message_guild_id);
+            } else {
+                console.log("No gportal ftp connection");
+            }
         } 
     });
 
@@ -1135,6 +1150,7 @@ function botConnectedToGameServer(guild_id) {
 }
 
 function sendPlayerMessagesToDiscord(scum_game_chat_messages, discord_channel, guild_id) {
+    console.log("Send player messages to discord");
     if (!scum_game_chat_messages) {
         message_logger.writeLogToAzureContainer(
             `ErrorLogs`, 
@@ -1157,6 +1173,7 @@ function sendPlayerMessagesToDiscord(scum_game_chat_messages, discord_channel, g
 
     for (let i = 0; i < scum_game_chat_messages.length; i++) {
         if (typeof scum_game_chat_messages[i] === 'string' && scum_game_chat_messages[i].trim() && !scum_game_chat_messages.includes(`Game version:`)) {
+            console.log(scum_game_chat_messages[i]);
             const embedded_message = new EmbedBuilder()
                 .setColor(0x299bcc)
                 .setTitle('In game chat')
@@ -1170,6 +1187,7 @@ function sendPlayerMessagesToDiscord(scum_game_chat_messages, discord_channel, g
 }
 
 function sendPlayerLoginMessagesToDiscord(scum_game_login_messages, discord_channel, guild_id) {
+    console.log("Send player logins to Discord function");
     if (!scum_game_login_messages) {
         message_logger.writeLogToAzureContainer(
             `ErrorLogs`, 
@@ -1196,6 +1214,8 @@ function sendPlayerLoginMessagesToDiscord(scum_game_login_messages, discord_chan
 
     for (let i = 0; i < scum_game_login_messages.length; i++) { 
         if (typeof scum_game_login_messages[i] === 'string' && scum_game_login_messages[i].trim() && !scum_game_login_messages.includes(`Game version:`)) {
+            console.log("Player login message");
+            console.log(scum_game_login_messages[i]);
             let user_logged_in_or_out = undefined;
             let x_coordinate = undefined;
             let y_coordinate = undefined;
@@ -1504,7 +1524,7 @@ client_instance.on('interactionCreate', async (interaction) => {
 
         if (user_data) {
             const ftp_server_data = {
-                ftp_server_host: user_data.ftp_server_ip,
+                ftp_server_ip: user_data.ftp_server_ip,
                 ftp_server_username: user_data.ftp_server_username,
                 ftp_server_password: user_data.ftp_server_password,
                 ftp_server_port: user_data.ftp_server_port

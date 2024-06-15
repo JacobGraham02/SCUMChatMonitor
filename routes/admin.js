@@ -43,12 +43,12 @@ router.post('/logdata', async function(request, response) {
     }
 });
 
-router.post('/createwebsocket', checkBotRepositoryInCache, async function(request, response) {
+router.post('/createwebsocket', async function(request, response) {
     const { email, password } = request.body;
-    const botRepository = request.user.bot_repository;
+    const botRepository = new BotRepository();
 
     try {
-        const repository_user = await botRepository.getBotDataByEmail(email);
+        const repository_user = await botRepository.getBotUserByEmail(email);
 
         if (repository_user) {
             const user_password = repository_user.bot_password;
@@ -57,16 +57,15 @@ router.post('/createwebsocket', checkBotRepositoryInCache, async function(reques
             
             if (is_valid_account) {
                 const user_id = repository_user.guild_id;
-                response.json({ success: true, message: `Login successful`, bot_id: user_id});
+                return response.json({ success: true, message: `Login successful`, bot_id: user_id});
             } else {
-                response.status(401).json({ success: false, message: `Invalid credentials` });
+                return response.status(401).json({ success: false, message: `Invalid credentials` });
             }
         } else {
-            response.status(401).json({ success: false, message: `Invalid credentials` });
+            return response.status(401).json({ success: false, message: `Invalid credentials` });
         }
     } catch (error) {
-        console.error(`Login error: ${error}`);
-        response.status(500).json({success: false, message: "An error occurred during login."})
+        return response.status(500).json({success: false, message: "An error occurred during login", error: `${error}`});
     }
 });
 
