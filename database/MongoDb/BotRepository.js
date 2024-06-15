@@ -103,10 +103,10 @@ export default class BotRepository {
     async createBotTeleportNewPlayerCoordinates(teleport_command) {
         const database_connection = await this.database_connection_manager.getConnection();
         const new_start_area_data_document = {
-            command_prefix: teleport_command.prefix,
-            x_coordinate: teleport_command.x,
-            y_coordinate: teleport_command.y,
-            z_coordinate: teleport_command.z
+            command_prefix: teleport_command.command_prefix,
+            x_coordinate: teleport_command.x_coordinate,
+            y_coordinate: teleport_command.y_coordinate,
+            z_coordinate: teleport_command.z_coordinate
         };
 
         try {

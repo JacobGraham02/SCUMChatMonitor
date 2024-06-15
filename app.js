@@ -1665,6 +1665,28 @@ client_instance.on(Events.InteractionCreate, async interaction => {
             }
         } 
 
+        else if (interaction.customId === `userSpawnCoordsInputModal`) {
+            const teleport_prefix = "#Teleport";
+            const x_coordinate = interaction.fields.getTextInputValue(`xCoordinateInput`);
+            const y_coordinate = interaction.fields.getTextInputValue(`yCoordinateInput`);
+            const z_coordinate = interaction.fields.getTextInputValue(`zCoordinateInput`);
+
+            const player_spawn_coordinate_zone_data = {
+                guild_id: guild_id,
+                command_prefix: teleport_prefix,
+                x_coordinate: x_coordinate,
+                y_coordinate: y_coordinate,
+                z_coordinate: z_coordinate 
+            }
+
+            try {
+                const bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
+                await bot_repository_instance.createBotTeleportNewPlayerCoordinates(player_spawn_coordinate_zone_data);
+            } catch (error) {
+                throw new Error(`There was an error when attempting to update your bot with new player spawn coordinates. Please inform the server administrator of this error: ${error}`);
+            }
+        }
+
         else if (interaction.customId === `battlemetricsServerIdModal`) {
             const battlemetrics_server_id = interaction.fields.getTextInputValue(`battlemetricsServerInput`);
             const battlemetrics_server_info_instance = new ServerInfoCommand(battlemetrics_server_id);
@@ -1736,6 +1758,8 @@ client_instance.on(Events.InteractionCreate, async interaction => {
         await interaction.reply({content: `Your submission for creating new game server data with your bot was successful`, ephemeral: true});
       } else if (interaction.customId === `ftpServerInputModal`) {
         await interaction.reply({content: `Your submission for creating new ftp server data with your bot was successful`, ephemeral: true});
+      } else if (interaction.customId === `userSpawnCoordsInputModal`) {
+        await interaction.reply({content: `Your submission for creating new player spawn coordinates was successful`, ephemeral: true});
       }
     }
   });

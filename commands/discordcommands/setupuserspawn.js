@@ -2,7 +2,7 @@ import { ActionRowBuilder, TextInputBuilder, TextInputStyle, ModalBuilder, Slash
 import BotRepository from '../../database/MongoDb/BotRepository.js';
 
 export default function() {
-    const setup_user_modal_object = {
+    const setup_user_spawn_coordinates = {
         data: new SlashCommandBuilder()
             .setName('setupuserspawn')
             .setDescription(`Register spawn coordinates for new players to be teleported to`)
@@ -22,8 +22,8 @@ export default function() {
             }
 
             const modal = new ModalBuilder()
-                .setCustomId(`userDataInputModal`)
-                .setTitle(`Enter user data below:`)
+                .setCustomId(`userSpawnCoordsInputModal`)
+                .setTitle(`Enter user spawn coordinates below:`)
 
             const xCoordinateInput = new TextInputBuilder()
                 .setCustomId(`xCoordinateInput`)
@@ -40,7 +40,7 @@ export default function() {
                 .setMinLength(1)
                 .setMaxLength(32)
                 .setRequired(true)
-                .setPlaceholder(`Johndoe027@gmail.com`)
+                .setPlaceholder(`-251920.7903`)
                 .setStyle(TextInputStyle.Short)
 
             const zCoordinateInput = new TextInputBuilder()
@@ -78,5 +78,5 @@ export default function() {
             }
         }
     }
-    return setup_user_modal_object;
+    return setup_user_spawn_coordinates;
 }
