@@ -1,13 +1,8 @@
 import { Router } from 'express';
 import { validatePassword } from '../modules/hashAndValidatePassword.js';
-import BotRepository from '../database/MongoDb/BotRepository.js';
 import Logger from '../utils/Logger.js';
-import Cache from '../utils/Cache.js';
-import WebSocket from 'ws';
 var router = Router();
-const botRepository = new BotRepository();
 const logger = new Logger();
-const cache = new Cache();
 
 function isLoggedIn(request, response, next) {
     if (request.isAuthenticated()) {
@@ -35,6 +30,7 @@ router.post('/logdata', async function(request, response) {
 
 router.post('/createwebsocket', async function(request, response) {
     const { email, password } = request.body;
+    const botRepository = request.user.bot_repository;
 
     try {
         const repository_user = await botRepository.getBotDataByEmail(email);
@@ -70,6 +66,8 @@ router.get('/newcommand', isLoggedIn, function(request, response) {
 
 router.get('/command/:commandname', isLoggedIn, async (request, response) => {
     const package_name = request.params.commandname;
+    const botRepository = request.user.bot_repository;
+
     try {
         const package_data = await botRepository.getBotPackageFromName(package_name); 
 
@@ -84,15 +82,6 @@ router.get('/command/:commandname', isLoggedIn, async (request, response) => {
 
 router.get(['/login-success', '/'], isLoggedIn, function(request, response) {
     try {
-        const guild_id = request.user.guild_id;
-        const websocket = cache.get(`websocket_${guild_id}`);
-        if (websocket && websocket.readyState === WebSocket.OPEN) {
-            const message = JSON.stringify({
-                action: 'DataSync',
-                data: 'This is a test data sync in the admin index page route'
-            });
-            websocket.send(message);
-        }
         response.render('admin/index', { user: request.user, currentPage: '/admin/', title: `Admin dashboard` });
     } catch (error) {
         console.error(`There was an error when attempting to load the admin index file after logging in. Please inform the server administrator of this error or try again: ${error}`);
@@ -101,11 +90,11 @@ router.get(['/login-success', '/'], isLoggedIn, function(request, response) {
 });
 
 router.get(['/commands'], isLoggedIn, async (request, response) => {
-    const bot_id = 1; 
     let bot_package;
+    const botRepository = request.user.bot_repository;
     
     try {
-        bot_package = await botRepository.getBotItemPackageData(bot_id);
+        bot_package = await botRepository.getBotItemPackagesData();
     } catch (error) {
         console.error(`There was an internal service error when attempting to read all the command data from MongoDB: ${error}`);
         response.status(500).json({ error: `There was an internal service error when attempting to read all the command data from MongoDB: ${error}`});
@@ -212,6 +201,8 @@ router.get('/logfiles', async (request, response) => {
 
 router.post('/setftpserverdata', async (request, response) => {
     const request_user_id = request.user.guild_id;
+    const botRepository = request.user.bot_repository;
+
     const ftp_server_data_object = {
         guild_id: request_user_id,
         ftp_server_hostname: request.body.ftp_server_hostname_input,
@@ -229,6 +220,8 @@ router.post('/setftpserverdata', async (request, response) => {
 
 router.post('/setspawncoordinates', async (request, response) => {
     const request_user_id = request.user.guild_id;
+    const botRepository = request.user.bot_repository;
+
     const coordinates_object = {
         guild_id: request_user_id,
         prefix: "#Teleport",
@@ -246,10 +239,7 @@ router.post('/setspawncoordinates', async (request, response) => {
 
 router.post('/setdiscordchannelids', async (request, response) => {
     const request_user_id = request.user.guild_id;
-    const websocket_connection = request.user.websocket;
-
-    console.log(`The websocket connection is:`);
-    console.log(websocket_connection);
+    const botRepository = request.user.bot_repository;
 
     const discord_server_channel_ids_object = {
         guild_id: request_user_id,
@@ -270,6 +260,8 @@ router.post('/setdiscordchannelids', async (request, response) => {
 
 router.post('/setgameserverdata', async (request, response) => {
     const request_user_id = request.user.guild_id;
+    const botRepository = request.user.bot_repository;
+
     const game_server_data = {
         guild_id: request_user_id,
         game_server_hostname_input: request.body.game_server_hostname_input,
@@ -289,6 +281,7 @@ router.post('/botcommand/new', isLoggedIn, async (request, response, next) => {
     const new_command_description = request.body.command_description;
     const command_cost = request.body.command_cost_input;
     let command_items = request.body.item_input_value;
+    const botRepository = request.user.bot_repository;
 
     if (!Array.isArray(command_items)) {
         command_items = [command_items];
@@ -302,7 +295,7 @@ router.post('/botcommand/new', isLoggedIn, async (request, response, next) => {
     }
 
     try {
-        // await botRepository.createBotItemPackage(1, new_bot_package);
+        await botRepository.createBotItemPackage(1, new_bot_package);
         response.render('admin/new_command', { user: request.user, page_title:`Create new command`, alert_title: `Successfuly created new package`, alert_description: `You have successfully created a new item package and registered it with your bot`, show_submit_modal: true });
     } catch (error) {
         response.render('admin/new_command', { user: request.user, page_title:`Error`, alert_title: `Error creating new package`, alert_description: `Please try submitting this form again or contact the server administrator if you believe this is an error: ${error}`, show_error_modal: true});

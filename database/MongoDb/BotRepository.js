@@ -174,11 +174,10 @@ export default class BotRepository {
         }
     }
 
-    async createBotItemPackage(bot_id, bot_package) {
+    async createBotItemPackage(bot_package) {
         const database_connection = await this.database_connection_manager.getConnection();
     
         const new_bot_item_package_document = {
-            bot_id: bot_id,
             package_name: bot_package.package_name,
             package_description: bot_package.package_description,
             package_cost: bot_package.package_cost,
@@ -190,8 +189,6 @@ export default class BotRepository {
     
             // Use insertOne to add the new bot item package document to the collection
             await bot_collection.insertOne(new_bot_item_package_document);
-            console.log("New bot item package inserted successfully.");
-    
         } catch (error) {
             console.error(`There was an error when attempting to create a new bot item package: ${error}`);
             throw new Error(`There was an error when attempting to create a new bot item package: ${error}`);
@@ -201,13 +198,13 @@ export default class BotRepository {
     }
     
 
-    async getBotItemPackageData(bot_id) {
+    async getBotItemPackagesData() {
         const database_connection = await this.database_connection_manager.getConnection();
         
         try {
             const bot_packages_collection = database_connection.collection('bot_packages');
 
-            const bot_packages = await bot_packages_collection.find({ bot_id: bot_id }).toArray();
+            const bot_packages = await bot_packages_collection.find().toArray();
             
             return bot_packages;
         } catch (error) {

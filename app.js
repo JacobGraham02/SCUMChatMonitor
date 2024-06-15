@@ -889,6 +889,8 @@ const verifyCredentialsCallback = async (email, password, done) => {
         return done(null, false);
     }
 
+    bot_repository_instance = new BotRepository(bot_user_data.guild_id);
+    
     const bot_user_email = bot_user_data.bot_email;
     const bot_user_username = bot_user_data.bot_username;
     const bot_user_password = bot_user_data.bot_password;
@@ -919,7 +921,7 @@ const verifyCredentialsCallback = async (email, password, done) => {
         ftp_server_port: bot_user_ftp_server_port,
         ftp_server_username: bot_user_ftp_server_username,
         ftp_server_password: bot_user_ftp_server_password,
-        game_server_ipv4: bot_user_game_server_ipv4,
+        game_server_ipv4_address: bot_user_game_server_ipv4,
         game_server_port: bot_user_game_server_port,
         scum_ingame_chat_channel_id: bot_user_ingame_chat_channel_id,
         scum_ingame_logins_channel_id: bot_user_ingame_logins_channel_id,
