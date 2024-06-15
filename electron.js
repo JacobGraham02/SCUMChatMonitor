@@ -38,11 +38,11 @@ async function createWebSocketConnection(websocket_id) {
 
     websocket.on('message', async (message) => {
         const json_message_data = JSON.parse(message);
-        if (json_message_data.action === `runCommand` && json_message_data.package_items && json_message_data.guild_id) {
+        if (json_message_data.action === `runCommand` && json_message_data.package_items && json_message_data.guild_id && json_message_data.steam_id) {
             try {
                 if (Array.isArray(json_message_data.package_items)) {
                     const commands_array = json_message_data.package_items;
-                    await runCommand(commands_array, websocket_id);
+                    await runCommand(commands_array, websocket_id, json_message_data.steam_id);
                 }
             } catch (error) {
                console.error(`There was an error when attempting to run a command: ${error}`);
@@ -170,19 +170,20 @@ function sleep(milliseconds) {
  * @param {string} command A string value containing the SCUM command to run in-game
  * @returns if the system cannot detect the SCUM process currently running, the function will cease execution. 
  */
-async function runCommand(commandsArray, websocket_id) {
-    for (const command of commandsArray) {
-        await sleep(500);
-        copyToClipboard(command, websocket_id);
-        await sleep(500);
+async function runCommand(commandsArray, websocket_id, steam_id) {
+    for (let command of commandsArray) {
+        const commandWithSteamId = `${command} ${steam_id}`;
+        await sleep(1000);
+        copyToClipboard(commandWithSteamId, websocket_id);
+        await sleep(1000);
         pressCharacterKeyT(websocket_id);
-        await sleep(500);
+        await sleep(1000);
         pressBackspaceKey(websocket_id);
-        await sleep(500);
+        await sleep(1000);
         pasteFromClipboard(websocket_id);
-        await sleep(500);
+        await sleep(1000);
         pressEnterKey(websocket_id);
-        await sleep(500);
+        await sleep(1000);
     }
 }
 

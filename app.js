@@ -2045,19 +2045,19 @@ async function processQueueIfNotProcessing(user_command_queue, guild_id) {
         //     sendCommandToClient(bot_package_items[i], guild_id);
             
         // } 
-        sendCommandToClient(bot_package_items, guild_id);
+        sendCommandToClient(bot_package_items, guild_id, command_to_execute_player_steam_id);
     }
 }
 
-function sendCommandToClient(bot_package_items_array, websocketId) {
-
+function sendCommandToClient(bot_package_items_array, websocketId, player_steam_id) {
     const websocket = cache.get(`websocket_${websocketId}`);
 
     if (websocket && websocket.readyState === WebSocket.OPEN) {
         websocket.send(JSON.stringify({
             action: `runCommand`,
             package_items: bot_package_items_array,
-            guild_id: websocketId
+            guild_id: websocketId,
+            steam_id: player_steam_id
         }));
     } else {
         message_logger.writeLogToAzureContainer(
