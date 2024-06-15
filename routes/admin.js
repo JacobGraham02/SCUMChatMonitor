@@ -79,7 +79,7 @@ router.get('/newcommand', isLoggedIn, function(request, response) {
     }
 });
 
-router.get('/command/:commandname', isLoggedIn, async (request, response) => {
+router.get('/command/:commandname', isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
     const package_name = request.params.commandname;
     const botRepository = request.user.bot_repository;
 
@@ -315,10 +315,12 @@ router.post('/botcommand/new', isLoggedIn, checkBotRepositoryInCache, async (req
         package_description: new_command_description,
         package_cost: command_cost,
         package_items: command_items
-    }
+    };
+
+    console.log(new_bot_package);
 
     try {
-        await botRepository.createBotItemPackage(1, new_bot_package);
+        await botRepository.createBotItemPackage(new_bot_package);
         response.render('admin/new_command', { user: request.user, page_title:`Create new command`, alert_title: `Successfuly created new package`, alert_description: `You have successfully created a new item package and registered it with your bot`, show_submit_modal: true });
     } catch (error) {
         response.render('admin/new_command', { user: request.user, page_title:`Error`, alert_title: `Error creating new package`, alert_description: `Please try submitting this form again or contact the server administrator if you believe this is an error: ${error}`, show_error_modal: true});

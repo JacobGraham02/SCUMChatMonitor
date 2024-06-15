@@ -183,6 +183,8 @@ export default class BotRepository {
             package_cost: bot_package.package_cost,
             package_items: bot_package.package_items
         };
+
+        console.log(new_bot_item_package_document);
     
         try {
             const bot_collection = database_connection.collection('bot_packages');
