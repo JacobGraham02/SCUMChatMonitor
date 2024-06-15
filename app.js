@@ -1796,7 +1796,7 @@ async function registerInitialSetupCommands(bot_token, bot_id, guild_id) {
 
     const commands = [];
 
-    const initial_bot_commands = [`setupuser`, `setupchannels`, `setupgameserver`, `setupchannels`, `setupftpserver`, `setupbotcommands`];
+    const initial_bot_commands = [`setupuserspawn`, `setupuser`, `setupchannels`, `setupgameserver`, `setupchannels`, `setupftpserver`, `setupbotcommands`];
 
     for (const command_file of filtered_command_files) {
         const command_file_path = path.join(commands_folder_path, command_file);
