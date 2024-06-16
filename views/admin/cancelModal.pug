@@ -1,0 +1,13 @@
+mixin cancelModal(modalTitle, modalContent)
+    div.modal.fade#cancelModal(tabindex="-1", role="dialog", aria-labelledby="cancelModalLabel", aria-hidden="true")
+        div.modal-dialog.modal-lg(role="document")
+            div.modal-content
+                div.modal-header
+                    h5.modal-title#cancelModalTitle #{modalTitle}
+                    button.close(type="button", data-dismiss="modal", aria-label="Close")
+                        span(aria-hidden="true") &times;
+                div.modal-body
+                    p #{modalContent}
+                div.modal-footer
+                    button.btn.btn-primary(type="button", id="confirmCancelButton") Yes
+                    button.btn.btn-secondary(type="button", data-dismiss="modal") No

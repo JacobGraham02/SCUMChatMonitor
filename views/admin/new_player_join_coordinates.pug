@@ -5,6 +5,7 @@ block variables
 
 include menu
 include smallModal
+include cancelModal
 include successModal
 include errorModal
 
@@ -15,6 +16,7 @@ block header
 block content(user)
     main#coordinate_data_edit_page    
         +smallModal(submit_modal_title, submit_modal_description)
+        +cancelModal(cancel_modal_title, cancel_modal_description)
         if show_submit_modal
             +successModal(alert_title, alert_description)
         if show_error_modal
@@ -85,7 +87,7 @@ block content(user)
                                
                 fieldset#coordinate_data_form_buttons.fieldset_for_form_buttons
                     button#save_changes_button(class="" type='submit') Save
-                    button#cancel_changes_to_coordinate_data_button(class="" type='button') Cancel
+                    button#cancel_changes_button(class="" type='button') Cancel
     script(src="/javascripts/validate_form_fields.js")
     script(src="/javascripts/coordinate_chooser_iframe.js")
     script(src="/javascripts/show_submit_modal.js")
