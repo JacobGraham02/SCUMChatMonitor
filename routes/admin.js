@@ -173,39 +173,140 @@ router.get(['/commands'], isLoggedIn, checkBotRepositoryInCache, async (request,
 
 router.get('/discordchannelids', isLoggedIn, async (request, response) => {
     try {
-        response.render('admin/discord_channel_ids', { user: request.user, title: `Discord channel ids`, currentPage: '/admin/discordchannelids', title:`Discord channel ids` });
+        const show_submit_modal = request.session.show_submit_modal || false;
+        const show_error_modal = request.session.show_error_modal || false;
+        const alert_title = request.session.alert_title || '';
+        const alert_description = request.session.alert_description || '';
+
+        // Clear the session variables
+        request.session.show_submit_modal = false;
+        request.session.show_error_modal = false;
+        request.session.alert_title = '';
+        request.session.alert_description = '';
+
+        response.render('admin/discord_channel_ids', {
+            user: request.user,
+            title: `Discord channel ids`,
+            currentPage: '/admin/discordchannelids',
+            submit_modal_title: `Change Discord channel ids`,
+            submit_modal_description: `Are you sure you want to change the Discord channel id values?`,
+            show_submit_modal,
+            show_error_modal,
+            alert_title,
+            alert_description
+        });
     } catch (error) {
         console.error(`There was an error when attempting to retrieve the page that allows you to change the Discord channel data. Please inform the server administrator of this error: ${error}`);
-        response.render('admin/discord_channel_ids', { user: request.user, title: `Discord channel ids`, title:`Discord channel ids` });
+        response.render('admin/discord_channel_ids', { 
+            user: request.user, 
+            title: `Discord channel ids`
+        });
     }
 });
 
 router.get('/ftpserverdata', isLoggedIn, async (request, response) => {
     try {
-        response.render('admin/ftp_server_data', { user: request.user, title: `FTP server data`, currentPage: '/admin/ftpserverdata'});
+        const show_submit_modal = request.session.show_submit_modal || false;
+        const show_error_modal = request.session.show_error_modal || false;
+        const alert_title = request.session.alert_title || '';
+        const alert_description = request.session.alert_description || '';
+
+        // Clear the session variables
+        request.session.show_submit_modal = false;
+        request.session.show_error_modal = false;
+        request.session.alert_title = '';
+        request.session.alert_description = '';
+
+        response.render('admin/ftp_server_data', {
+            user: request.user,
+            title: `FTP server data`,
+            currentPage: '/admin/ftpserverdata',
+            submit_modal_title: `Change FTP server data`,
+            submit_modal_description: `Are you sure you want to change the FTP server data?`,
+            show_submit_modal,
+            show_error_modal,
+            alert_title,
+            alert_description
+        });
     } catch (error) {
         console.error(`There was an error when attempting to retrieve the page that allows you to change the FTP server data. Please inform the server administrator of this error: ${error}`);
-        response.render('admin/ftp_server_data', { user: request.user, title: `FTP server data` });
+        response.render('admin/ftp_server_data', { 
+            user: request.user, 
+            title: `FTP server data` 
+        });
     }
 });
+
 
 router.get('/gameserverdata', isLoggedIn, (request, response) => {
     try {
-        response.render('admin/game_server_data', { user: request.user, currentPage: '/admin/gameserverdata', title: `Game server data` });
+        const show_submit_modal = request.session.show_submit_modal || false;
+        const show_error_modal = request.session.show_error_modal || false;
+        const alert_title = request.session.alert_title || '';
+        const alert_description = request.session.alert_description || '';
+
+        // Clear the session variables
+        request.session.show_submit_modal = false;
+        request.session.show_error_modal = false;
+        request.session.alert_title = '';
+        request.session.alert_description = '';
+
+        response.render('admin/game_server_data', {
+            user: request.user,
+            currentPage: '/admin/gameserverdata',
+            title: `Game server data`,
+            submit_modal_title: `Change SCUM server data`,
+            submit_modal_description: `Are you sure you want to change your SCUM server IPv4 address and port number?`,
+            show_submit_modal,
+            show_error_modal,
+            alert_title,
+            alert_description
+        });
     } catch (error) {
-        console.error(`There was an error when attempting to retrieve the page that allows you to set game server data`);
-        response.render('admin/game_server_data', { user: request.user, info_message: `There was an error`, title: `Game server data` });
+        console.error(`There was an error when attempting to retrieve the page that allows you to set game server data: ${error}`);
+        response.render('admin/game_server_data', { 
+            user: request.user, 
+            title: `Game server data`,
+            info_message: `There was an error`
+        });
     }
 });
 
+
 router.get('/spawncoordinates', isLoggedIn, (request, response) => {
     try {
-        response.render('admin/new_player_join_coordinates', { user: request.user, currentPage: '/admin/spawncoordinates', title: `Spawn zone coordinates`});
+        const show_submit_modal = request.session.show_submit_modal || false;
+        const show_error_modal = request.session.show_error_modal || false;
+        const alert_title = request.session.alert_title || '';
+        const alert_description = request.session.alert_description || '';
+
+        // Clear the session variables
+        request.session.show_submit_modal = false;
+        request.session.show_error_modal = false;
+        request.session.alert_title = '';
+        request.session.alert_description = '';
+
+        response.render('admin/new_player_join_coordinates', {
+            user: request.user,
+            currentPage: '/admin/spawncoordinates',
+            title: `Spawn zone coordinates`,
+            submit_modal_title: `Change spawn zone coordinates`,
+            submit_modal_description: `Are you sure you want to change new player spawn zone coordinates?`,
+            show_submit_modal,
+            show_error_modal,
+            alert_title,
+            alert_description
+        });
     } catch (error) {
         console.error(`There was an error when attempting to retrieve the page that allows you to set the spawn location of players. Please inform the server administrator of this error: ${error}`);
-        response.render('admin/new_player_join_coordinates', { user: request.user, currentPage: `/admin/spawncoordinates`, title: `Spawn zone coordinates`});
+        response.render('admin/new_player_join_coordinates', { 
+            user: request.user, 
+            currentPage: '/admin/spawncoordinates', 
+            title: `Spawn zone coordinates` 
+        });
     }
 });
+
 
 router.get('/logfiles', isLoggedIn, async (request, response) => {
     const user_guild_id = request.user.guild_id;
@@ -231,14 +332,23 @@ router.post('/setftpserverdata', isLoggedIn, checkBotRepositoryInCache, async (r
         ftp_server_port: request.body.ftp_server_port_input,
         ftp_server_username: request.body.ftp_server_username_input,
         ftp_server_password: request.body.ftp_server_password_input
-    }
+    };
     try {
         await botRepository.createBotFtpServerData(ftp_server_data_object);
-        response.render('admin/ftp_server_data', { user: request.user, alert_title: `Successfully updated FTP server credentials`, alert_description: `You have successfully updated your FTP server credentials`, show_submit_modal: true });
+        // Store the success message in the session
+        request.session.alert_title = 'Successfully updated FTP server credentials';
+        request.session.alert_description = 'You have successfully updated your FTP server credentials';
+        request.session.show_submit_modal = true;
+        response.redirect('/admin/ftpserverdata');
     } catch (error) {
-        response.render('admin/ftp_server_data', { user: request.user, alert_title: `Error updating FTP server credentials`, alert_description: `Please try submitting this form again or contacting the site administrator if you believe this is an error: ${error}`, show_error_modal: true });
+        // Store the error message in the session
+        request.session.alert_title = 'Error updating FTP server credentials';
+        request.session.alert_description = `Please try submitting this form again or contact the site administrator if you believe this is an error: ${error}`;
+        request.session.show_error_modal = true;
+        response.redirect('/admin/ftpserverdata');
     }
 });
+
 
 router.post('/setspawncoordinates', isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
     const request_user_id = request.user.guild_id;
@@ -246,18 +356,28 @@ router.post('/setspawncoordinates', isLoggedIn, checkBotRepositoryInCache, async
 
     const coordinates_object = {
         guild_id: request_user_id,
-        prefix: "#Teleport",
-        x: request.body.x_coordinate_data_input,
-        y: request.body.y_coordinate_data_input,
-        z: request.body.z_coordinate_input
-    }
+        command_prefix: "#Teleport",
+        x_coordinate: request.body.x_coordinate_data_input,
+        y_coordinate: request.body.y_coordinate_data_input,
+        z_coordinate: request.body.z_coordinate_input
+    };
     try {
         await botRepository.createBotTeleportNewPlayerCoordinates(coordinates_object);
-        response.render('admin/new_player_join_coordinates', { user: request.user, alert_title: `Successfully updated spawn zone coordinates`, alert_description: `You have successfully changed the coordinates for the new player spawn zone`, show_submit_modal: true });
+        // Store the success message in the session
+        request.session.alert_title = 'Successfully updated spawn zone coordinates';
+        request.session.alert_description = 'You have successfully changed the coordinates for the new player spawn zone';
+        request.session.show_submit_modal = true;
+        response.redirect('/admin/spawncoordinates');
     } catch (error) {
-        response.render('admin/new_player_join_coordinates', { user: request.user, alert_info: `Error updating spawn zone coordinates`, alert_description: `Please try submitting this form again or contacting the site administrator if you believe this is an error: ${error}`, show_error_modal: true });
+        console.error(`There was an error when attempting to update the spawn zone coordinates: ${error}`);
+        // Store the error message in the session
+        request.session.alert_title = 'Error updating spawn zone coordinates';
+        request.session.alert_description = `Please try submitting this form again or contact the site administrator if you believe this is an error: ${error}`;
+        request.session.show_error_modal = true;
+        response.redirect('/admin/spawncoordinates');
     }
 });
+
 
 router.post('/setdiscordchannelids', isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
     const request_user_id = request.user.guild_id;
@@ -273,10 +393,16 @@ router.post('/setdiscordchannelids', isLoggedIn, checkBotRepositoryInCache, asyn
     };
     try {
         await botRepository.createBotDiscordData(discord_server_channel_ids_object);
-        response.render('admin/discord_channel_ids', { user: request.user, alert_title: `Successfully changed Discord channel ids`, alert_description: `You have successfully changed the Discord channel ids associated with the bot`, show_submit_modal: true });
+        request.session.alert_title = 'Successfully changed Discord channel ids';
+        request.session.alert_description = 'You have successfully changed the Discord channel ids associated with the bot';
+        request.session.show_submit_modal = true;
+        response.redirect('/admin/discordchannelids');
     } catch (error) {
         console.error(`There was an error when attempting to update discord channel ids in the bot database document: ${error}`);
-        response.render('admin/discord_channel_ids', { user: request.user, alert_title: `Error changing Discord channel ids`, alert_description: `Please try submitting this form again or contact the site administrator if you believe this is an error: ${error}`, show_error_modal: true});
+        request.session.alert_title = 'Error changing Discord channel ids';
+        request.session.alert_description = `Please try submitting this form again or contact the site administrator if you believe this is an error: ${error}`;
+        request.session.show_error_modal = true;
+        response.redirect('/admin/discordchannelids');
     }
 });
 
@@ -288,15 +414,24 @@ router.post('/setgameserverdata', isLoggedIn, checkBotRepositoryInCache, async (
         guild_id: request_user_id,
         game_server_hostname_input: request.body.game_server_hostname_input,
         game_server_port_input: request.body.game_server_port_input
-    }
+    };
     try {
         await botRepository.createBotGameServerData(game_server_data);
-        response.render('admin/game_server_data', { user: request.user, alert_title: `Successfully submitted changes`, alert_description: `You have successfully changed the game server IPv4 address and port number`, show_submit_modal: true})
+        // Store the success message in the session
+        request.session.alert_title = 'Successfully submitted changes';
+        request.session.alert_description = 'You have successfully changed the game server IPv4 address and port number';
+        request.session.show_submit_modal = true;
+        response.redirect('/admin/gameserverdata');
     } catch (error) {
         console.error(`There was an error when attempting to update the game server IP address and port number: ${error}`);
-        response.render('admin/game_server_data', { user: request.user, alert_title: `Error submitting changes`, alert_description: `Please try submitting this form again or contact the server administrator if you believe this is an error: ${error}`, show_error_modal: true})
+        // Store the error message in the session
+        request.session.alert_title = 'Error submitting changes';
+        request.session.alert_description = `Please try submitting this form again or contact the server administrator if you believe this is an error: ${error}`;
+        request.session.show_error_modal = true;
+        response.redirect('/admin/gameserverdata');
     }
 });
+
 
 router.post('/botcommand/new', isLoggedIn, checkBotRepositoryInCache, async (request, response, next) => {
     const new_command_name = request.body.command_name;

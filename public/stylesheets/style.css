@@ -894,7 +894,7 @@ a {
     display: flex;
     flex-direction: column; /* Keep children (the title and the container div) in a column */
     align-items: center; /* Center children horizontally */
-    height: 100vh; /* Make it take up the full viewport height */
+    height: 80%; /* Make it take up the full viewport height */
 }
 
 /* Container for log files to sit side by side */

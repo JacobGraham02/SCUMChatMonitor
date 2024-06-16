@@ -15,7 +15,7 @@ block header
 
 block content(user)
 	main#discord_channel_id_edit_page
-		+smallModal
+		+smallModal(submit_modal_title, submit_modal_description)
 		if show_submit_modal 
 			+successModal(alert_title, alert_description)
 		if show_error_modal
