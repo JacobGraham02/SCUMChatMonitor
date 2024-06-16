@@ -6,7 +6,15 @@ block variables
 include menu
 include smallModal
 include successModal
+include cancelModal
 include errorModal
+
+block variables
+	- var page_title= title
+	- var submit_modal_title= "Create command"
+	- var submit_modal_description = "Are you sure you want to create this command?"
+	- var cancel_modal_title = "Cancel command creation"
+	- var cancel_modal_description = "Are you sure you want to go back to the previous page?"
 
 block header
 	header#header.header
@@ -14,7 +22,8 @@ block header
 
 block content(user)
 	main#command_new_page
-		+smallModal
+		+smallModal(submit_modal_title, submit_modal_description)
+		+cancelModal(cancel_modal_title, cancel_modal_description)
 		if show_submit_modal 
 			+successModal(alert_title, alert_description)
 		if show_error_modal
@@ -57,7 +66,7 @@ block content(user)
 
 				fieldset#edit_command_form_field_buttons
 						button#save_changes_button(type='submit') Create 
-						button#cancel_changes_to_command_button(type='button') Cancel
+						button#cancel_changes_button(type='button') Cancel
 
 	script(src='/javascripts/commands_form.js')
 	script(src='/javascripts/show_submit_modal.js')

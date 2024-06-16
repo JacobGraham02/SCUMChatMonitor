@@ -1,0 +1,13 @@
+mixin deleteModal(modalTitle, modalContent)
+    div.modal.fade#deleteModal(tabindex="-1", role="dialog", aria-labelledby="deleteModalLabel", aria-hidden="true")
+        div.modal-dialog(role="document")
+            div.modal-content
+                div.modal-header
+                    h5.modal-title#deleteModalLabel #{modalTitle}
+                    button.close(type="button", data-dismiss="modal", aria-label="Close")
+                        span(aria-hidden="true") &times;
+                div.modal-body
+                    p #{modalContent}
+                div.modal-footer
+                    button.btn.btn-danger(type="button", id="confirmDeleteButton") Confirm
+                    button.btn.btn-secondary(type="button", data-dismiss="modal") Cancel

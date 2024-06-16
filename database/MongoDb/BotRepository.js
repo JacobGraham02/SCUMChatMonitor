@@ -447,6 +447,19 @@ export default class BotRepository {
         }
     } 
 
+    async deleteBotPackageByName(package_name) {
+        const database_connection = await this.database_connection_manager.getConnection();
+        try {
+            const deletion_result = await database_connection.collection('bot_packages').deleteOne({ package_name: package_name });
+            return deletion_result;
+        } catch (error) {
+            console.error(`There was an error when attempting to delete the command: ${error}`);
+            throw error;
+        } finally {
+            await this.releaseConnectionSafely(database_connection);
+        }
+    }
+
     async updateUser(user_steam_id, user_data) {
         const database_connection = await this.database_connection_manager.getConnection();
         try {

@@ -469,4 +469,30 @@ router.post('/botcommand/new', isLoggedIn, checkBotRepositoryInCache, async (req
     }
 });
 
+router.delete('/deletecommand/:packageName', isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
+    const packageName = request.params.packageName;
+    const botRepository = request.user.bot_repository;
+
+    try {
+        const deletion_result = await botRepository.deleteBotPackageByName(packageName);
+        if (deletion_result.deletedCount === 1) {
+            request.session.alert_title = 'Command Deleted';
+            request.session.alert_description = `The command "${packageName}" was successfully deleted.`;
+            request.session.show_submit_modal = true;
+            response.redirect('/admin/');
+        } else {
+            request.session.alert_title = 'Deletion Failed';
+            request.session.alert_description = `The command "${packageName}" could not be found.`;
+            request.session.show_error_modal = true;
+            response.redirect('/admin/');
+        }
+    } catch (error) {
+        console.error(`There was an error when attempting to delete the command: ${error}`);
+        request.session.alert_title = 'Server Error';
+        request.session.alert_description = `An error occurred while attempting to delete the command: ${error}`;
+        request.session.show_error_modal = true;
+        response.redirect('/admin/');
+    }
+});
+
 export default router;
