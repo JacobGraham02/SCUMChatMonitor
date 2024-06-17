@@ -139,16 +139,14 @@ const steam_web_api_player_info = new SteamUserInfoCommand(process.env.steam_web
  * @param {string[]} logs An array of strings that represents the contents of the FTP login file on gportal.  
  * */
 async function determinePlayerLoginSessionMoney(guild_id, logs) {
-    console.log("Determine player login session money");
     const user_balance_updates = new Map();
     let user_steam_id = {};
-
-    console.log("Player session money logs are:");
-    console.log(logs);
 
     if (!Array.isArray(logs)) {
         throw new Error('Invalid logs array');
     }
+
+    const bot_repository = cache.get(`bot_repository_${guild_id}`);
 
     for (const log of logs) {
         if (!log || log.includes("Game version: ")) {
@@ -180,10 +178,9 @@ async function determinePlayerLoginSessionMoney(guild_id, logs) {
                  * in time from the Map. 
                  */
                 if (user_logged_in_or_out === 'logged in') {
-                    cache.set(`login_time_${user_steam_id}`);
+                    cache.set(`login_time_${user_steam_id}`, formatted_date_and_time);
                 } else if (user_logged_in_or_out === 'logged out') {
                     const login_time = cache.get(`login_time_${user_steam_id}`);
-
                     /**
                      * The variable calculated_elapsed_time holds the value in milliseconds. Therefore, to get the time in hours, we have to perform the math calculation 1000 / 60 / 60.
                      * Now that we have the play time in hours, we can multiply that play time by 1000 to get the amount of money they will get. Let us suppose initially a user has 0 
@@ -193,8 +190,6 @@ async function determinePlayerLoginSessionMoney(guild_id, logs) {
                     if (login_time) {
                         const calculated_elapsed_time = ((formatted_date_and_time - login_time) / 1000 / 60 / 60);
                         const user_account_balance = Math.round(calculated_elapsed_time * 1000);
-
-                        console.log(`User ${user_steam_id} has an added account balance of $${user_account_balance}`);
 
                         message_logger.writeLogToAzureContainer(
                             `InfoLogs`, 
