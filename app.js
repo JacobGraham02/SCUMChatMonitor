@@ -139,8 +139,12 @@ const steam_web_api_player_info = new SteamUserInfoCommand(process.env.steam_web
  * @param {string[]} logs An array of strings that represents the contents of the FTP login file on gportal.  
  * */
 async function determinePlayerLoginSessionMoney(guild_id, logs) {
+    console.log("Determine player login session money");
     const user_balance_updates = new Map();
     let user_steam_id = {};
+
+    console.log("Player session money logs are:");
+    console.log(logs);
 
     if (!Array.isArray(logs)) {
         throw new Error('Invalid logs array');
@@ -318,7 +322,6 @@ function retryConnection(guild_id, ftp_server_data) {
  * @returns {Array} An array containing object(s) in the following format: {steam_id: string, player_message: string}
  */
 async function readAndFormatGportalFtpServerLoginLog(bot_repository, guild_id, ftp_client) {
-
     let stream = null;
     let ftp_file_bulk_contents = '';
     let ftp_file_processed_contents_string_array = [];
@@ -426,16 +429,29 @@ async function readAndFormatGportalFtpServerLoginLog(bot_repository, guild_id, f
                 }
                 cache.set(`player_ftp_log_login_messages_${guild_id}`, ftp_file_processed_contents_string_array);
 
-                sendPlayerLoginMessagesToDiscord(
+                await sendPlayerLoginMessagesToDiscord(
                     received_chat_login_messages,
                     channel_for_joins,
                     guild_id
-                );    
-                await insertSteamUsersIntoDatabase(Object.keys(user_steam_ids), Object.values(user_steam_ids), guild_id);
+                );
 
-                await determinePlayerLoginSessionMoney(guild_id, received_chat_login_messages);
+                await insertSteamUsersIntoDatabase(
+                    Object.keys(user_steam_ids), 
+                    Object.values(user_steam_ids), 
+                    guild_id
+                );
 
-                await teleportNewPlayersToLocation(bot_repository, player_ipv4_addresses, user_steam_ids, channel_for_new_joins);
+                await determinePlayerLoginSessionMoney(
+                    guild_id, 
+                    cache.get(`received_chat_login_messages_${guild_id}`)
+                );
+
+                await teleportNewPlayersToLocation(
+                    bot_repository, 
+                    player_ipv4_addresses, 
+                    user_steam_ids, 
+                    channel_for_new_joins
+                );
 
                 cache.set(`current_login_log_hash_${guild_id}`, current_file_contents_hash);
 
@@ -648,7 +664,6 @@ async function readAndFormatGportalFtpServerChatLog(guild_id, ftp_client) {
                          * append both the user steam id and user in-game message into an array which we will return
                          */
                         if (browser_file_contents_lines[i].match(chat_log_messages_regex)) {
-                            console.log("Chat messages matches regex");
                             file_contents_steam_id_and_messages.push({
                                 key: browser_file_contents_lines[i].match(chat_log_steam_id_regex),
                                 value: browser_file_contents_lines[i].match(chat_log_messages_regex)
@@ -1155,7 +1170,8 @@ function sendPlayerMessagesToDiscord(scum_game_chat_messages, discord_channel, g
     }
 }
 
-function sendPlayerLoginMessagesToDiscord(scum_game_login_messages, discord_channel, guild_id) {
+async function sendPlayerLoginMessagesToDiscord(scum_game_login_messages, discord_channel, guild_id) {
+    console.log("Send player log in messages to discord");
     if (!scum_game_login_messages) {
         message_logger.writeLogToAzureContainer(
             `ErrorLogs`, 
@@ -1182,6 +1198,7 @@ function sendPlayerLoginMessagesToDiscord(scum_game_login_messages, discord_chan
 
     for (let i = 0; i < scum_game_login_messages.length; i++) { 
         if (typeof scum_game_login_messages[i] === 'string' && scum_game_login_messages[i].trim() && !scum_game_login_messages.includes(`Game version:`)) {
+            console.log(scum_game_login_messages[i]);
             let user_logged_in_or_out = undefined;
             let x_coordinate = undefined;
             let y_coordinate = undefined;
@@ -1384,52 +1401,57 @@ client_instance.on('interactionCreate', async (interaction) => {
                 return;
             }
 
-            const discord_channel_id_for_chat = bot_discord_information.scum_ingame_chat_channel_id;
-            const discord_channel_id_for_logins = bot_discord_information.scum_ingame_logins_channel_id;
-            const discord_channel_id_for_new_player_joins = bot_discord_information.scum_new_player_joins_channel_id;
-            const discord_channel_id_for_server_info_button = bot_discord_information.scum_server_info_channel_id;
-            const discord_channel_id_for_server_online = bot_discord_information.scum_server_online_channel_id;
-            const discord_channel_id_for_bot_commands = bot_discord_information.scum_bot_commands_channel_id;
-        
-            const battlemetrics_server_id = bot_discord_information.scum_battlemetrics_server_id;
-        
-            const teleport_command_prefix = bot_discord_information.command_prefix;
-            const teleport_command_x_coordinate = bot_discord_information.x_coordinate;
-            const teleport_command_y_coordinate = bot_discord_information.y_coordinate;
-            const teleport_command_z_coordinate = bot_discord_information.z_coordinate;
-        
-            if (battlemetrics_server_id) {
-                const battlemetrics_server_info_instance = new ServerInfoCommand(battlemetrics_server_id);
-                cache.set(`battlemetrics_server_info_instance_${guild_id}`, battlemetrics_server_info_instance);
+            if (bot_discord_information) {
+
+                console.log(bot_discord_information);
+
+                const discord_channel_id_for_chat = bot_discord_information.scum_ingame_chat_channel_id;
+                const discord_channel_id_for_logins = bot_discord_information.scum_ingame_logins_channel_id;
+                const discord_channel_id_for_new_player_joins = bot_discord_information.scum_new_player_joins_channel_id;
+                const discord_channel_id_for_server_info_button = bot_discord_information.scum_server_info_channel_id;
+                const discord_channel_id_for_server_online = bot_discord_information.scum_server_online_channel_id;
+                const discord_channel_id_for_bot_commands = bot_discord_information.scum_bot_commands_channel_id;
+            
+                const battlemetrics_server_id = bot_discord_information.scum_battlemetrics_server_id;
+            
+                const teleport_command_prefix = bot_discord_information.command_prefix;
+                const teleport_command_x_coordinate = bot_discord_information.x_coordinate;
+                const teleport_command_y_coordinate = bot_discord_information.y_coordinate;
+                const teleport_command_z_coordinate = bot_discord_information.z_coordinate;
+            
+                if (battlemetrics_server_id) {
+                    const battlemetrics_server_info_instance = new ServerInfoCommand(battlemetrics_server_id);
+                    cache.set(`battlemetrics_server_info_instance_${guild_id}`, battlemetrics_server_info_instance);
+                } 
+                if (discord_channel_id_for_chat) {
+                    const discord_channel_for_chat = interaction.guild.channels.cache.get(discord_channel_id_for_chat);
+                    cache.set(`discord_channel_for_chat_${guild_id}`, discord_channel_for_chat);
+                }
+                if (discord_channel_id_for_logins) {
+                    const discord_channel_for_logins = interaction.guild.channels.cache.get(discord_channel_id_for_logins);
+                    cache.set(`discord_channel_for_logins_${guild_id}`, discord_channel_for_logins);
+                }
+                if (discord_channel_id_for_new_player_joins) {
+                    const discord_channel_for_new_joins = interaction.guild.channels.cache.get(discord_channel_id_for_new_player_joins);
+                    cache.set(`discord_channel_for_new_joins_${guild_id}`, discord_channel_for_new_joins);
+                }
+                if (discord_channel_id_for_server_info_button) {
+                    const discord_channel_for_server_info = interaction.guild.channels.cache.get(discord_channel_id_for_server_info_button);
+                    cache.set(`discord_channel_for_server_info_${guild_id}`, discord_channel_for_server_info);
+                }
+                if (discord_channel_id_for_server_online) {
+                    const discord_channel_for_server_online = interaction.guild.channels.cache.get(discord_channel_id_for_server_online);
+                    cache.set(`discord_channel_for_server_online_${guild_id}`, discord_channel_for_server_online);
+                }
+                if (discord_channel_id_for_bot_commands) {
+                    const discord_channel_for_bot_commands = interaction.guild.channels.cache.get(discord_channel_id_for_bot_commands);
+                    cache.set(`discord_channel_for_bot_commands_${guild_id}`, discord_channel_for_bot_commands);
+                }
+                cache.set(`teleport_command_prefix_${guild_id}`, teleport_command_prefix);
+                cache.set(`teleport_command_x_coordinate_${guild_id}`, teleport_command_x_coordinate);
+                cache.set(`teleport_command_y_coordinate_${guild_id}`, teleport_command_y_coordinate);
+                cache.set(`teleport_command_z_coordinate_${guild_id}`, teleport_command_z_coordinate);
             } 
-            if (discord_channel_id_for_chat) {
-                const discord_channel_for_chat = interaction.guild.channels.cache.get(discord_channel_id_for_chat);
-                cache.set(`discord_channel_for_chat_${guild_id}`, discord_channel_for_chat);
-            }
-            if (discord_channel_id_for_logins) {
-                const discord_channel_for_logins = interaction.guild.channels.cache.get(discord_channel_id_for_logins);
-                cache.set(`discord_channel_for_logins_${guild_id}`, discord_channel_for_logins);
-            }
-            if (discord_channel_id_for_new_player_joins) {
-                const discord_channel_for_new_joins = interaction.guild.channels.cache.get(discord_channel_id_for_new_player_joins);
-                cache.set(`discord_channel_for_new_joins_${guild_id}`, discord_channel_for_new_joins);
-            }
-            if (discord_channel_id_for_server_info_button) {
-                const discord_channel_for_server_info = interaction.guild.channels.cache.get(discord_channel_id_for_server_info_button);
-                cache.set(`discord_channel_for_server_info_${guild_id}`, discord_channel_for_server_info);
-            }
-            if (discord_channel_id_for_server_online) {
-                const discord_channel_for_server_online = interaction.guild.channels.cache.get(discord_channel_id_for_server_online);
-                cache.set(`discord_channel_for_server_online_${guild_id}`, discord_channel_for_server_online);
-            }
-            if (discord_channel_id_for_bot_commands) {
-                const discord_channel_for_bot_commands = interaction.guild.channels.cache.get(discord_channel_id_for_bot_commands);
-                cache.set(`discord_channel_for_bot_commands_${guild_id}`, discord_channel_for_bot_commands);
-            }
-            cache.set(`teleport_command_prefix_${guild_id}`, teleport_command_prefix);
-            cache.set(`teleport_command_x_coordinate_${guild_id}`, teleport_command_x_coordinate);
-            cache.set(`teleport_command_y_coordinate_${guild_id}`, teleport_command_y_coordinate);
-            cache.set(`teleport_command_z_coordinate_${guild_id}`, teleport_command_z_coordinate);
         }
 
         if (interaction.customId === `setupdiscordchannelids`) {
@@ -1956,15 +1978,14 @@ async function setProcessQueueMutex(user_command_queue, guild_id) {
             } else {
                 console.error(`An error has occurred during execution of the mutex: ${error}`);
             }
-        })
-        .finally(() => {
-            mutex.release();
-        })
+        });
 }
 
 async function processQueueIfNotProcessing(user_command_queue, guild_id) {
-    console.log(`Process queue function executed`);
     const bot_repository = cache.get(`bot_repository_${guild_id}`);
+    let bot_package_items = undefined;
+    let bot_item_package_cost = undefined;
+
     while (user_command_queue.size() > 0) { 
         /**
          * After a command has finished execution in the queue, shift the values one spot to remove the command which has been executed. Extract the command 
@@ -1985,9 +2006,7 @@ async function processQueueIfNotProcessing(user_command_queue, guild_id) {
         Next, we have to take the key associated with the command used, which is the user's steam id
         */
         const command_name = user_chat_message_object.value[0].substring(1);
-        console.log(`Command name: ${command_name}`);
         const command_to_execute_player_steam_id = user_chat_message_object.key[0];
-        console.log(`Player steam id that is executing command: ${command_to_execute_player_steam_id}`);
 
         /**
          * Fetch the user from the database with an id that corresponds with the one associated with the executed command. After, fetch all of properties and data from the user and command
@@ -2001,8 +2020,16 @@ async function processQueueIfNotProcessing(user_command_queue, guild_id) {
         a document with the name 'test' will be searched for in MongoDB. MongoDB returns the bot_item_package as an object instead of an array of objects. 
         */
         const bot_item_package = await bot_repository.getBotPackageFromName(command_name.toString());
-        const bot_package_items = bot_item_package.package_items;
-        const bot_item_package_cost = bot_item_package.package_cost;
+
+        if (bot_item_package) {
+
+            if (bot_item_package.package_items) {
+                bot_package_items = bot_item_package.package_items;
+            }
+            if (bot_item_package.package_cost) {
+                bot_item_package_cost = bot_item_package.package_cost;
+            }
+        } 
 
         /**
          * Remove the weird (0-9{1,4}) value which is appended onto each username in the GPortal chat log. 
@@ -2018,38 +2045,35 @@ async function processQueueIfNotProcessing(user_command_queue, guild_id) {
         if (command_name === 'welcomepack') {
             const welcome_pack_cost = user_account.user_welcome_pack_cost;
              if (user_account_balance < welcome_pack_cost) {
-                 await enqueueCommand(`${client_ingame_chat_name} you do not have enough money to use your welcome pack again. Use the command /balance to check your balance`, guild_id);
-                 continue;
+                await sendMessageToClient(`${client_ingame_chat_name} you do not have enough money to use your welcome pack again. Use the command /balance to check your balance`, guild_id, command_to_execute_player_steam_id);
+                continue;
              } else {
-                 await bot_repository.updateUserWelcomePackUsesByOne(user_account.user_steam_id);
-                 await bot_repository.updateUserAccountBalance(command_to_execute_player_steam_id, -welcome_pack_cost);
+                await bot_repository.updateUserWelcomePackUsesByOne(user_account.user_steam_id);
+                await bot_repository.updateUserAccountBalance(command_to_execute_player_steam_id, -welcome_pack_cost);
              }
         }
 
         if (user_account_balance < bot_item_package.package_cost) {
-            await enqueueCommand(`${client_ingame_chat_name}, you do not have enough money to use this package. Use the command /balance to check your balance.`, guild_id);
+            await sendMessageToClient(`${client_ingame_chat_name}, you do not have enough moeny to use this command`, guild_id, command_to_execute_player_steam_id)
             continue;
         }
         /**
-         * If the cost to execute the command does not equal undefined, subtract the balance of the package from the user's balance 
+         * Subtract the balance of the package from the user's balance 
          */
-        if ((typeof bot_item_package_cost !== 'Number' && bot_item_package_cost)) {
-            parseInt(bot_item_package_cost, 10);
+        if (bot_item_package_cost) {
             await bot_repository.updateUserAccountBalance(command_to_execute_player_steam_id, -bot_item_package_cost);
-
+            await sendMessageToClient(`${client_ingame_chat_name}, the cost of the bot item package has been deducted from your account`, guild_id, command_to_execute_player_steam_id);
         }
         /**
          * Open the chat menu by pressing the 'T' key. If the chat is already open, press the 'Backspace key to get rid of the hanging 'T' character
          */
-        // for (let i = 0; i < bot_package_items.length; ++i) {
-        //     sendCommandToClient(bot_package_items[i], guild_id);
-            
-        // } 
-        sendCommandToClient(bot_package_items, guild_id, command_to_execute_player_steam_id);
+        if (bot_package_items) {
+            await sendCommandToClient(bot_package_items, guild_id, command_to_execute_player_steam_id);
+        } 
     }
 }
 
-function sendCommandToClient(bot_package_items_array, websocketId, player_steam_id) {
+async function sendCommandToClient(bot_package_items_array, websocketId, player_steam_id) {
     const websocket = cache.get(`websocket_${websocketId}`);
 
     if (websocket && websocket.readyState === WebSocket.OPEN) {
@@ -2066,6 +2090,27 @@ function sendCommandToClient(bot_package_items_array, websocketId, player_steam_
             `${websocketId}`,
             `${websocketId}-error-logs`
         );
+    }
+}
+
+async function sendMessageToClient(message, websocket_id, steam_id) {
+    const websocket = cache.get(`websocket_${websocket_id}`);
+
+    const message_array = [message];
+
+    if (websocket && websocket.readyState === WebSocket.OPEN) {
+        websocket.send(JSON.stringify({
+            action: `announceMessage`,
+            messages: message_array,
+            player_steam_id: steam_id
+        }));
+    } else {
+        message_logger.writeLogToAzureContainer(
+            `ErrorLogs`,
+            `The websocket to send messages to execute back to the client either does not exist or is not open`,
+            `${websocket_id}`,
+            `${websocket_id}-error-logs`
+        )
     }
 }
 
