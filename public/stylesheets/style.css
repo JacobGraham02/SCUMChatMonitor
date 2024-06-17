@@ -855,10 +855,7 @@ a {
 }
 
 #logout_button_container {
-    margin-top: 25%;
-}
-#global_site_navigation_logout_form {
-    
+    margin-top: 10%;
 }
 
 .menu a.active {
@@ -1016,6 +1013,11 @@ a {
         max-height: 100vh;
         /* Transform the list to top of side section */
         /* background: #efeff5; */
+    }
+    
+    .header .menu li {
+        width: 100%;
+        height: fit-content;
     }
 
     #login_section #login_password_field input, #login_username_field input {

@@ -43,6 +43,10 @@ mixin menu(user, currentPage)
       h1#user_administrator_name_heading Welcome, anonymous!
     -}
     li 
+      a(href='/admin/players'
+      title=`A link to view all of the players registered with your SCUM server bot`
+      class=(currentPage === '/admin/serverPlayers' ? 'active' : '')) Players
+    li 
      div#logout_button_container
       form#global_site_navigation_logout_form(action='/logout' method='POST')
        button#gui_bot_web_interface_logout_button(type="submit") Log out

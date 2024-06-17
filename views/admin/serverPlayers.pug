@@ -1,0 +1,37 @@
+extends layout
+
+block variables
+    - var page_title = title 
+    - var players_per_page = 10
+    - var current_page_number = current_page_of_players
+    - var total_number_of_pages = Math.ceil(total_player_files / players_per_page)
+
+include menu
+include smallModal
+include deleteModal
+include successModal
+include errorModal
+
+block header
+    header#header.header
+        +menu(user, currentPage)
+
+block content(user)
+    main#test 
+        h1#current_server_players_heading Players
+
+        ol#current_server_players_list
+            each player in players
+                h3#steam_name #{player.user_steam_name}
+                li#steam_id Steam id= #{player.user_steam_id} 
+                li#balance Balance= player.user_money 
+                li#welcome_pack_uses Welcome pack uses= player.welcome_pack_uses 
+
+        if (page_numbers.length > 1)
+            nav.pagination
+                ul
+                    each page in page_numbers
+                        li(class=(page === current_page_number ? 'active' : ''))
+                            a(href=`/players?range=${(page - 1) * players_per_page + 1}&${page * players_per_page}`) #{page}
+
+    script(src='/javascripts/admin_index_page.js')
