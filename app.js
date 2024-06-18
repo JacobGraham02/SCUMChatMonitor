@@ -1649,12 +1649,18 @@ client_instance.on('guildCreate', async (guild) => {
             .setCustomId(`setupuserspawn`)
             .setLabel(`Register user spawn coordinates`)
             .setStyle(ButtonStyle.Primary)
+        
+        const goto_bot_website_button = new ButtonBuilder()
+            .setLabel(`Go to bot web portal`)
+            .setURL("scumchatmonitorweb.azurewebsites.net")
+            .setStyle(ButtonStyle.Link)
     
         const button_row_bot_controls = new ActionRowBuilder().addComponents(
             server_info_button,
             enable_bot_button,
             disable_bot_button,
-            reinitialize_bot_button
+            reinitialize_bot_button,
+            goto_bot_website_button
         );
         
         const button_row_bot_data = new ActionRowBuilder().addComponents(
@@ -1702,7 +1708,8 @@ client_instance.on('guildCreate', async (guild) => {
                 `**View server info:** View information about your SCUM server\n`+
                 `**Enable bot:** Enable your bot so it starts working on your SCUM server\n`+
                 `**Disable bot:** Disable your bot so it stops working on your SCUM server\n`+
-                `**Restart bot:** Restart the bot so all functionality restarts. Useful if the bot is having problems\n`,
+                `**Restart bot:** Restart the bot so all functionality restarts. Useful if the bot is having problems\n`+
+                `**Go to bot web portal:** Go to your bot web portal to configure settings and add packages\n`,
             components: [button_row_bot_controls]
             });
             await discord_channel_for_server_info.send({
