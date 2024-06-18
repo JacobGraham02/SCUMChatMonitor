@@ -921,6 +921,50 @@ a {
     flex-direction: column;
 }
 
+/* Server players page */
+#server_players_main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 2px solid red;
+}
+
+/* Add this CSS to your stylesheet or within a <style> tag in your Pug template */
+#players_pagination_list_ul, #current_server_players_list {
+    list-style-type: none;
+    padding: 0; /* Ensure there is no padding that could interfere with styling */
+}
+
+#players_pagination_list_ul li a, #current_server_players_list li a {
+    text-decoration: none; /* Remove underline from links */
+}
+
+#players_pagination_list_ul li a:hover, #current_server_players_list li a:hover {
+    text-decoration: none; /* Ensure no underline on hover */
+}
+
+#current_server_players_list_article {
+    font-weight: bold;
+    display: flex;
+    width: 80%;
+    gap: 5%;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+    height: fit-content;
+}
+
+#current_server_players_list_article #current_server_players_list{
+    display: flex;
+    width: 100%;
+    height: fit-content;
+    gap: 10px;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+
 /* Media queries for when on a desktop */
 @media screen and (min-width: 1199px) {
     body {
