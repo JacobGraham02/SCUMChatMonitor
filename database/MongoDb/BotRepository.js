@@ -234,13 +234,13 @@ export default class BotRepository {
         }
     }
 
-    async getBotDataByGuildId(guild_id) {
+    async getBotDataByGuildId() {
         const database_connection = await this.database_connection_manager.getConnection();
     
         try {
             const bot_collection = database_connection.collection('bot');
     
-            const bot_data = await bot_collection.findOne({ guild_id: guild_id });
+            const bot_data = await bot_collection.findOne({});
     
             return bot_data;
         } catch (error) {

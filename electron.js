@@ -77,6 +77,17 @@ async function createWebSocketConnection(websocket_id) {
             }
         }
 
+        if (json_message_data.action === `teleportNewPlayers`) {
+            const teleport_coordinates = json_message_data.teleport_coordinates;
+            const player_steam_id = json_message_data.steam_id;
+            const x_coordinate = teleport_coordinates.x;
+            const y_coordinate = teleport_coordinates.y;
+            const z_coordinate = teleport_coordinates.z;
+            const teleport_command = `#Teleport ${x_coordinate} ${y_coordinate} ${z_coordinate}, ${player_steam_id}`;
+            commandQueue.push(teleport_command);
+            processCommandQueue();
+        }
+
         if (json_message_data.action === `reinitializeBot` && json_message_data.guild_id) {
             try {
                 const botInitializedOnServer = await reinitializeBotOnServer(json_message_data.guild_id, websocket_id);

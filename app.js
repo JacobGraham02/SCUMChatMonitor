@@ -443,9 +443,9 @@ async function readAndFormatGportalFtpServerLoginLog(bot_repository, guild_id, f
 
                 await teleportNewPlayersToLocation(
                     bot_repository, 
-                    player_ipv4_addresses, 
-                    user_steam_ids, 
-                    channel_for_new_joins
+                    Object.keys(user_steam_ids), 
+                    channel_for_new_joins,
+                    guild_id
                 );
 
                 cache.set(`current_login_log_hash_${guild_id}`, current_file_contents_hash);
@@ -477,40 +477,38 @@ async function readAndFormatGportalFtpServerLoginLog(bot_repository, guild_id, f
  * 
  * @param {any} online_users a Map containing the key-value pairs of user steam id and user steam name
  */
-async function teleportNewPlayersToLocation(bot_repository, player_ipv4_addresses, online_users, channel_for_new_joins, guild_id) { 
-    const bot_user = await bot_repository.getBotDataByEmail(guild_id);
+async function teleportNewPlayersToLocation(bot_repository, user_steam_ids, channel_for_new_joins, guild_id) {
+    const bot_user = await bot_repository.getBotDataByGuildId(guild_id);
 
     if (!bot_user) {
         return;
     }
 
-    if (!(bot_user.x_coordinate || bot_user.y_coordinate || bot_user.z_coordinate)) {
+    if (!(bot_user.x_coordinate && bot_user.y_coordinate && bot_user.z_coordinate)) {
         return;
     }
+
     const bot_user_x_coordinate = bot_user.x_coordinate;
     const bot_user_y_coordinate = bot_user.y_coordinate;
     const bot_user_z_coordinate = bot_user.z_coordinate;
 
     /**
-     * Iterate over each key in the Map online_users. Each key in the Map is the steam id of the user
+     * Iterate over the user_steam_ids array
      */
-    for (const key in online_users) {
-        /**
-         * Replacing the ' characters enclosing the string so we get a valid number
-         */
-        key.replace(/'/g, "");
+    for (let i = 0; i < user_steam_ids.length; i++) {
+        const steam_id = user_steam_ids[i];
+
         /*
         Only find a user in the MongoDB database if they have not yet joined the server (i.e. with the property 'user_joining_server_first_time' equal to 0)
         After a user joins the server, that property is updated to contain a value of '1'
         */
-        const user_first_join_results = await bot_repository.findUserByIdIfFirstServerJoin(key);
+        const user_first_join_results = await bot_repository.findUserByIdIfFirstServerJoin(steam_id);
+
         if (user_first_join_results) {
-            const user_steam_id = user_first_join_results.user_steam_id;
-            
             try {
-                myEmitter.emit('newUserJoinedServer', player_ipv4_addresses, user_steam_id, channel_for_new_joins);
+                myEmitter.emit('newUserJoinedServer', steam_id, channel_for_new_joins, guild_id);
             } catch (error) {
-                message_logger.writeLogToAzureContainer(
+                await message_logger.writeLogToAzureContainer(
                     `ErrorLogs`,
                     `An error occurred when sending the new player login messages to discord: ${error}`,
                     guild_id,
@@ -518,22 +516,27 @@ async function teleportNewPlayersToLocation(bot_repository, player_ipv4_addresse
                 );
             }
 
-            await sleep(60000);
-
             try {
-                await enqueueCommand(`#Teleport ${bot_user_x_coordinate} ${bot_user_y_coordinate} ${bot_user_z_coordinate} ${user_steam_id}`, guild_id);
+                const teleport_coordinates = {
+                    x: bot_user_x_coordinate,
+                    y: bot_user_y_coordinate,
+                    z: bot_user_z_coordinate
+                }
+                await sendNewPlayerCommandToClient(teleport_coordinates, guild_id, steam_id);
             } catch (error) {
-                message_logger.writeLogToAzureContainer(
+                await message_logger.writeLogToAzureContainer(
                     `ErrorLogs`,
                     `An error occurred when attempting to teleport the player to the spawn location area: ${error}`,
                     guild_id,
                     `${guild_id}-error-logs`
                 );
             }
+
+            await bot_repository.updateUser(steam_id, { user_joining_server_first_time: 1 });
         }
-        await bot_repository.updateUser(key, { user_joining_server_first_time: 1 });
     }
 }
+
 
 /**
  * This asynchronous function reads chat log files from the FTP server hosted on GPortal for my SCUM server
@@ -720,7 +723,6 @@ async function readAndFormatGportalFtpServerChatLog(guild_id, ftp_client) {
         );
     } finally {
         if (stream) {
-            stream.close();
             stream = null;
         }
         received_chat_messages = [];
@@ -1165,8 +1167,12 @@ function sendPlayerMessagesToDiscord(scum_game_chat_messages, discord_channel, g
     }
 }
 
+function isValidMessage(message) {
+    const validMessagePattern = /^[a-zA-Z0-9()\[\]'":/.,{} ]+$/;
+    return validMessagePattern.test(message);
+}
+
 async function sendPlayerLoginMessagesToDiscord(scum_game_login_messages, discord_channel, guild_id) {
-    console.log("Send player log in messages to discord");
     if (!scum_game_login_messages) {
         message_logger.writeLogToAzureContainer(
             `ErrorLogs`, 
@@ -1193,7 +1199,9 @@ async function sendPlayerLoginMessagesToDiscord(scum_game_login_messages, discor
 
     for (let i = 0; i < scum_game_login_messages.length; i++) { 
         if (typeof scum_game_login_messages[i] === 'string' && scum_game_login_messages[i].trim() && !scum_game_login_messages.includes(`Game version:`)) {
-            console.log(scum_game_login_messages[i]);
+            if (!isValidMessage(scum_game_login_messages[i])) {
+                continue;
+            }
             let user_logged_in_or_out = undefined;
             let x_coordinate = undefined;
             let y_coordinate = undefined;
@@ -1251,21 +1259,7 @@ async function sendPlayerLoginMessagesToDiscord(scum_game_login_messages, discor
 }
     
 
-async function sendNewPlayerLoginMessagesToDiscord(player_ipv4_addresses, user_steam_id, discord_channel, guild_id) {
-    const ipapi_instance = cache.get(`ipapi_instance_${guild_id}`);
-    if (!ipapi_instance) {
-        const ipapi_info_instance = new PlayerInfoCommand()
-        cache.set(`ipapi_instance_${guild_id}`, ipapi_info_instance);
-    }
-    if (!player_ipv4_addresses) {
-        message_logger.writeLogToAzureContainer(
-            `ErrorLogs`, 
-            `The log in messages from your scum server chat could not be fetched`, 
-            guild_id, 
-            `${guild_id}-error-logs`
-        );
-        return;
-    };
+async function sendNewPlayerLoginMessagesToDiscord(user_steam_id, discord_channel, guild_id) {
     if (!discord_channel) {
         message_logger.writeLogToAzureContainer(
             `ErrorLogs`, 
@@ -1274,38 +1268,23 @@ async function sendNewPlayerLoginMessagesToDiscord(player_ipv4_addresses, user_s
             `${guild_id}-error-logs`
         );
         return;
-    }
-    if (player_ipv4_addresses) {
-        steam_web_api_player_info.setPlayerSteamId(user_steam_id);
+    };
 
-        for (let i = 0; i < player_ipv4_addresses.length; i++) { 
-            const ipapi_player_info = cache.get(`ipapi_instance_${guild_id}`);
-            ipapi_player_info.setPlayerIpAddress(player_ipv4_addresses[i]);
-            const player_info = await ipapi_player_info.fetchJsonApiDataFromIpApiDotCom();
-            const player_steam_info = await steam_web_api_player_info.fetchJsonApiDataFromSteamWebApi();
-            const player_steam_data = player_steam_info.response.players[0];
-                const embedded_message = new EmbedBuilder()
-                    .setColor(0x299bcc)
-                    .setTitle('SCUM new player login information')
-                    .setThumbnail('https://i.imgur.com/dYtjF3w.png')
-                    .addFields(
-                        {name:"Steam id",value:player_steam_data.steamid,inline:true},
-                        {name:"Steam name",value:player_steam_data.personaname,inline:true},
-                        {name:"Profile Url",value:player_steam_data.profileurl,inline:true},
-                        {name:"IPv4 address",value:player_info.query,inline:true},
-                        {name:"Country",value:player_info.country,inline:true},
-                        {name:"Region name",value:player_info.regionName,inline:true},
-                        {name:"City",value:player_info.city,inline:true},
-                        {name:"Timezone",value:player_info.timezone,inline:true},
-                        {name:"Service provider",value:player_info.isp,inline:true},
-                        {name:"Organization",value:player_info.org,inline:true},
-                        {name:"AS",value:player_info.as,inline:true}
-                    )
-                    .setTimestamp()
-                    .setFooter({ text: 'Scum Monitor Man', iconURL: 'https://i.imgur.com/dYtjF3w.png' });
-                    discord_channel.send({ embeds: [embedded_message] });
-        }
-    }
+    steam_web_api_player_info.setPlayerSteamId(user_steam_id);
+    const player_steam_info = await steam_web_api_player_info.fetchJsonApiDataFromSteamWebApi();
+    const player_steam_data = player_steam_info.response.players[0];
+        const embedded_message = new EmbedBuilder()
+            .setColor(0x299bcc)
+            .setTitle('SCUM new player login information')
+            .setThumbnail('https://i.imgur.com/dYtjF3w.png')
+            .addFields(
+                {name:"Steam id",value:player_steam_data.steamid,inline:true},
+                {name:"Steam name",value:player_steam_data.personaname,inline:true},
+                {name:"Profile Url",value:player_steam_data.profileurl,inline:true},
+            )
+            .setTimestamp()
+            .setFooter({ text: 'Scum Monitor Man', iconURL: 'https://i.imgur.com/dYtjF3w.png' });
+            discord_channel.send({ embeds: [embedded_message] });
 }
 
 async function startServerFunctionalityIntervals(guild_id, ftp_server_data) {
@@ -1805,8 +1784,8 @@ client_instance.on('guildCreate', async (guild) => {
     }
 });
 
-myEmitter.on('newUserJoinedServer', (player_ipv4_addresses, steam_id, discord_channel_for_new_joins) => {
-    sendNewPlayerLoginMessagesToDiscord(player_ipv4_addresses, steam_id, discord_channel_for_new_joins)
+myEmitter.on('newUserJoinedServer', (steam_id, discord_channel_for_new_joins, guild_id) => {
+    sendNewPlayerLoginMessagesToDiscord(steam_id, discord_channel_for_new_joins, guild_id)
 });
 
 client_instance.on(Events.InteractionCreate, async interaction => {
@@ -2161,6 +2140,26 @@ async function sendCommandToClient(bot_package_items_array, websocketId, player_
             `${websocketId}`,
             `${websocketId}-error-logs`
         );
+    }
+}
+
+async function sendNewPlayerCommandToClient(coordinates, websocket_id, steam_id) {
+    console.log(`send new player to command client`);
+    const websocket = cache.get(`websocket_${websocket_id}`);
+
+    if (websocket && websocket.readyState === WebSocket.OPEN) {
+        websocket.send(JSON.stringify({
+            action: `teleportNewPlayers`,
+            teleport_coordinates: coordinates,
+            player_steam_id: steam_id
+        }));
+    } else {
+        message_logger.writeLogToAzureContainer(
+            `ErrorLogs`,
+            `The websocket to send new player join messages to execute back to the client either does not exist or is not open`,
+            `${websocket_id}`,
+            `${websocket_id}-error-logs`
+        )
     }
 }
 

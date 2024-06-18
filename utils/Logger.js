@@ -64,6 +64,14 @@ export default class Logger {
         return false;
     }
 
+    sanitizeContainerName(name) {
+        return name.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 63);
+    }
+
+    sanitizeBlobName(name) {
+        return encodeURIComponent(name).slice(0, 1024);
+    }
+
     /**
      * The current ISO date is formatted in the following pattern: YYYY-MM-DD
      * @returns a Date object formatted as ISO
@@ -98,18 +106,28 @@ export default class Logger {
         const current_iso_date = this.getCurrentDateISO();
         const blob_file_name = `${guildId}-${current_iso_date}-${logName}.log`;
 
+        // Sanitize container and blob names
+        const sanitizedContainerName = this.sanitizeContainerName(containerName);
+        const sanitizedBlobFileName = this.sanitizeBlobName(blob_file_name);
+
+        // Validate sanitized names
+        if (sanitizedContainerName !== containerName || sanitizedBlobFileName !== blob_file_name) {
+            console.error(`Invalid container or blob name after sanitization.`);
+            return;
+        }
+
         // Create BlobServiceClient from the connection string
         const blob_service_client = BlobServiceClient.fromConnectionString(storage_account_connection);
 
         // Get a reference to the container
-        const container_client = blob_service_client.getContainerClient(containerName);
+        const container_client = blob_service_client.getContainerClient(sanitizedContainerName);
 
         try {
             // Ensure the container exists
             await container_client.createIfNotExists();
 
             // Get a reference to the BlockBlobClient for the specific blob
-            const blob_client = container_client.getBlockBlobClient(blob_file_name);
+            const blob_client = container_client.getBlockBlobClient(sanitizedBlobFileName);
 
             // Check if the blob (log file) already exists
             const blob_client_exists = await blob_client.exists();
