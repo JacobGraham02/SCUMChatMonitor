@@ -171,68 +171,90 @@ router.get(['/commands'], isLoggedIn, checkBotRepositoryInCache, async (request,
     }
 });
 
-router.get(`/players`, isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
-    let players = undefined;
+router.get('/players', isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
+    let server_players = undefined;
     const botRepository = request.user.bot_repository;
 
     try {
-        players = await botRepository.findAllUsers();
+        server_players = await botRepository.findAllUsers();
     } catch (error) {
         console.error(`There was an internal service error when attempting to read all the player data from MongoDB: ${error}`);
-        response.status(500).json({ error: `There was an internal service error when attempting to read all the player data from MongoDB: ${error}`});
+        response.status(500).json({ error: `There was an internal service error when attempting to read all the player data from MongoDB: ${error}` });
         return;
     }
 
-    if (players) {
-        const players_per_page = 1;
-        const range = request.query.range || '1';
+    if (server_players) {
+        const players_per_page = 10; 
 
-        // Split the 'range' query parameter by '&' and convert both parts to numbers
+        const range = request.query.range || '1&10';
+
         const [start_range_number, end_range_number] = range.split('&').map(Number);
 
-        // Calculate the current page number based on the start range and the number of players per page
+        // Calculate the current page number
         const current_page_number = Math.ceil(start_range_number / players_per_page);
 
-        // Calculate the total number of pages needed to display all players
-        const total_number_of_pages = Math.ceil(players.length / players_per_page);
+        // Calculate the total number of pages
+        const total_number_of_pages = Math.ceil(server_players.length / players_per_page);
 
-        // Set the number of pages to be visible in the pagination at any given time
-        const visible_pages = 3;
+        const visible_players_per_page = 3;
 
-        // Calculate the starting page number for pagination. Ensures it doesn't go below 1.
-        let start_page = Math.max(1, current_page_number - Math.floor(visible_pages / 2));
+        let start_page = Math.max(1, current_page_number - Math.floor(visible_players_per_page / 2));
 
-        // Calculate the ending page number for pagination. Ensures it doesn't go beyond the total number of pages.
-        let end_page = Math.min(total_number_of_pages, start_page + visible_pages - 1);
+        let end_page = Math.min(total_number_of_pages, start_page + visible_players_per_page - 1);
 
-        // Adjust the start page based on the end page to ensure the correct number of visible pages are shown.
-        // This is particularly important when navigating to the last few pages.
-        start_page = Math.max(1, end_page - visible_pages + 1);
+        start_page = Math.max(1, end_page - visible_players_per_page + 1);
 
-        // Generate the list of page numbers to be displayed in the pagination based on the start and end pages calculated.
+        // Generate the list of page numbers to be displayed in the pagination
         const page_numbers = Array.from({ length: (end_page - start_page) + 1 }, (_, i) => i + start_page);
-
-        // Slice the players array to only include the players for the current page based on the range selected.
-        const current_page_players = players.slice(start_range_number - 1, end_range_number);
+        
+        // Slice the players array to only include the players for the current page
+        const current_page_players = server_players.slice(start_range_number - 1, end_range_number);
 
         response.render('admin/serverPlayers', {
-            title: 'Players', 
-            players: current_page_players, 
-            current_page_of_players: current_page_number, 
-            total_player_files: players.length, 
+            title: 'Players',
+            current_page_players,
+            current_page_of_players: current_page_number,
+            total_player_files: server_players.length,
             page_numbers,
             user: request.user,
             currentPage: '/admin/serverPlayers'
         });
     } else {
         response.render('admin/serverPlayers', {
-            title: 'Players', 
+            title: 'Players',
             user: request.user,
             currentPage: '/admin/serverPlayers'
         });
     }
 });
 
+
+router.get("/player/:steam_id", isLoggedIn, checkBotRepositoryInCache, async function(request, response) {
+    const steam_id = request.params.steam_id;
+    const botRepository = request.user.bot_repository;
+    let player = undefined;
+
+    try {
+        player = await botRepository.findUserById(steam_id);
+    } catch (error) {
+        console.error(`There was an internal service error when attempting to read the player data from MongoDB: ${error}`);
+        return;
+    }
+
+    if (player) {
+        response.render('admin/serverPlayer', {
+            title: `Player details`,
+            player,
+            user: request.user,
+            currentPage: `/players/${steam_id}`
+        });
+    } else {
+        response.status(404).render('error', {
+            message: `The player you wish to see was not found`,
+            error: { status: 404 }
+        });
+    }
+});
 
 router.get('/discordchannelids', isLoggedIn, async (request, response) => {
     try {
