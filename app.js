@@ -1360,9 +1360,7 @@ client_instance.on('ready', () => {
 */
 
 client_instance.on('interactionCreate', async (interaction) => {
-    let bot_discord_information = undefined;
     const guild_id = interaction.guild.id;
-    let bot_repository_instance = undefined;
     const bot_id = interaction.client.user.id;
 
     if (interaction.isButton()) {
@@ -1385,8 +1383,60 @@ client_instance.on('interactionCreate', async (interaction) => {
         if (interaction.customId === `enablebotbutton`) {
             try {
                 const bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
-                bot_discord_information = await bot_repository_instance.getBotDataByGuildId(guild_id);
+                const bot_discord_information = await bot_repository_instance.getBotDataByGuildId(guild_id);
+
+                if (bot_discord_information) {
+                    const discord_channel_id_for_chat = bot_discord_information.scum_ingame_chat_channel_id;
+                    const discord_channel_id_for_logins = bot_discord_information.scum_ingame_logins_channel_id;
+                    const discord_channel_id_for_new_player_joins = bot_discord_information.scum_new_player_joins_channel_id;
+                    const discord_channel_id_for_server_info_button = bot_discord_information.scum_server_info_channel_id;
+                    const discord_channel_id_for_server_online = bot_discord_information.scum_server_online_channel_id;
+                    const discord_channel_id_for_bot_commands = bot_discord_information.scum_bot_commands_channel_id;
+                
+                    const battlemetrics_server_id = bot_discord_information.scum_battlemetrics_server_id;
+                
+                    const teleport_command_prefix = bot_discord_information.command_prefix;
+                    const teleport_command_x_coordinate = bot_discord_information.x_coordinate;
+                    const teleport_command_y_coordinate = bot_discord_information.y_coordinate;
+                    const teleport_command_z_coordinate = bot_discord_information.z_coordinate;
+                
+                    if (battlemetrics_server_id) {
+                        const battlemetrics_server_info_instance = new ServerInfoCommand(battlemetrics_server_id);
+                        cache.set(`battlemetrics_server_info_instance_${guild_id}`, battlemetrics_server_info_instance);
+                    } 
+                    if (discord_channel_id_for_chat) {
+                        const discord_channel_for_chat = interaction.guild.channels.cache.get(discord_channel_id_for_chat);
+                        cache.set(`discord_channel_for_chat_${guild_id}`, discord_channel_for_chat);
+                    }
+                    if (discord_channel_id_for_logins) {
+                        const discord_channel_for_logins = interaction.guild.channels.cache.get(discord_channel_id_for_logins);
+                        cache.set(`discord_channel_for_logins_${guild_id}`, discord_channel_for_logins);
+                    }
+                    if (discord_channel_id_for_new_player_joins) {
+                        const discord_channel_for_new_joins = interaction.guild.channels.cache.get(discord_channel_id_for_new_player_joins);
+                        cache.set(`discord_channel_for_new_joins_${guild_id}`, discord_channel_for_new_joins);
+                    }
+                    if (discord_channel_id_for_server_info_button) {
+                        const discord_channel_for_server_info = interaction.guild.channels.cache.get(discord_channel_id_for_server_info_button);
+                        cache.set(`discord_channel_for_server_info_${guild_id}`, discord_channel_for_server_info);
+                    }
+                    if (discord_channel_id_for_server_online) {
+                        const discord_channel_for_server_online = interaction.guild.channels.cache.get(discord_channel_id_for_server_online);
+                        cache.set(`discord_channel_for_server_online_${guild_id}`, discord_channel_for_server_online);
+                    }
+                    if (discord_channel_id_for_bot_commands) {
+                        const discord_channel_for_bot_commands = interaction.guild.channels.cache.get(discord_channel_id_for_bot_commands);
+                        cache.set(`discord_channel_for_bot_commands_${guild_id}`, discord_channel_for_bot_commands);
+                    }
+                    cache.set(`teleport_command_prefix_${guild_id}`, teleport_command_prefix);
+                    cache.set(`teleport_command_x_coordinate_${guild_id}`, teleport_command_x_coordinate);
+                    cache.set(`teleport_command_y_coordinate_${guild_id}`, teleport_command_y_coordinate);
+                    cache.set(`teleport_command_z_coordinate_${guild_id}`, teleport_command_z_coordinate);
+
+                    await interaction.reply(`Your SCUM server bot has been enabled`);
+                }
             } catch (error) {
+                await interaction.reply(`There was an error when attempting to enable your SCUM bot. Please try again or contact the bot administrator: ${error}`);
                 message_logger.writeLogToAzureContainer(
                     `ErrorLogs`,
                     `There was an error when creating the Discord bot category and text channels: ${error}`,
@@ -1395,73 +1445,71 @@ client_instance.on('interactionCreate', async (interaction) => {
                 );
                 return;
             }
+        }
 
-            if (bot_discord_information) {
+        if (interaction.customId === `disablebotbutton`) {
+            try {
+                if (cache.get(`battlemetrics_server_info_instance_${guild_id}`)) {
+                    cache.delete(`battlemetrics_server_info_instance_${guild_id}`);
+                }
+                if (cache.get(`discord_channel_for_chat_${guild_id}`)) {
+                    cache.delete(`discord_channel_for_chat_${guild_id}`);
+                }
+                if (cache.get(`discord_channel_for_logins_${guild_id}`)) {
+                    cache.delete(`discord_channel_for_logins_${guild_id}`);
+                }
+                if (cache.get(`discord_channel_for_new_joins_${guild_id}`)) {
+                    cache.delete(`discord_channel_for_new_joins_${guild_id}`)
+                }
+                if (cache.get(`discord_channel_for_server_info_${guild_id}`)) {
+                    cache.delete(`discord_channel_for_server_info_${guild_id}`);
+                }
+                if (cache.get(`discord_channel_for_server_online_${guild_id}`)) {
+                    cache.delete(`discord_channel_for_server_online_${guild_id}`);
+                }
+                if (cache.get(`discord_channel_for_bot_commands_${guild_id}`)) {
+                    cache.delete(`discord_channel_for_bot_commands_${guild_id}`);
+                }
+                if (cache.get(`teleport_command_prefix_${guild_id}`)) {
+                    cache.delete(`teleport_command_prefix_${guild_id}`);
+                }
+                if (cache.get(`teleport_command_x_coordinate_${guild_id}`)) {
+                    cache.delete(`teleport_command_x_coordinate_${guild_id}`);
+                }
+                if (cache.get(`teleport_command_y_coordinate_${guild_id}`)) {
+                    cache.delete(`teleport_command_y_coordinate_${guild_id}`);
+                }
+                if (cache.get(`teleport_command_z_coordinate_${guild_id}`)) {
+                    cache.delete(`teleport_command_z_coordinate_${guild_id}`);
+                }
 
-                console.log(bot_discord_information);
-
-                const discord_channel_id_for_chat = bot_discord_information.scum_ingame_chat_channel_id;
-                const discord_channel_id_for_logins = bot_discord_information.scum_ingame_logins_channel_id;
-                const discord_channel_id_for_new_player_joins = bot_discord_information.scum_new_player_joins_channel_id;
-                const discord_channel_id_for_server_info_button = bot_discord_information.scum_server_info_channel_id;
-                const discord_channel_id_for_server_online = bot_discord_information.scum_server_online_channel_id;
-                const discord_channel_id_for_bot_commands = bot_discord_information.scum_bot_commands_channel_id;
-            
-                const battlemetrics_server_id = bot_discord_information.scum_battlemetrics_server_id;
-            
-                const teleport_command_prefix = bot_discord_information.command_prefix;
-                const teleport_command_x_coordinate = bot_discord_information.x_coordinate;
-                const teleport_command_y_coordinate = bot_discord_information.y_coordinate;
-                const teleport_command_z_coordinate = bot_discord_information.z_coordinate;
-            
-                if (battlemetrics_server_id) {
-                    const battlemetrics_server_info_instance = new ServerInfoCommand(battlemetrics_server_id);
-                    cache.set(`battlemetrics_server_info_instance_${guild_id}`, battlemetrics_server_info_instance);
-                } 
-                if (discord_channel_id_for_chat) {
-                    const discord_channel_for_chat = interaction.guild.channels.cache.get(discord_channel_id_for_chat);
-                    cache.set(`discord_channel_for_chat_${guild_id}`, discord_channel_for_chat);
-                }
-                if (discord_channel_id_for_logins) {
-                    const discord_channel_for_logins = interaction.guild.channels.cache.get(discord_channel_id_for_logins);
-                    cache.set(`discord_channel_for_logins_${guild_id}`, discord_channel_for_logins);
-                }
-                if (discord_channel_id_for_new_player_joins) {
-                    const discord_channel_for_new_joins = interaction.guild.channels.cache.get(discord_channel_id_for_new_player_joins);
-                    cache.set(`discord_channel_for_new_joins_${guild_id}`, discord_channel_for_new_joins);
-                }
-                if (discord_channel_id_for_server_info_button) {
-                    const discord_channel_for_server_info = interaction.guild.channels.cache.get(discord_channel_id_for_server_info_button);
-                    cache.set(`discord_channel_for_server_info_${guild_id}`, discord_channel_for_server_info);
-                }
-                if (discord_channel_id_for_server_online) {
-                    const discord_channel_for_server_online = interaction.guild.channels.cache.get(discord_channel_id_for_server_online);
-                    cache.set(`discord_channel_for_server_online_${guild_id}`, discord_channel_for_server_online);
-                }
-                if (discord_channel_id_for_bot_commands) {
-                    const discord_channel_for_bot_commands = interaction.guild.channels.cache.get(discord_channel_id_for_bot_commands);
-                    cache.set(`discord_channel_for_bot_commands_${guild_id}`, discord_channel_for_bot_commands);
-                }
-                cache.set(`teleport_command_prefix_${guild_id}`, teleport_command_prefix);
-                cache.set(`teleport_command_x_coordinate_${guild_id}`, teleport_command_x_coordinate);
-                cache.set(`teleport_command_y_coordinate_${guild_id}`, teleport_command_y_coordinate);
-                cache.set(`teleport_command_z_coordinate_${guild_id}`, teleport_command_z_coordinate);
-            } 
+                await interaction.reply(`Your SCUM bot has been disabled. Remember to re-enable the bot by clicking the 'Enable bot' button when you want to use the bot`);
+            } catch (error) {
+                await interaction.reply(`There was an error when attempting to disable your SCUM bot. Please try again or contact the bot administrator: ${error}`);
+            }
         }
 
         if (interaction.customId === `setupdiscordchannelids`) {
             const setupChannelsCommand = client_instance.discord_commands.get(`setupchannels`);
             if (setupChannelsCommand) {
-                await setupChannelsCommand.execute(interaction)
+                try {
+                    await setupChannelsCommand.execute(interaction)
+                } catch (error) {
+                    await interaction.reply(`There was an error when attempting to show the set up Discord channel form. Please contact the bot administrator and inform them of the following error or try again: ${error}`);
+                }
             } else {
-                await interaction.reply({content: `The command to set up Discord channels was not found`,ephemeral: true});
+                await interaction.reply({content: `The command to set up Discord channels was not found or there was an error. Please infor`,ephemeral: true});
             }
         }
 
         if (interaction.customId === `setupftpserverdata`) {
             const setupFtpSeverCommand = client_instance.discord_commands.get(`setupftpserver`);
             if (setupFtpSeverCommand) {
-                await setupFtpSeverCommand.execute(interaction);
+                try {
+                    await setupFtpSeverCommand.execute(interaction);
+                } catch (error) {
+                    await interaction.reply(`There was an error when attempting to show the set up FTP data form. Please contact the bot administrator and inform them of the following error or try again: ${error}`);
+                }
             } else {
                 await interaction.reply({content: `The command to associate FTP server data with your bot was not found`, ephemeral: true});
             }
@@ -1470,7 +1518,11 @@ client_instance.on('interactionCreate', async (interaction) => {
         if (interaction.customId === `setupwebsiteuser`) {
             const setupFtpSeverCommand = client_instance.discord_commands.get(`setupuser`);
             if (setupFtpSeverCommand) {
-                await setupFtpSeverCommand.execute(interaction);
+                try {
+                    await setupFtpSeverCommand.execute(interaction);
+                } catch (error) {
+                    await interaction.reply(`There was an error when attempting to show the set up bot website user data form. Please contact the bot administrator and inform them of the following error or try again: ${error}`);
+                }
             } else {
                 await interaction.reply({content: `The command to set up a website user account was not found`, ephemeral: true});
             }
@@ -1479,7 +1531,11 @@ client_instance.on('interactionCreate', async (interaction) => {
         if (interaction.customId === `setupgameserver`) {
             const setupFtpSeverCommand = client_instance.discord_commands.get(`setupgameserver`);
             if (setupFtpSeverCommand) {
-                await setupFtpSeverCommand.execute(interaction);
+                try {
+                    await setupFtpSeverCommand.execute(interaction);
+                } catch (error) {
+                    await interaction.reply(`There was an error when attempting to show the set up SCUM server data form. Please contact the bot administrator and inform them of the following error or try again: ${error}`);
+                }
             } else {
                 await interaction.reply({content: `The command to associate the SCUM game server data with your bot was not found`, ephemeral: true});
             }
@@ -1488,37 +1544,51 @@ client_instance.on('interactionCreate', async (interaction) => {
         if (interaction.customId === `setupuserspawn`) {
             const setupFtpSeverCommand = client_instance.discord_commands.get(`setupuserspawn`);
             if (setupFtpSeverCommand) {
-                await setupFtpSeverCommand.execute(interaction);
+                try {
+                    await setupFtpSeverCommand.execute(interaction);
+                } catch (error) {
+                    await interaction.reply(`There was an error when attempting to show the set up new user spawn area data form. Please contact the bot administrator and inform them of the following error or try again: ${error}`);
+                }
             } else {
                 await interaction.reply({content: `The command to set up new player spawn coordinates in your server was not found`, ephemeral: true});
             }
         }
 
-        bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
+        try {
+            let bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
+            
+            if (!(bot_repository_instance)) {
+                cache.set(`bot_repository_${guild_id}`, new BotRepository(guild_id));
+                bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
+            }
 
-        if (!(bot_repository_instance)) {
-            cache.set(`bot_repository_${guild_id}`, new BotRepository(guild_id));
-            bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
+            const user_data = await bot_repository_instance.getBotDataByGuildId(guild_id);
+            if (user_data) {
+                const ftp_server_data = {
+                    ftp_server_ip: user_data.ftp_server_ip,
+                    ftp_server_username: user_data.ftp_server_username,
+                    ftp_server_password: user_data.ftp_server_password,
+                    ftp_server_port: user_data.ftp_server_port
+                };
+    
+                const game_server_data = {
+                    game_server_ipv4: user_data.game_server_ipv4_address,
+                    game_server_port: user_data.game_server_port
+                };
+    
+                const user_command_queue = new Queue();
+                cache.set(`user_command_queue_${guild_id}`, user_command_queue);
+                checkIfGameServerOnline(`enable`, guild_id, ftp_server_data, game_server_data);
+            } 
+        } catch (error) {
+            message_logger.writeLogToAzureContainer(
+                `ErrorLogs`,
+                `There was an error when attempting to initialize the check to see if the SCUM game server is online`,
+                `${guild_id}`,
+                `${guild_id}-error-logs`
+            );
+            return;
         }
-        const user_data = await bot_repository_instance.getBotDataByGuildId(guild_id);
-
-        if (user_data) {
-            const ftp_server_data = {
-                ftp_server_ip: user_data.ftp_server_ip,
-                ftp_server_username: user_data.ftp_server_username,
-                ftp_server_password: user_data.ftp_server_password,
-                ftp_server_port: user_data.ftp_server_port
-            };
-
-            const game_server_data = {
-                game_server_ipv4: user_data.game_server_ipv4_address,
-                game_server_port: user_data.game_server_port
-            };
-
-            const user_command_queue = new Queue();
-            cache.set(`user_command_queue_${guild_id}`, user_command_queue);
-            checkIfGameServerOnline(`enable`, guild_id, ftp_server_data, game_server_data);
-        } 
     }
 
     if (interaction.customId === `serverinformationbutton`) {
@@ -1568,7 +1638,7 @@ client_instance.on('interactionCreate', async (interaction) => {
     if (determineIfUserCanUseCommand(interaction.member, command.authorization_role_name)) { 
         await command.execute(interaction);
     } else {
-        await interaction.reply({ content: `You do not have permission to execute the command ${command.data.name}. Contact a server administrator if you believe this is an error` });
+        await interaction.reply({ content: `You do not have permission to execute the command ${command.data.name}. Contact the server or bot administrator if you believe this is an error` });
     }
 });
 
@@ -1577,164 +1647,161 @@ client_instance.on('interactionCreate', async (interaction) => {
  * The guildCreate event is triggered when the Discord bot joins a new server
  */
 client_instance.on('guildCreate', async (guild) => {
-    let bot_discord_information = undefined;
-    let bot_repository_instance = undefined;
     const bot_id = client_instance.user.id;
     const guild_id = guild.id;
     cache.set(`guild_${guild_id}`, guild_id);
-    bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
-
-    if (!bot_repository_instance) {
-        cache.set(`bot_repository_${guild_id}`, new BotRepository(guild_id));
-        bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
-    }
 
     try {
         await registerInitialSetupCommands(bot_token, bot_id, guild_id);
         await createBotCategoryAndChannels(guild);
         const bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
-        bot_discord_information = await bot_repository_instance.getBotDataByGuildId(guild.id);
+        if (!bot_repository_instance) {
+            cache.set(`bot_repository_${guild_id}`, new BotRepository(guild_id));
+            bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
+        }
+        const bot_discord_information = await bot_repository_instance.getBotDataByGuildId(guild.id);
+
+        
+        if (bot_discord_information) {
+            const server_info_button = new ButtonBuilder()
+                .setCustomId('serverinformationbutton')
+                .setLabel('View server info')
+                .setStyle(ButtonStyle.Success);
+
+            const enable_bot_button = new ButtonBuilder()
+                .setCustomId('enablebotbutton')
+                .setLabel(`Enable bot`)
+                .setStyle(ButtonStyle.Success);
+
+            const disable_bot_button = new ButtonBuilder()
+                .setCustomId('disablebotbutton')
+                .setLabel(`Disable bot`)
+                .setStyle(ButtonStyle.Danger);
+
+            const reinitialize_bot_button = new ButtonBuilder()
+                .setCustomId(`reinitializebotbutton`)
+                .setLabel(`Restart bot`)
+                .setStyle(ButtonStyle.Success);
+
+            const setup_discord_channel_ids_button = new ButtonBuilder()
+                .setCustomId(`setupdiscordchannelids`)
+                .setLabel(`Register Discord channel ids`)
+                .setStyle(ButtonStyle.Primary)
+
+            const setup_ftp_server_button = new ButtonBuilder()
+                .setCustomId(`setupftpserverdata`)
+                .setLabel(`Register FTP data`)
+                .setStyle(ButtonStyle.Primary)
+
+            const setup_website_user_button = new ButtonBuilder()
+                .setCustomId(`setupwebsiteuser`)
+                .setLabel(`Register website user`)
+                .setStyle(ButtonStyle.Primary)
+
+            const setup_game_server_button = new ButtonBuilder()
+                .setCustomId(`setupgameserver`)
+                .setLabel(`Register SCUM game server data`)
+                .setStyle(ButtonStyle.Primary)
+
+            const setup_user_spawn_coordinates_button = new ButtonBuilder()
+                .setCustomId(`setupuserspawn`)
+                .setLabel(`Register user spawn coordinates`)
+                .setStyle(ButtonStyle.Primary)
+            
+            const goto_bot_website_button = new ButtonBuilder()
+                .setLabel(`Go to bot web portal`)
+                .setURL("scumchatmonitorweb.azurewebsites.net")
+                .setStyle(ButtonStyle.Link)
+        
+            const button_row_bot_controls = new ActionRowBuilder().addComponents(
+                server_info_button,
+                enable_bot_button,
+                disable_bot_button,
+                reinitialize_bot_button,
+                goto_bot_website_button
+            );
+            
+            const button_row_bot_data = new ActionRowBuilder().addComponents(
+                setup_discord_channel_ids_button,
+                setup_ftp_server_button,
+                setup_website_user_button,
+                setup_game_server_button,
+                setup_user_spawn_coordinates_button
+            );
+
+            const discord_channel_id_for_chat = bot_discord_information.scum_ingame_chat_channel_id;
+            const discord_channel_id_for_logins = bot_discord_information.scum_ingame_logins_channel_id;
+            const discord_channel_id_for_new_player_joins = bot_discord_information.scum_new_player_joins_channel_id;
+            const discord_channel_id_for_server_info_button = bot_discord_information.scum_server_info_channel_id;
+            const discord_channel_id_for_server_online = bot_discord_information.scum_server_online_channel_id;
+            const discord_channel_id_for_bot_commands = bot_discord_information.scum_bot_commands_channel_id;
+
+            const battlemetrics_server_id = bot_discord_information.scum_battlemetrics_server_id;
+
+            const teleport_command_prefix = bot_discord_information.command_prefix;
+            const teleport_command_x_coordinate = bot_discord_information.x_coordinate;
+            const teleport_command_y_coordinate = bot_discord_information.y_coordinate;
+            const teleport_command_z_coordinate = bot_discord_information.z_coordinate;
+
+            if (battlemetrics_server_id) {
+                const battlemetrics_server_info_instance = new ServerInfoCommand(battlemetrics_server_id);
+                cache.set(`battlemetrics_server_info_instance_${guild_id}`, battlemetrics_server_info_instance);
+            }
+            if (discord_channel_id_for_chat) {
+                const discord_channel_for_chat = guild.channels.cache.get(discord_channel_id_for_chat);
+                cache.set(`discord_channel_for_chat_${guild_id}`, discord_channel_for_chat);
+            }
+            if (discord_channel_id_for_logins) {
+                const discord_channel_for_logins = guild.channels.cache.get(discord_channel_id_for_logins);
+                cache.set(`discord_channel_for_logins_${guild_id}`, discord_channel_for_logins);
+            }
+            if (discord_channel_id_for_new_player_joins) {
+                const discord_channel_for_new_joins = guild.channels.cache.get(discord_channel_id_for_new_player_joins);
+                cache.set(`discord_channel_for_new_joins_${guild_id}`, discord_channel_for_new_joins);
+            }
+            if (discord_channel_id_for_server_info_button) {
+                const discord_channel_for_server_info = guild.channels.cache.get(discord_channel_id_for_server_info_button);
+                await discord_channel_for_server_info.send({
+                    content: `**Bot controls:**\nClick one of the buttons below to control your bot:\n\n`+
+                    `**View server info:** View information about your SCUM server\n`+
+                    `**Enable bot:** Enable your bot so it starts working on your SCUM server\n`+
+                    `**Disable bot:** Disable your bot so it stops working on your SCUM server\n`+
+                    `**Restart bot:** Restart the bot so all functionality restarts. Useful if the bot is having problems\n`+
+                    `**Go to bot web portal:** Go to your bot web portal to configure settings and add packages\n`,
+                components: [button_row_bot_controls]
+                });
+                await discord_channel_for_server_info.send({
+                    content: `**Bot setup**:\nClick one of the buttons below to configure your bot:\n\n`+
+                    `**Register Discord channel ids:**  Register the Discord channel ids in this server with your bot\n`+
+                    `**Register FTP data:** Register the your server host's FTP server with your bot\n`+
+                    `**Register website user:** Register a website user with your bot. This will give you access to the bot web interface\n`+
+                    `**Register SCUM game server data:** Register your SCUM game server data (IPv4 address and port number) with your bot\n`+
+                    `**Register user spawn coordinates:** Register new user spawn coordinates with your bot\n`,
+                components: [button_row_bot_data]
+                });
+                cache.set(`discord_channel_for_server_info_${guild_id}`, discord_channel_for_server_info);
+            } 
+            if (discord_channel_id_for_server_online) {
+                const discord_channel_for_server_online = guild.channels.cache.get(discord_channel_id_for_server_online);
+                cache.set(`discord_channel_for_server_online_${guild_id}`, discord_channel_for_server_online);
+            }
+            if (discord_channel_id_for_bot_commands) {
+                const discord_channel_for_bot_commands = guild.channels.cache.get(discord_channel_id_for_bot_commands);
+                cache.set(`discord_channel_for_bot_commands_${guild_id}`, discord_channel_for_bot_commands);
+            }
+            cache.set(`teleport_command_prefix_${guild_id}`, teleport_command_prefix);
+            cache.set(`teleport_command_x_coordinate_${guild_id}`, teleport_command_x_coordinate);
+            cache.set(`teleport_command_y_coordinate_${guild_id}`, teleport_command_y_coordinate);
+            cache.set(`teleport_command_z_coordinate_${guild_id}`, teleport_command_z_coordinate);
+        }
     } catch (error) {
         message_logger.writeLogToAzureContainer(
             `ErrorLogs`,
-            `There was an error when registering initial bot set up commands and creating the Discord bot category and text channels: ${error}`,
+            `There was an error when registering initial bot set up commands and creating the Discord bot category, buttons, and text channels: ${error}`,
             `${guild_id}`,
             `${guild_id}-error-logs`
         )
         return;
-    }
-
-    if (bot_discord_information) {
-        const server_info_button = new ButtonBuilder()
-            .setCustomId('serverinformationbutton')
-            .setLabel('View server info')
-            .setStyle(ButtonStyle.Success);
-
-        const enable_bot_button = new ButtonBuilder()
-            .setCustomId('enablebotbutton')
-            .setLabel(`Enable bot`)
-            .setStyle(ButtonStyle.Success);
-
-        const disable_bot_button = new ButtonBuilder()
-            .setCustomId('disablebotbutton')
-            .setLabel(`Disable bot`)
-            .setStyle(ButtonStyle.Danger);
-
-        const reinitialize_bot_button = new ButtonBuilder()
-            .setCustomId(`reinitializebotbutton`)
-            .setLabel(`Restart bot`)
-            .setStyle(ButtonStyle.Success);
-
-        const setup_discord_channel_ids_button = new ButtonBuilder()
-            .setCustomId(`setupdiscordchannelids`)
-            .setLabel(`Register Discord channel ids`)
-            .setStyle(ButtonStyle.Primary)
-
-        const setup_ftp_server_button = new ButtonBuilder()
-            .setCustomId(`setupftpserverdata`)
-            .setLabel(`Register FTP data`)
-            .setStyle(ButtonStyle.Primary)
-
-        const setup_website_user_button = new ButtonBuilder()
-            .setCustomId(`setupwebsiteuser`)
-            .setLabel(`Register website user`)
-            .setStyle(ButtonStyle.Primary)
-
-        const setup_game_server_button = new ButtonBuilder()
-            .setCustomId(`setupgameserver`)
-            .setLabel(`Register SCUM game server data`)
-            .setStyle(ButtonStyle.Primary)
-
-        const setup_user_spawn_coordinates_button = new ButtonBuilder()
-            .setCustomId(`setupuserspawn`)
-            .setLabel(`Register user spawn coordinates`)
-            .setStyle(ButtonStyle.Primary)
-        
-        const goto_bot_website_button = new ButtonBuilder()
-            .setLabel(`Go to bot web portal`)
-            .setURL("scumchatmonitorweb.azurewebsites.net")
-            .setStyle(ButtonStyle.Link)
-    
-        const button_row_bot_controls = new ActionRowBuilder().addComponents(
-            server_info_button,
-            enable_bot_button,
-            disable_bot_button,
-            reinitialize_bot_button,
-            goto_bot_website_button
-        );
-        
-        const button_row_bot_data = new ActionRowBuilder().addComponents(
-            setup_discord_channel_ids_button,
-            setup_ftp_server_button,
-            setup_website_user_button,
-            setup_game_server_button,
-            setup_user_spawn_coordinates_button
-        );
-
-        const discord_channel_id_for_chat = bot_discord_information.scum_ingame_chat_channel_id;
-        const discord_channel_id_for_logins = bot_discord_information.scum_ingame_logins_channel_id;
-        const discord_channel_id_for_new_player_joins = bot_discord_information.scum_new_player_joins_channel_id;
-        const discord_channel_id_for_server_info_button = bot_discord_information.scum_server_info_channel_id;
-        const discord_channel_id_for_server_online = bot_discord_information.scum_server_online_channel_id;
-        const discord_channel_id_for_bot_commands = bot_discord_information.scum_bot_commands_channel_id;
-
-        const battlemetrics_server_id = bot_discord_information.scum_battlemetrics_server_id;
-
-        const teleport_command_prefix = bot_discord_information.command_prefix;
-        const teleport_command_x_coordinate = bot_discord_information.x_coordinate;
-        const teleport_command_y_coordinate = bot_discord_information.y_coordinate;
-        const teleport_command_z_coordinate = bot_discord_information.z_coordinate;
-
-        if (battlemetrics_server_id) {
-            const battlemetrics_server_info_instance = new ServerInfoCommand(battlemetrics_server_id);
-            cache.set(`battlemetrics_server_info_instance_${guild_id}`, battlemetrics_server_info_instance);
-        }
-        if (discord_channel_id_for_chat) {
-            const discord_channel_for_chat = guild.channels.cache.get(discord_channel_id_for_chat);
-            cache.set(`discord_channel_for_chat_${guild_id}`, discord_channel_for_chat);
-        }
-        if (discord_channel_id_for_logins) {
-            const discord_channel_for_logins = guild.channels.cache.get(discord_channel_id_for_logins);
-            cache.set(`discord_channel_for_logins_${guild_id}`, discord_channel_for_logins);
-        }
-        if (discord_channel_id_for_new_player_joins) {
-            const discord_channel_for_new_joins = guild.channels.cache.get(discord_channel_id_for_new_player_joins);
-            cache.set(`discord_channel_for_new_joins_${guild_id}`, discord_channel_for_new_joins);
-        }
-        if (discord_channel_id_for_server_info_button) {
-            const discord_channel_for_server_info = guild.channels.cache.get(discord_channel_id_for_server_info_button);
-            await discord_channel_for_server_info.send({
-                content: `**Bot controls:**\nClick one of the buttons below to control your bot:\n\n`+
-                `**View server info:** View information about your SCUM server\n`+
-                `**Enable bot:** Enable your bot so it starts working on your SCUM server\n`+
-                `**Disable bot:** Disable your bot so it stops working on your SCUM server\n`+
-                `**Restart bot:** Restart the bot so all functionality restarts. Useful if the bot is having problems\n`+
-                `**Go to bot web portal:** Go to your bot web portal to configure settings and add packages\n`,
-            components: [button_row_bot_controls]
-            });
-            await discord_channel_for_server_info.send({
-                content: `**Bot setup**:\nClick one of the buttons below to configure your bot:\n\n`+
-                `**Register Discord channel ids:**  Register the Discord channel ids in this server with your bot\n`+
-                `**Register FTP data:** Register the your server host's FTP server with your bot\n`+
-                `**Register website user:** Register a website user with your bot. This will give you access to the bot web interface\n`+
-                `**Register SCUM game server data:** Register your SCUM game server data (IPv4 address and port number) with your bot\n`+
-                `**Register user spawn coordinates:** Register new user spawn coordinates with your bot\n`,
-            components: [button_row_bot_data]
-            });
-            cache.set(`discord_channel_for_server_info_${guild_id}`, discord_channel_for_server_info);
-        } 
-        if (discord_channel_id_for_server_online) {
-            const discord_channel_for_server_online = guild.channels.cache.get(discord_channel_id_for_server_online);
-            cache.set(`discord_channel_for_server_online_${guild_id}`, discord_channel_for_server_online);
-        }
-        if (discord_channel_id_for_bot_commands) {
-            const discord_channel_for_bot_commands = guild.channels.cache.get(discord_channel_id_for_bot_commands);
-            cache.set(`discord_channel_for_bot_commands_${guild_id}`, discord_channel_for_bot_commands);
-        }
-        cache.set(`teleport_command_prefix_${guild_id}`, teleport_command_prefix);
-        cache.set(`teleport_command_x_coordinate_${guild_id}`, teleport_command_x_coordinate);
-        cache.set(`teleport_command_y_coordinate_${guild_id}`, teleport_command_y_coordinate);
-        cache.set(`teleport_command_z_coordinate_${guild_id}`, teleport_command_z_coordinate);
     }
 });
 
@@ -1870,12 +1937,15 @@ client_instance.on(Events.InteractionCreate, async interaction => {
   });
 
 async function createBotCategoryAndChannels(guild) {
-    let discord_channel_ids = [];
     try {
         const category_creation_response = await guild.channels.create({
-            name: `Chat monitor bot`,
+            name: `SCUM Chat Monitor Bot`,
             type: ChannelType.GuildCategory
         });
+
+        const discord_channel_ids = {
+            guild_id: guild.id
+        };
 
         const channel_names = [
             "Bot commands",
@@ -1904,7 +1974,6 @@ async function createBotCategoryAndChannels(guild) {
                     parent: category_creation_response.id
                 });
                 const mongodb_channel_name = mongodb_channel_names[i];
-                discord_channel_ids["guild_id"] = guild.id;
                 discord_channel_ids[mongodb_channel_name] = created_channel.id;
             }
         }
