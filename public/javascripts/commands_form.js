@@ -1060,29 +1060,36 @@ function populateOriginalHiddenInputFieldWithValue() {
 }
 
 function generateAdditionalInputFields() {
-    const hidden_input = document.createElement('input');
     const inner_parent_section = document.createElement('div');
-
-    hidden_input.type = 'hidden';
-    hidden_input.name = 'item_input_value';
-    hidden_input.id = 'hidden_command_id_input';
     inner_parent_section.className = "individual_add_item_label_and_input";
-    
+    inner_parent_section.style.display = 'flex';  // Set display to flex
+    inner_parent_section.style.alignItems = 'center';  // Align items vertically
+
     const new_input_label = document.createElement('label');
-    const new_input = document.createElement('input');
-    new_input_label.className ="new_command_label";
-    new_input_label.htmlFor = 'item_input'
+    new_input_label.className = "new_command_label";
+    new_input_label.htmlFor = 'item_input';
     new_input_label.textContent = "Choose package item";
+
+    const new_input = document.createElement('input');
     new_input.type = 'text';
-    new_input.name = 'item_input';
     new_input.className = 'new_command_input_field';
-    new_input.placeholder = 'Type to search...';
+    new_input.name = 'item_input';
+    new_input.placeholder = '(Required) start typing to begin searching...';
     new_input.setAttribute('list', 'items_list');
 
-    const outer_parent_section = document.querySelector('#add_item_fields_container');
+    const deleteButton = document.createElement('button');
+    deleteButton.type = 'button';
+    deleteButton.className = 'delete-item-btn';
+    deleteButton.textContent = 'Delete item';
+    deleteButton.onclick = function() { 
+        inner_parent_section.remove();
+    };
+    
     inner_parent_section.appendChild(new_input_label);
     inner_parent_section.appendChild(new_input);
-    inner_parent_section.appendChild(hidden_input);
+    inner_parent_section.appendChild(deleteButton);  
+
+    const outer_parent_section = document.querySelector('#add_item_fields_container');
     outer_parent_section.appendChild(inner_parent_section);
 
     new_input.addEventListener('change', function() {

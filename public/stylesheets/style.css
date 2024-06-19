@@ -180,6 +180,7 @@ main {
     display: flex;
     justify-content: center;
     align-items: center;
+    gap: 5%;
 }
 
 .new_command_data_fieldset {
@@ -215,7 +216,7 @@ main {
 }
 
 .new_command_input_field {
-    width: 50%;
+    width: 100%;
 }
 
 .new_command_input_field, .new_command_label {
@@ -230,6 +231,11 @@ main {
     justify-content: center;
     align-items: center;
     align-self: flex-end;
+    margin-top: 2%;
+}
+
+.delete-item-btn {
+    margin-top: 2%;
 }
 
 #edit_command_form_field_buttons {
@@ -969,8 +975,11 @@ a {
         justify-content: center;
         align-items: center;
     }
-    
 
+    .new_command_input_field {
+        width: 50%;
+    }
+    
     #article_for_ftp_data_page_disclaimer {
         margin-bottom: 0%;
     }    

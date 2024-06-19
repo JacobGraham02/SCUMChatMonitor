@@ -21,7 +21,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Special handling for number inputs
         if (inputField.type === 'number') {
-            console.log(inputField.type);
             value = parseInt(value);
         }
 
