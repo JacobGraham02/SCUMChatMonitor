@@ -32,25 +32,28 @@ block content(user)
 			h1#create_command_page_header_h1 Create a new command and register it with the bot
 
 		form#new_command_form(method='POST', action='/admin/botcommand/new', enctype='application/x-www-form-urlencoded' class="needs-validation bot_data_form") 
-			section#new_command_section_easy
+			section#new_command_section
 				fieldset#fieldset_for_form_heading 
 
-				fieldset#command_item_name 
-					article#add_command_name_container(class='input_for_easy_command_creation')
-						label(class="new_command_label",for='command_name') Command name. Maximum length of 50 letters and/or numbers. 
+				fieldset#command_item_name.new_command_data_fieldset 
+					article#add_command_name_container.new_command_data_fieldset_article
+						label(class="new_command_label",for='command_name') Command name. Maximum length of 50 letters and/or numbers
 						input#command_name(class="new_command_input_field",type='text',name='command_name', 
-						placeholder='Write here...', minlength='1', maxlength='50', required)
+						placeholder='Write here...', minlength='1', maxlength='50', required, data-maxlength='50')
+						span.char_count(data-for='command_name') 
 
-				fieldset#command_item_description
-					article#add_command_description_container(class='input_for_easy_command_creation')
-						label(class="new_command_label",for='command_description') Command description. Maximum length of 1000 letters and/or numbers.
-						textarea#command_description(class="new_command_input_field",type='text',name='command_description', 
-						placeholder='Write here...', minlength='1', maxlength='1000',required)
+				fieldset#command_item_description.new_command_data_fieldset 
+					article#add_command_description_container.new_command_data_fieldset_article
+						label(class="new_command_label",for='command_description') Command description. Maximum length of 1000 letters and/or numbers
+						textarea#command_description(class="new_command_input_field",type='text',name='command_description',
+						placeholder='Write here...', minlength='1', maxlength='1000', required, data-maxlength='1000')
+						span.char_count(data-for='command_description') 
 
-				fieldset#dropdown_menu_for_spawn_item 
-					article#add_item_fields_container(class='input_for_easy_command_creation')
+				fieldset#dropdown_menu_for_spawn_item.new_command_data_fieldset 
+					label(class="new_command_label") Add new package items
+					article#add_item_fields_container.new_command_data_fieldset_article
 						div.individual_add_item_label_and_input
-							label(class="new_command_label",for='item_input') Choose package item
+							label(for='item_input') Choose package item
 							input.item_input(class="new_command_input_field",type='text', name='item_input', list='items_list', 
 							placeholder='Type to search...', maxlength='100' required)
 							input#hidden_command_id_input(type='hidden',name='item_input_value')
@@ -58,13 +61,14 @@ block content(user)
 					article#add_another_item_button_container
 						button#add_item_button(type='button') Add another item
 
-				fieldset#add_command_cost 
-					article#add_command_cost_fields_container(class='input_for_easy_command_creation')
-						label(class="new_command_label",for='command_cost_input') Command cost. Maximum length of 6 numbers. 
+				fieldset#add_command_cost.new_command_data_fieldset 
+					article#add_command_cost_fields_container.new_command_data_fieldset_article
+						label(class="new_command_label",for='command_cost_input') Command cost. Maximum length of 6 numbers
 						input#command_cost_input(class="new_command_input_field", type='number', name='command_cost_input', placeholder='Command cost...', 
-						maxlength='6', minlength='1' pattern="[0-6]{1,6}")
+						maxlength='6', minlength='1' pattern="[0-6]{1,6}", data-maxlength='6')
+						span.char_count(data-for="command_cost_input")
 
-				fieldset#edit_command_form_field_buttons
+				fieldset#edit_command_form_field_buttons.new_command_data_fieldset 
 						button#save_changes_button(type='submit') Create 
 						button#cancel_changes_button(type='button') Cancel
 

@@ -10,6 +10,42 @@ const create_command_page_buttons = document.querySelectorAll('button');
 const addItemButton = document.querySelector('#add_item_button');
 const initial_spawn_item_input = document.querySelector('.item_input');
 const initial_spawn_item_hidden_input = document.querySelector('#hidden_command_id_input');
+const max_character_inputs = document.querySelectorAll(`.new_command_input_field[data-maxlength]`);
+
+function updateCharCounter(event) {
+    const input = event.target;
+    const maxLength = input.getAttribute('data-maxlength');
+    const characterCountSpan = document.querySelector(`.char_count[data-for='${input.id}']`);
+
+    if (input.value.length > maxLength) {
+        input.value = input.value.substring(0, maxLength);
+    }
+
+    const currentLength = input.value.length;
+    const remaining = maxLength - currentLength;
+    
+    if (characterCountSpan) {
+        characterCountSpan.textContent = `${remaining} characters remaining`;
+    } 
+
+    if (remaining <= 0) {
+        if (event.inputType !== 'deleteContentBackward' && event.inputType !== 'deleteContentForward') {
+            event.preventDefault(); 
+            input.value = input.value.substring(0, maxLength); 
+        }
+    }
+}
+
+
+function registerCharCounter() {
+    const maxCharacterInputs = document.querySelectorAll('.new_command_input_field[data-maxlength]');
+    maxCharacterInputs.forEach(input => {
+        input.addEventListener('input', updateCharCounter);
+        updateCharCounter({ target: input }); 
+    });
+}
+
+registerCharCounter();
 
 const scum_items_list = [
     { value: "#SpawnItem Weapon_M82A1_Black", label: "Black M82A1 sniper", imageUrl:"https://static.wikia.nocookie.net/scum_gamepedia_en/images/2/27/M82A1.png/revision/latest/scale-to-width-down/50?cb=20220813052625" },

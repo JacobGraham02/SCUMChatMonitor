@@ -53,6 +53,10 @@ body {
     grid-area: main;
 }
 
+main {
+    overflow-y: auto;
+}
+
 #website_menu_username_container {
     width: 100%;
     height: 100%;
@@ -132,98 +136,35 @@ body {
     margin-bottom: 1%;
 }
 
-.advancedCommandCreationButtonSelected {
-    background: red;
+/*  Create new bot command section */
+#command_new_page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
-.easyCommandCreationButtonSelected {
-    background: green;
+#dropdown_menu_for_spawn_item {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 80%;
 }
 
-#new_command_section_easy {
+#new_command_form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 80%;
+    overflow: visible;
+}
+
+#new_command_section {
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     height: 100%;
-    width: 100%;
-}
-
-.new_command_label {
-    font-size: 125%;
-}
-
-.new_command_input_field {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 100%;
-    margin: 1%;
-}
-
-.input_for_easy_command_creation {
-    display: flex;
-    width: 50%;
-    flex-direction: column;
-}
-
-.individual_add_item_label_and_input {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    width: 50%;
-    max-width: 50%;
-    max-height: 100%;
-}
-
-#add_command_name_container {
-    width: 100%;
-}
-
-#command_name {
-    width: 50%;
-}
-
-#add_command_cost {
-    display: flex;
-    width: 100%;
-}
-
-#add_command_cost_fields_container {
-    width: 100%;
-}
-
-#command_item_name {
-    display: flex;
-    width: 100%;
-}
-
-#command_cost_input {
-    width: 50%;
-}
-
-#dropdown_menu_for_spawn_item {
-    width: 100%;
-}
-
-#edit_command_form_field_buttons {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-#command_item_description {
-    display: flex;
-    width: 100%;
-}
-
-#command_description {
-    width: 100%;
-    height: fit-content;
-}
-
-#add_command_description_container {
     width: 100%;
 }
 
@@ -235,9 +176,49 @@ body {
     width: 100%;
 }
 
+#edit_command_form_field_buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.new_command_data_fieldset {
+    display: flex;
+    width: 100%;
+    margin-top: 2%;
+    height: fit-content;
+}
+
+.new_command_data_fieldset_article {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: fit-content;
+    align-items: center;
+    justify-content: center;
+}
+
+.new_command_label {
+    font-weight: bold;
+}
+
+.individual_add_item_label_and_input {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+#command_description {
+    height: fit-content;
+}
+
+.new_command_input_field {
+    width: 50%;
+}
+
 .new_command_input_field, .new_command_label {
-    width: 48%; /* Adjust as needed */
-    margin-right: 2%; /* Space between items */
     min-width: 0;
     flex-basis: 20%;
 }
@@ -279,12 +260,6 @@ body {
     height: fit-content;
     font-weight: bold;
     font-size: 150%;
-}
-
-#command_new_page, #command_edit_page {
-    display: flex;
-    align-items: center;
-    flex-direction: column;
 }
 
 #edit_command_section {
@@ -999,10 +974,6 @@ a {
     #article_for_ftp_data_page_disclaimer {
         margin-bottom: 0%;
     }    
-
-    #dropdown_menu_for_spawn_item {
-        width: 60%;
-    }
 
     #index_page_home_button {
         width: 100%;
