@@ -4,8 +4,11 @@ import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { exec } from 'child_process';
+
+const commandQueue = [];
+let isProcessingCommandQueue = false;
+
 const intervals = new Map();
-const cache = new Map();
 
 let mainWindow;
 
@@ -34,21 +37,57 @@ function createWindow() {
     });
 }
 
+async function processCommandQueue() {
+    if (isProcessingCommandQueue) {
+        return;
+    }
+    isProcessingCommandQueue = true;
+
+    while (commandQueue.length > 0) {
+        const { command, websocket_id, steam_id } = commandQueue.shift();
+        await runCommand(command, websocket_id, steam_id);
+    }
+
+    isProcessingCommandQueue = false;
+}
+
 async function createWebSocketConnection(websocket_id) {
     const websocket = new WebSocket(`ws://localhost:8080?websocket_id=${encodeURIComponent(websocket_id)}`);
 
     websocket.on('message', async (message) => {
         const json_message_data = JSON.parse(message);
-        if (json_message_data.action === `runCommand` && json_message_data.package_items && json_message_data.guild_id) {
-            try {
-                if (Array.isArray(json_message_data.package_items)) {
-                    const commands_array = json_message_data.package_items;
-                    await runCommand(commands_array, websocket_id);
+
+        if (json_message_data.action === `announceMessage`) {
+            if (Array.isArray(json_message_data.messages)) {
+                for (const command of json_message_data.messages) {
+                    commandQueue.push({ command, websocket_id });
                 }
-            } catch (error) {
-               console.error(`There was an error when attempting to run a command: ${error}`);
+                processCommandQueue();
             }
         }
+
+        if (json_message_data.action === `runCommand` && json_message_data.package_items && json_message_data.guild_id && json_message_data.steam_id) {
+            if (Array.isArray(json_message_data.package_items)) {
+                const commands_array = json_message_data.package_items;
+                const player_steam_id = json_message_data.steam_id;
+                for (const command of commands_array) {
+                    commandQueue.push({ command, websocket_id, steam_id: player_steam_id });
+                }
+                processCommandQueue();
+            }
+        }
+
+        if (json_message_data.action === `teleportNewPlayers`) {
+            const teleport_coordinates = json_message_data.teleport_coordinates;
+            const player_steam_id = json_message_data.steam_id;
+            const x_coordinate = teleport_coordinates.x;
+            const y_coordinate = teleport_coordinates.y;
+            const z_coordinate = teleport_coordinates.z;
+            const teleport_command = `#Teleport ${x_coordinate} ${y_coordinate} ${z_coordinate}, ${player_steam_id}`;
+            commandQueue.push(teleport_command);
+            processCommandQueue();
+        }
+
         if (json_message_data.action === `reinitializeBot` && json_message_data.guild_id) {
             try {
                 const botInitializedOnServer = await reinitializeBotOnServer(json_message_data.guild_id, websocket_id);
@@ -61,36 +100,29 @@ async function createWebSocketConnection(websocket_id) {
                 console.error(`There was an error when attempting to reinitialize the bot on the SCUM server: ${error}`);
             }
         }
-        if (json_message_data.action === `enabled` && json_message_data.guild_id 
-        && json_message_data.game_server_ip && json_message_data.game_server_port
-        && json_message_data.ftp_server_data) {
+        if (json_message_data.action === `enable` && json_message_data.guild_id 
+        && json_message_data.ftp_server_data && json_message_data.game_server_data) {
 
-            const game_server_ip = json_message_data.game_server_ip;
-            const game_server_port = json_message_data.game_server_port;
-            // const ftp_server_host = json_message_data.ftp_server_data.ftp_server_host;
-            // const ftp_server_username = json_message_data.ftp_server_data.ftp_server_username;
-            // const ftp_server_password = json_message_data.ftp_server_data.ftp_server_password;
-            // const ftp_server_port = json_message_data.ftp_server_data.ftp_server_port;
-
-            // const ftp_server_data = {
-            //     ftp_server_host: ftp_server_host,
-            //     ftp_server_username: ftp_server_username,
-            //     ftp_server_password: ftp_server_password,
-            //     ftp_server_port: ftp_server_port
-            // }
+            console.log("Enable bot button in electron is triggered");
 
             const check_server_online_and_bot_connected_interval = setInterval(async function() {
+                const game_server_data = json_message_data.game_server_data;
+                const ftp_server_data = json_message_data.ftp_server_data;
+                const guild_id = json_message_data.guild_id;
+
                 try {
-                    const isConnectedToServer = await checkWindowsHasTcpConnectionToGameServer(game_server_ip, game_server_port);
-                    const isServerOnline = await checkWindowsCanPingGameServer(game_server_ip);
+                    const isConnectedToServer = await checkWindowsHasTcpConnectionToGameServer(game_server_data.game_server_ipv4, game_server_data.game_server_port);
+                    const isServerOnline = await checkWindowsCanPingGameServer(game_server_data.game_server_ipv4);
+                    const localTimeISO = getLocalTimeInISO8601Format();
         
                     // Send response back through WebSocket
                     websocket.send(JSON.stringify({
                         action: 'statusUpdate',
-                        guild_id: json_message_data.guild_id,
-                        ftp_server_data: json_message_data.ftp_server_data,
+                        guild_id: guild_id,
+                        ftp_server_data: ftp_server_data,
                         connectedToServer: isConnectedToServer,
-                        serverOnline: isServerOnline
+                        serverOnline: isServerOnline,
+                        localTime: localTimeISO
                     }));
                 } catch (error) {
                     websocket.send(JSON.stringify({
@@ -125,6 +157,11 @@ async function createWebSocketConnection(websocket_id) {
     return websocket;
 }
 
+function getLocalTimeInISO8601Format() {
+    const current_date = new Date();
+    return current_date.toISOString();
+}
+
 /**
 * This function uses the native Windows command prompt shell to execute the command 'netstat -an' to fetch a list of current connections.
 * It checks if the computer is connected to the game server IP address, which helps ensure the bot keeps trying to rejoin the game server if disconnected. 
@@ -134,7 +171,7 @@ async function createWebSocketConnection(websocket_id) {
 async function checkWindowsHasTcpConnectionToGameServer(game_server_address, game_server_port) {
     console.log(`Windows is connected to game server`);
     return new Promise((resolve, reject) => {
-        exec(`netstat -an | find "${game_server_address}:${game_server_port}"`, (error, stdout, stderr) => {
+        exec(`netstat -an | find "${game_server_address}:${game_server_port}"`, (error, stdout) => {
             if (error) reject(error);
             resolve(stdout.includes(game_server_address + ':' + game_server_port));
         });
@@ -149,7 +186,7 @@ async function checkWindowsHasTcpConnectionToGameServer(game_server_address, gam
 async function checkWindowsCanPingGameServer(game_server_address) {
     console.log(`Windows can ping game server`);
     return new Promise((resolve, reject) => {
-        exec(`ping ${game_server_address}`, (error, stdout, stderr) => {
+        exec(`ping ${game_server_address}`, (error, stdout) => {
             if (error) reject(error);
             resolve(stdout.includes('Reply from ' + game_server_address));
         });
@@ -173,21 +210,20 @@ function sleep(milliseconds) {
  * @param {string} command A string value containing the SCUM command to run in-game
  * @returns if the system cannot detect the SCUM process currently running, the function will cease execution. 
  */
-async function runCommand(commandsArray, websocket_id) {
-    for (const command of commandsArray) {
-        await sleep(500);
-        copyToClipboard(command, websocket_id);
-        await sleep(500);
-        pressCharacterKeyT(websocket_id);
-        await sleep(500);
-        pressBackspaceKey(websocket_id);
-        await sleep(500);
-        pasteFromClipboard(websocket_id);
-        await sleep(500);
-        pressEnterKey(websocket_id);
-        await sleep(500);
-    }
+async function runCommand(command, websocket_id) {
+    await sleep(1000);
+    copyToClipboard(command, websocket_id);
+    await sleep(1000);
+    pressCharacterKeyT(websocket_id);
+    await sleep(1000);
+    pressBackspaceKey(websocket_id);
+    await sleep(1000);
+    pasteFromClipboard(websocket_id);
+    await sleep(1000);
+    pressEnterKey(websocket_id);
+    await sleep(1000);
 }
+
 
 /**
  * This is the sequence of operations which executes after the server restarts, and the bot must log back into the server.
@@ -241,7 +277,7 @@ async function moveMouseToContinueButtonXYLocation(websocket_id) {
     const command = `powershell.exe -command "Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class P { [DllImport(\\"user32.dll\\")] public static extern bool SetCursorPos(int x, int y); }'; [P]::SetCursorPos(${x_cursor_position}, ${y_cursor_position})"`;
 
     try {
-        const { stdout, stderr } = await executeAsyncCommand(command);
+        const { stderr } = await executeAsyncCommand(command);
         if (stderr) {
             await sendLogData(
                 `ErrorLogs`,
@@ -257,6 +293,7 @@ async function moveMouseToContinueButtonXYLocation(websocket_id) {
     }
 }
 
+
 /**
  * Executes a Windows powershell command to simulate a user moving the cursor to a specific (X, Y) location on screen. This is an asynchronous operation.
  */
@@ -266,7 +303,7 @@ async function moveMouseToPressOkForMessage(websocket_id) {
     const command = `powershell.exe -command "Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class P { [DllImport(\\"user32.dll\\")] public static extern bool SetCursorPos(int x, int y); }'; [P]::SetCursorPos(${x_cursor_position}, ${y_cursor_position})"`;
     
     try {
-        const { stdout, stderr } = await executeAsyncCommand(command);
+        const { stderr } = await executeAsyncCommand(command);
         if (stderr) {
             await sendLogData(
                 `ErrorLogs`,
@@ -289,7 +326,7 @@ async function pressMouseLeftClickButton(websocket_id) {
     const command = `powershell.exe -command "Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class P { [DllImport(\\"user32.dll\\")] public static extern void mouse_event(int dwFlags, int dx, int dy, int dwData, int dwExtraInfo); }'; $leftDown = 0x0002; $leftUp = 0x0004; [P]::mouse_event($leftDown, 0, 0, 0, 0); [P]::mouse_event($leftUp, 0, 0, 0, 0);"`;
     
     try {
-        const { stdout, stderr } = await executeAsyncCommand(command);
+        const { stderr } = await executeAsyncCommand(command);
         if (stderr) {
             await sendLogData(
                 `ErrorLogs`,
@@ -314,7 +351,7 @@ async function copyToClipboard(text, websocket_id) {
     const command = `powershell.exe -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Clipboard]::SetText('${text.replace(/'/g, "''")}')"`;
 
     try {
-        const { stdout, stderr } = await executeAsyncCommand(command);
+        const { stderr } = await executeAsyncCommand(command);
         if (stderr) {
             await sendLogData(
                 `ErrorLogs`,
@@ -340,7 +377,7 @@ async function pasteFromClipboard(websocket_id) {
     const command = `powershell.exe -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('^v')"`
  
     try {
-        const { stdout, stderr } = await executeAsyncCommand(command);
+        const { stderr } = await executeAsyncCommand(command);
         if (stderr) {
             await sendLogData(
                 `ErrorLogs`,
@@ -366,7 +403,7 @@ async function pressTabKey(websocket_id) {
     const command = `powershell.exe -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('{TAB}')"`;
 
     try {
-        const { stdout, stderr } = await executeAsyncCommand(command);
+        const { stderr } = await executeAsyncCommand(command);
         if (stderr) {
             await sendLogData(
                 `ErrorLogs`,
@@ -392,7 +429,7 @@ async function pressCharacterKeyT(websocket_id) {
     const command = `powershell.exe -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('t')`;
 
     try {
-        const { stdout, stderr } = await executeAsyncCommand(command);
+        const { stderr } = await executeAsyncCommand(command);
         if (stderr) {
             await sendLogData(
                 `ErrorLogs`,
@@ -419,7 +456,7 @@ async function pressBackspaceKey(websocket_id) {
     const command = `powershell.exe -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('{BACKSPACE}')`;
 
     try {
-        const { stdout, stderr } = await executeAsyncCommand(command);
+        const { stderr } = await executeAsyncCommand(command);
         if (stderr) {
             await sendLogData(
                 `ErrorLogs`,
@@ -445,7 +482,7 @@ async function pressEnterKey(websocket_id) {
     const command = `powershell.exe -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('{Enter}')`;
 
     try {
-        const { stdout, stderr } = await executeAsyncCommand(command);
+        const { stderr } = await executeAsyncCommand(command);
         if (stderr) {
             await sendLogData(
                 `ErrorLogs`,
@@ -515,13 +552,16 @@ app.whenReady().then(() => {
         try {
             const response = await fetch("http://localhost:8080/admin/createwebsocket", {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'Accept': 'application/json'
+                },
                 body: JSON.stringify({ email, password })
             });
             const response_data = await response.json();
             return response_data;
         } catch (error) {
-            console.error(`Error during login: ${error}`);
+            throw error;
             return false; 
         }
     });

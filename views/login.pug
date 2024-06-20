@@ -21,13 +21,26 @@ block content
 				p#failed_login_message= invalid_login_message
 			-}
 			form#login_fields_form(action='/login' method='post') 
-				fieldset#login_username_field.login_fieldset
-					label#form_login_username_label.login_label(for='email') Email address:
-					input#form_login_username_input.login_input(type='text' name='email')
+				article#login_fields_form_fieldset_container
+					fieldset#login_username_field.login_fieldset
+						label#form_login_username_label.login_label(for='email') Email address:
+						label#form_login_username_label_hint.login_label_hint(for='email') Must be the same as the email address you registered with your bot in Discord (e.g., bobsmith01@gmail.com)
+						input#form_login_username_input.login_input(
+							type='email' 
+							name='email', 
+							placeholder='(Required) bobsmith01@gmail.com',
+							minlength='1',
+							maxlength='100')
 
-				fieldset#login_password_field.login_fieldset
-					label#form_login_password_label.login_label(for='password') Password:
-					input#form_login_password_input.login_input(type='password' name='password')
+					fieldset#login_password_field.login_fieldset
+						label#form_login_password_label.login_label(for='password') Password:
+						label#form_login_password_label_hint.login_label_hint(for='password') Must be the same as the password you registered with your bot in Discord (e.g., 1tfoBp4wdqxbhxcPZzNM71zB)
+						input#form_login_password_input.login_input(
+							type='password' 
+							name='password',
+							placeholder='(Required) 1tfoBp4wdqxbhxcPZzNM71zB'
+							minlength='1'
+							maxlength='32')
 
 				article#login_form_submit_button_article
 					button#button_submit_login(action='submit') Log in

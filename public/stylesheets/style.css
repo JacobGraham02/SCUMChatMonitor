@@ -19,6 +19,8 @@ body {
     /* justify-content: flex-start;
     align-items: flex-start; */
     grid-area: header;
+    height: 100%;
+    max-height: 100vh;
 }
 
 #footer {
@@ -27,16 +29,15 @@ body {
     text-align: center;
 }
 
-#menu_container {
+#menu_container, #login_menu_container {
     width: 100%;
-    height: auto;
+    height: 100%;
     display: flex;
     display: -ms-flexbox;
     display: -webkit-flex;
     background: #efeff5;
     flex-direction: column;
     flex-flow: column wrap;
-    align-items: flex-start;
     grid-area: header;
 }
 
@@ -52,8 +53,13 @@ body {
     grid-area: main;
 }
 
+main {
+    overflow-y: auto;
+}
+
 #website_menu_username_container {
     width: 100%;
+    height: 100%;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -130,98 +136,35 @@ body {
     margin-bottom: 1%;
 }
 
-.advancedCommandCreationButtonSelected {
-    background: red;
+/*  Create new bot command section */
+#command_new_page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
-.easyCommandCreationButtonSelected {
-    background: green;
+#dropdown_menu_for_spawn_item {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 80%;
 }
 
-#new_command_section_easy {
+#new_command_form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 80%;
+    overflow: visible;
+}
+
+#new_command_section {
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     height: 100%;
-    width: 100%;
-}
-
-.new_command_label {
-    font-size: 125%;
-}
-
-.new_command_input_field {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 100%;
-    margin: 1%;
-}
-
-.input_for_easy_command_creation {
-    display: flex;
-    width: 50%;
-    flex-direction: column;
-}
-
-.individual_add_item_label_and_input {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    width: 50%;
-    max-width: 50%;
-    max-height: 100%;
-}
-
-#add_command_name_container {
-    width: 100%;
-}
-
-#command_name {
-    width: 50%;
-}
-
-#add_command_cost {
-    display: flex;
-    width: 100%;
-}
-
-#add_command_cost_fields_container {
-    width: 100%;
-}
-
-#command_item_name {
-    display: flex;
-    width: 100%;
-}
-
-#command_cost_input {
-    width: 50%;
-}
-
-#dropdown_menu_for_spawn_item {
-    width: 100%;
-}
-
-#edit_command_form_field_buttons {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-#command_item_description {
-    display: flex;
-    width: 100%;
-}
-
-#command_description {
-    width: 100%;
-    height: fit-content;
-}
-
-#add_command_description_container {
     width: 100%;
 }
 
@@ -233,9 +176,50 @@ body {
     width: 100%;
 }
 
+#edit_command_form_field_buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5%;
+}
+
+.new_command_data_fieldset {
+    display: flex;
+    width: 100%;
+    margin-top: 2%;
+    height: fit-content;
+}
+
+.new_command_data_fieldset_article {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: fit-content;
+    align-items: center;
+    justify-content: center;
+}
+
+.new_command_label {
+    font-weight: bold;
+}
+
+.individual_add_item_label_and_input {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+#command_description {
+    height: fit-content;
+}
+
+.new_command_input_field {
+    width: 100%;
+}
+
 .new_command_input_field, .new_command_label {
-    width: 48%; /* Adjust as needed */
-    margin-right: 2%; /* Space between items */
     min-width: 0;
     flex-basis: 20%;
 }
@@ -247,6 +231,11 @@ body {
     justify-content: center;
     align-items: center;
     align-self: flex-end;
+    margin-top: 2%;
+}
+
+.delete-item-btn {
+    margin-top: 2%;
 }
 
 #edit_command_form_field_buttons {
@@ -277,12 +266,6 @@ body {
     height: fit-content;
     font-weight: bold;
     font-size: 150%;
-}
-
-#command_new_page, #command_edit_page {
-    display: flex;
-    align-items: center;
-    flex-direction: column;
 }
 
 #edit_command_section {
@@ -345,7 +328,7 @@ body {
 .menu {
     height: 100%;
     width: 100%;
-    gap: 5%;
+    gap: 3%;
     list-style: none;
     overflow: hidden;
     display: flex;
@@ -509,10 +492,6 @@ fieldset {
     border: 0;
 }
 
-.login_label {
-    font-size: 120%;
-}
-
 #index_page_header_buttons {
     display: flex;
     align-items: center;
@@ -527,68 +506,57 @@ fieldset {
 
 }
 
+/* Log in page stylings */
 #login_section {
     display: flex;
     flex-direction: column;
     height: 100%;
-    justify-content: center;
     align-items: center;
-}
-
-#login_section #login_username_field {
-    height: 40%;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-#login_section #login_password_field {
-    height: 40%;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-#login_section #login_password_field input, #login_username_field input {
-    height: 10%;
-    width: 100%;
 }
 
 .login_fieldset {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     flex-direction: column;
-    margin: 0;
-    padding: 0;
-    width: 80%;
+    text-align: center;
+    width: 100%;
 }
+
+#login_fields_form_fieldset_container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: fit-content;
+}
+
+.login_input {
+    width: 80%;
+    height: 80%;
+}
+
+.login_label {
+    font-weight: bold;
+}
+
 #invalid_login_message {
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
 }
-#login_form_submit_button_article {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-top: 1px;
-}
-
-#login_form_submit_button_article #button_submit_login {
-    width: 25%;
-}
 
 #login_fields_form {
-    width: 70%;
-    height: 100%;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    width: 90%;
+    height: fit-content;
+    font-size: 125%;
+    line-height: 150%;
 }
 
-#login_fields_form input {
-    width: 100%;
-    min-height: 15%;
-    height: fit-content;
-}
+/* End of log in page stylings */
 
 #commands_file_javascript_textarea {
     width: 100%;
@@ -743,14 +711,25 @@ a {
     width: 100%;
 }
 
+#log_in_to_account_heading {
+    font-weight: bold;
+}
+
 #index_page_home_button {
     display: flex;
-    width: 100%;
+    width: 25%;
+    margin-top: 5%;
     align-items: center;
     justify-content: center;
 }
 
+#user_administrator_name_heading {
+    margin-top: 0;
+}
+
 #menu_links_image {
+    width: 50%;
+    height: auto;
     display: block;
     margin: 0;
 }
@@ -841,11 +820,7 @@ a {
 }
 
 #logout_button_container {
-    margin-top: 100%;
-    border: 2px dotted black;
-}
-#global_site_navigation_logout_form {
-    border: 2px solid blue;
+    margin-top: 10%;
 }
 
 .menu a.active {
@@ -881,7 +856,7 @@ a {
     display: flex;
     flex-direction: column; /* Keep children (the title and the container div) in a column */
     align-items: center; /* Center children horizontally */
-    height: 100vh; /* Make it take up the full viewport height */
+    height: 80%; /* Make it take up the full viewport height */
 }
 
 /* Container for log files to sit side by side */
@@ -910,6 +885,50 @@ a {
     height: auto; /* Adjust height to auto to fit content */
     flex-direction: column;
 }
+
+/* Server players page */
+#server_players_main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 2px solid red;
+}
+
+/* Add this CSS to your stylesheet or within a <style> tag in your Pug template */
+#players_pagination_list_ul, #current_server_players_list {
+    list-style-type: none;
+    padding: 0; /* Ensure there is no padding that could interfere with styling */
+}
+
+#players_pagination_list_ul li a, #current_server_players_list li a {
+    text-decoration: none; /* Remove underline from links */
+}
+
+#players_pagination_list_ul li a:hover, #current_server_players_list li a:hover {
+    text-decoration: none; /* Ensure no underline on hover */
+}
+
+#current_server_players_list_article {
+    font-weight: bold;
+    display: flex;
+    width: 80%;
+    gap: 5%;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+    height: fit-content;
+}
+
+#current_server_players_list_article #current_server_players_list{
+    display: flex;
+    width: 100%;
+    height: fit-content;
+    gap: 10px;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
 
 /* Media queries for when on a desktop */
 @media screen and (min-width: 1199px) {
@@ -940,14 +959,17 @@ a {
         justify-content: center;
         align-items: center;
     }
-    
 
+    .new_command_input_field {
+        width: 50%;
+    }
+    
     #article_for_ftp_data_page_disclaimer {
         margin-bottom: 0%;
     }    
 
-    #dropdown_menu_for_spawn_item {
-        width: 60%;
+    #index_page_home_button {
+        width: 100%;
     }
 
     #ftp_server_data_edit_page, #discord_channel_id_edit_page, #coordinate_data_edit_page, #game_server_data_edit_page {
@@ -1000,10 +1022,10 @@ a {
         /* Transform the list to top of side section */
         /* background: #efeff5; */
     }
-
-    #login_section #login_password_field input, #login_username_field input {
-        height: 10%;
-        width: 30%;
+    
+    .header .menu li {
+        width: 100%;
+        height: fit-content;
     }
 
     .ftp_server_data_input, .discord_channel_id_input, .coordinate_data_input, .game_server_data_input {
@@ -1024,22 +1046,26 @@ a {
         display: block;
     }
 
-    #website_menu_username_container {
+    #website_menu_username_container, #website_login_menu {
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
         width: 100%;
-        height: 80%;
+        height: 90%;
+    }
+
+    #navbar_wilson_image {
+        width: 100%;
+        height: 100%;
     }
 
     .menu {
         display: flex;
+        height: 100%;
         flex-direction: column;
-        height: fit-content;
         align-items: center;
         text-align: center;
-        gap: 3%;
     }
     
     #menu_container {
@@ -1109,5 +1135,10 @@ a {
 
     #landing_page_wilson_picture {
         display: none;
+    }
+
+    .login_input {
+        width: 60%;
+        height: 60%;
     }
 }

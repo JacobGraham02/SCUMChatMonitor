@@ -1,14 +1,16 @@
 mixin menu(data)
- section#menu_container
-  div#website_menu_username_container
+ section#login_menu_container
+  div#website_login_menu
    input#menu-btn.menu-btn(type='checkbox')
    label.menu-icon(for='menu-btn')
     span.navicon
    ul.menu
-    a#index_page_home_button(href='/' title='A link to go to the website home page')
-     img#menu_links_image(src='../../images/WilsonBotMenu.png', alt='The WilsonBot logo')
+    li
+     div#navbar_wilson_image
+      a#index_page_home_button(href='/' title='A link to go to the website home page')
+       img#menu_links_image(src='../../images/WilsonBotMenu.png', alt='The WilsonBot logo')
     li 
-       div#navbar_welcome_message
+       div#navbar_welcome
         -if (user === undefined) {
           h1#user_administrator_name_heading Welcome, user 
         -} else {

@@ -1,0 +1,37 @@
+extends layout
+
+block variables
+    - var page_title = title 
+    - var players_per_page = 10
+    - var current_page_number = 1
+    - var total_number_of_pages = Math.ceil(total_player_files / players_per_page)
+
+include menu
+include smallModal
+include deleteModal
+include successModal
+include errorModal
+
+block header
+    header#header.header
+        +menu(user, currentPage)
+
+block content(user)
+    main#server_players_main 
+        h1#current_server_players_heading Players
+        h4#current_server_players_heading_todo Click on any of the player names listed here to view more details about them
+
+        article#current_server_players_list_article
+            ul#current_server_players_list
+                - for (let i = (current_page_number - 1) * players_per_page; i < Math.min(current_page_number * players_per_page, current_page_players.length); i++) {
+                    li 
+                        a(href=`player/${current_page_players[i].user_steam_id}`)= current_page_players[i].user_steam_name
+                - }
+
+            nav#players_pagination_list_nav
+                ul#players_pagination_list_ul
+                    for page in page_numbers
+                        li#players_pagination_list_item(class=current_page_of_players === page ? 'active' : '')
+                            a#players_pagination_list_link(href=`players?range=${(page - 1) * players_per_page + 1}&${page * players_per_page}`) Page #{page}
+
+    script(src='/javascripts/admin_index_page.js')

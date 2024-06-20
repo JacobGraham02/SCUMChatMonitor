@@ -1,0 +1,27 @@
+extends layout 
+
+block variables 
+    - var page_title = title 
+
+include menu 
+include smallModal 
+include deleteModal 
+include successModal 
+include errorModal 
+
+block header 
+    header#header.header 
+        +menu(user, currentPage)
+
+block content(user)
+    main#main_player_details 
+        h1 Player details 
+
+        h3 Steam name: #{player.user_steam_name}
+        h4 Steam id: #{player.user_steam_id}
+        h4 Balance: #{player.user_money}
+        h4 Welcome pack uses: #{player.welcome_pack_uses || 0}
+
+        a(href="/admin/players?range=1&10") Back to players list 
+
+    script(src='/javascripts/admin_index_page.js')

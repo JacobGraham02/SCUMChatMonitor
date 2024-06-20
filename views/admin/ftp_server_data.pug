@@ -5,16 +5,19 @@ block variables
 
 include menu
 include smallModal
+include cancelModal
 include successModal
 include errorModal
 
 block header
     header#header.header
         +menu(user, currentPage)
+        
 
 block content(user)
     main#ftp_server_data_edit_page   
-        +smallModal
+        +smallModal(submit_modal_title, submit_modal_description)
+        +cancelModal(cancel_modal_title, cancel_modal_description)
         if show_submit_modal
             +successModal(alert_title, alert_description)
         if show_error_modal
@@ -96,6 +99,6 @@ block content(user)
                         
                 fieldset#ftp_server_data_form_field_buttons.fieldset_for_form_buttons
                     button#save_changes_button(class="" type='submit') Save
-                    button#cancel_changes_to_ftp_server_data_button(class="" type='button') Cancel
+                    button#cancel_changes_button(class="" type='button') Cancel
     script(src="/javascripts/validate_form_fields.js")
     script(src="/javascripts/show_submit_modal.js")

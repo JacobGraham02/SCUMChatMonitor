@@ -36,9 +36,6 @@ export default class Cache {
      * @param {any} key 
      */
     delete(key) {
-        const cache_data = this.data_cache.get(key);
-        if (cache_data) {
-            return this.data_cache.delete(key);
-        }
+        return this.data_cache.delete(key);
     }
 }
