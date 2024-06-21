@@ -102,9 +102,6 @@ async function createWebSocketConnection(websocket_id) {
         }
         if (json_message_data.action === `enable` && json_message_data.guild_id 
         && json_message_data.ftp_server_data && json_message_data.game_server_data) {
-
-            console.log("Enable bot button in electron is triggered");
-
             const check_server_online_and_bot_connected_interval = setInterval(async function() {
                 const game_server_data = json_message_data.game_server_data;
                 const ftp_server_data = json_message_data.ftp_server_data;
@@ -136,9 +133,8 @@ async function createWebSocketConnection(websocket_id) {
             intervals.set(`enable_game_server_checks_interval`, check_server_online_and_bot_connected_interval);
         }
 
-        if (json_message_data.action === `disabled` && json_message_data.guild_id
-        && json_message_data.game_server_ip && json_message_data.game_server_port
-        && json_message_data.ftp_server_data && json_message_data.channel_for_server_info) {
+        if (json_message_data.action === `disable`) {
+            console.log("Disable bot button has been clicked");
             if (intervals.has(`enable_game_server_checks_interval`)) {
                 clearInterval(intervals.get(`enable_game_server_checks_interval`));
                 intervals.delete(`enable_game_server_checks_interval`);
