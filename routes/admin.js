@@ -45,13 +45,23 @@ router.post('/logdata', async function(request, response) {
 });
 
 router.post('/createwebsocket', 
-    body('email').isEmail().withMessage(`Invalid email address`),
-    body('password').isLength({ min: 1}).withMessage(`Password cannot be empty`), 
+    body('email')
+    .isEmail()
+    .withMessage(`Please enter a valid email address`),
+
+    body('password')
+    .isLength({ min: 1, max: 32})
+    .trim()
+    .withMessage(`The password field cannot be empty`),
+
     async function(request, response) {
 
     const errors = validationResult(request);
     if (!errors.isEmpty()) {
-        return response.status(400).json({ errors: errors.array() });
+        request.session.alert_title = 'Validation errors';
+        request.session.alert_description = '<ul id="error_message_list">' + errors.array().map(error => `<li>${error.msg}</li>`).join('') + '</ul>';
+        request.session.show_error_modal = true;
+        return response.redirect('/login');
     }
 
     const { email, password } = request.body;
@@ -426,18 +436,43 @@ router.get('/logfiles', isLoggedIn, async (request, response) => {
 }); 
 
 router.post('/setftpserverdata', isLoggedIn, checkBotRepositoryInCache, 
-    body('ftp_server_hostname_input').isString().notEmpty().withMessage('FTP hostname cannot be empty.'),
-    body('ftp_server_port_input').isInt().withMessage('FTP port must be a valid integer.'),
-    body('ftp_server_username_input').isString().notEmpty().withMessage('FTP username cannot be empty.'),
-    body('ftp_server_password_input').isString().notEmpty().withMessage('FTP password cannot be empty.'),
+    body('ftp_server_hostname_input')
+    .isString()
+    .trim()
+    .notEmpty()
+    .matches("^(25[0-5]|2[0-4]\\d|1\\d{2}|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d{2}|[1-9]?\\d)){3}$")
+    .withMessage('The FTP server hostname field must contain a valid IPv4 address (between 0.0.0.0 and 255.255.255.255'),
+
+    body('ftp_server_port_input')
+    .isInt()
+    .trim()
+    .notEmpty()
+    .matches("^(102[4-9]|10[3-9][0-9]|1[1-9][0-9]{2}|[2-9][0-9]{3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$")
+    .withMessage('The FTP server port number must contain a number between 1000 and 65535'),
+
+    body('ftp_server_username_input')
+    .isString()
+    .trim()
+    .notEmpty()
+    .matches("^[a-zA-Z0-9_]*$")
+    .withMessage('The FTP server username must contain a string of characters'),
+
+    body('ftp_server_password_input')
+    .isString()
+    .trim()
+    .notEmpty()
+    .withMessage('The FTP server password must contain a string of characters'),
     
     async (request, response) => {
 
     const errors = validationResult(request);
     if (!errors.isEmpty()) {
-        return response.status(400).json({ errors: errors.array() });
+        request.session.alert_title = 'Validation errors';
+        request.session.alert_description = '<ul id="error_message_list">' + errors.array().map(error => `<li>${error.msg}</li>`).join('') + '</ul>';
+        request.session.show_error_modal = true;
+        return response.redirect('/admin/ftpserverdata');
     }
-    
+
     const request_user_id = request.user.guild_id;
     const botRepository = request.user.bot_repository;
 
@@ -466,15 +501,29 @@ router.post('/setftpserverdata', isLoggedIn, checkBotRepositoryInCache,
 
 
 router.post('/setspawncoordinates', isLoggedIn, checkBotRepositoryInCache,   
-    body('x_coordinate_data_input').isNumeric().withMessage('X Coordinate must be numeric.'),
-    body('y_coordinate_data_input').isNumeric().withMessage('Y Coordinate must be numeric.'),
-    body('z_coordinate_input').isNumeric().withMessage('Z Coordinate must be numeric.'),
+    body('x_coordinate_data_input')
+    .trim()
+    .isNumeric()
+    .withMessage('The spawn zone x coordinate must be a number'),
+
+    body('y_coordinate_data_input')
+    .trim()
+    .isNumeric()
+    .withMessage('The spawn zone y coordinate must be a number'),
+
+    body('z_coordinate_input')
+    .trim()
+    .isNumeric()
+    .withMessage('The spawn zone z coordinate must be a number'),
     
     async (request, response) => {
 
     const errors = validationResult(request);
     if (!errors.isEmpty()) {
-         return response.status(400).json({ errors: errors.array() });
+        request.session.alert_title = 'Validation errors';
+        request.session.alert_description = '<ul id="error_message_list">' + errors.array().map(error => `<li>${error.msg}</li>`).join('') + '</ul>';
+        request.session.show_error_modal = true;
+        return response.redirect('/admin/spawncoordinates');
     }
     const request_user_id = request.user.guild_id;
     const botRepository = request.user.bot_repository;
@@ -505,18 +554,47 @@ router.post('/setspawncoordinates', isLoggedIn, checkBotRepositoryInCache,
 
 
 router.post('/setdiscordchannelids', isLoggedIn, checkBotRepositoryInCache, 
-    body('bot_ingame_chat_log_channel_id_input').isString().trim().isNumeric().withMessage('In-game chat log channel ID must be numeric.'),
-    body('bot_ingame_logins_channel_id_input').isString().trim().isNumeric().withMessage('Login channel ID must be numeric.'),
-    body('bot_ingame_new_player_joined_id_input').isString().trim().isNumeric().withMessage('New player channel ID must be numeric.'),
-    body('battlemetrics_server_id_input').isString().trim().isNumeric().withMessage('Battlemetrics server ID must be numeric.'),
-    body('bot_server_info_channel_id_input').isString().trim().isNumeric().withMessage('Server info button channel ID must be numeric.'),
+    body('bot_ingame_chat_log_channel_id_input')
+    .isString()
+    .trim()
+    .isNumeric()
+    .matches("^[0-9]{17,25}$")
+    .withMessage('The In-game discord channel id must consist of between 17 and 25 numbers between 0 and 9'),
+
+    body('bot_ingame_logins_channel_id_input')
+    .isString()
+    .trim()
+    .isNumeric()
+    .matches("^[0-9]{17,25}$")
+    .withMessage('The player login channel id must consist of between 17 and 25 numbers between 0 and 9'),
+    
+    body('bot_ingame_new_player_joined_id_input')
+    .isString()
+    .trim()
+    .isNumeric()
+    .matches("^[0-9]{17,25}$")
+    .withMessage('The new player joins channel id must consist of between 17 and 25 numbers between 0 and 9'),
+
+    body('battlemetrics_server_id_input')
+    .isString()
+    .trim()
+    .isNumeric()
+    .matches("^[0-9]{17,25}$")
+    .withMessage('Your Battlemetrics server id must consist of between 17 and 25 numbers between 0 and 9'),
+
+    body('bot_server_info_channel_id_input')
+    .isString()
+    .trim()
+    .isNumeric()
+    .matches("^[0-9]{17,25}$")
+    .withMessage('The server info button channel id must consist of between 17 and 25 numbers between 0 and 9'),
     
     async (request, response) => {
 
     const errors = validationResult(request);
     if (!errors.isEmpty()) {
         request.session.alert_title = 'Validation errors';
-        request.session.alert_description = errors.array().map(err => err.msg).join(', ');
+        request.session.alert_description = '<ul id="error_message_list">' + errors.array().map(error => `<li>${error.msg}</li>`).join('') + '</ul>';
         request.session.show_error_modal = true;
         return response.redirect('/admin/discordchannelids');
     }
@@ -548,15 +626,26 @@ router.post('/setdiscordchannelids', isLoggedIn, checkBotRepositoryInCache,
 });
 
 router.post('/setgameserverdata', isLoggedIn, checkBotRepositoryInCache, 
-    body('game_server_hostname_input').isString().trim().notEmpty().withMessage('Game server hostname cannot be empty.'),
-    body('game_server_port_input').isNumeric().withMessage('Game server port must be a valid number.'),
+    body('game_server_hostname_input')
+    .isString()
+    .trim()
+    .notEmpty()
+    .matches("^(25[0-5]|2[0-4]\\d|1\\d{2}|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d{2}|[1-9]?\\d)){3}$")
+    .withMessage('Your game server hostname (IPv4 address) must be a valid IPv4 address between 0.0.0.0 and 255.255.255.255'),
+
+    body('game_server_port_input')
+    .isNumeric()
+    .trim()
+    .notEmpty()
+    .matches("^(102[4-9]|10[3-9][0-9]|1[1-9][0-9]{2}|[2-9][0-9]{3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$")
+    .withMessage('Your game server port must be a number between 1024 and 65535'),
     
     async (request, response) => {
 
     const errors = validationResult(request);
     if (!errors.isEmpty()) {
         request.session.alert_title = 'Validation errors';
-        request.session.alert_description = errors.array().map(err => err.msg).join(', ');
+        request.session.alert_description = '<ul id="error_message_list">' + errors.array().map(error => `<li>${error.msg}</li>`).join('') + '</ul>';
         request.session.show_error_modal = true;
             return response.redirect('/admin/gameserverdata');
     }

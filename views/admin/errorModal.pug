@@ -1,3 +1,4 @@
+//- Because the server handles sending HTML content to this model, we can safely supply unescaped HTML content into this modal
 mixin errorModal(modalTitle, modalContent)
     div.modal.fade#errorModal(tabindex="-1", role="dialog", aria-labelledby="errorModalLabel", aria-hidden="true")
         div.modal-dialog.modal-lg(role="document")
@@ -7,6 +8,6 @@ mixin errorModal(modalTitle, modalContent)
                     button.close(type="button", data-dismiss="modal", aria-label="Close")
                         span(aria-hidden="true") &times;
                 div.modal-body
-                    p #{modalContent}
+                    p!= modalContent
                 div.modal-footer
                     button.btn.btn-secondary(type="button", data-dismiss="modal") Close

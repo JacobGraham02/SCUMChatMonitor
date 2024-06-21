@@ -72,13 +72,13 @@ block content(user)
 
                 fieldset#ftp_server_password_fieldset.ftp_server_data_fieldset
                     article#bot_ingame_new_player_joins_id_article(class='article_for_ftp_server_data')
-                        label(class="ftp_server_data_label",for='ftp_server_password_input') FTP server password (e.g. aED1PbAfqBTjPWnRF1kKUQgd). Your password must contain at least one number ranging from 0 through 9, contain 1 upper and lower case letter, 1 special character, and be between 8 and 32 characters long. 
+                        label(class="ftp_server_data_label",for='ftp_server_password_input') FTP server password (e.g. aED1PbAfqBTjPWnRF1kKUQgd). Your password must be between 8 and 32 characters long. 
                         input.validate-input#ftp_server_password_input(
                             class="ftp_server_data_input",
                             type='password',
                             name='ftp_server_password_input', 
                             title="Please enter an FTP server password that follows the rule defined above",
-                            pattern="^[a-zA-Z0-9 ]{1,}$",      
+                            pattern="^.{8,32}$",      
                             value= user.ftp_server_password ? user.ftp_server_password : "",                      
                             required,
                             placeholder='aED1PbAfqBTjPWnRF1kKUQgd')
@@ -90,8 +90,9 @@ block content(user)
                         input.validate-input#ftp_server_confirm_password_input(
                             class="ftp_server_data_input",
                             type='password',
+                            title="Enter the same FTP server password as defined above"
                             name='ftp_server_confirm_password_input', 
-                            pattern="^[a-zA-Z0-9 ]{1,}$",
+                            pattern="^.{8,32}$",
                             value= "",
                             required,
                             placeholder='aED1PbAfqBTjPWnRF1kKUQgd')
