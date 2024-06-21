@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { validatePassword } from '../modules/hashAndValidatePassword.js';
 import Logger from '../utils/Logger.js';
 import Cache from '../utils/Cache.js';
+import { body, validationResult } from 'express-validator';
 import BotRepository from '../database/MongoDb/BotRepository.js';
 var router = Router();
 const logger = new Logger();
@@ -43,7 +44,16 @@ router.post('/logdata', async function(request, response) {
     }
 });
 
-router.post('/createwebsocket', async function(request, response) {
+router.post('/createwebsocket', 
+    body('email').isEmail().withMessage(`Invalid email address`),
+    body('password').isLength({ min: 1}).withMessage(`Password cannot be empty`), 
+    async function(request, response) {
+
+    const errors = validationResult(request);
+    if (!errors.isEmpty()) {
+        return response.status(400).json({ errors: errors.array() });
+    }
+
     const { email, password } = request.body;
     const botRepository = new BotRepository();
 
@@ -415,7 +425,19 @@ router.get('/logfiles', isLoggedIn, async (request, response) => {
     }
 }); 
 
-router.post('/setftpserverdata', isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
+router.post('/setftpserverdata', isLoggedIn, checkBotRepositoryInCache, 
+    body('ftp_server_hostname_input').isString().notEmpty().withMessage('FTP hostname cannot be empty.'),
+    body('ftp_server_port_input').isInt().withMessage('FTP port must be a valid integer.'),
+    body('ftp_server_username_input').isString().notEmpty().withMessage('FTP username cannot be empty.'),
+    body('ftp_server_password_input').isString().notEmpty().withMessage('FTP password cannot be empty.'),
+    
+    async (request, response) => {
+
+    const errors = validationResult(request);
+    if (!errors.isEmpty()) {
+        return response.status(400).json({ errors: errors.array() });
+    }
+    
     const request_user_id = request.user.guild_id;
     const botRepository = request.user.bot_repository;
 
@@ -443,7 +465,17 @@ router.post('/setftpserverdata', isLoggedIn, checkBotRepositoryInCache, async (r
 });
 
 
-router.post('/setspawncoordinates', isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
+router.post('/setspawncoordinates', isLoggedIn, checkBotRepositoryInCache,   
+    body('x_coordinate_data_input').isNumeric().withMessage('X Coordinate must be numeric.'),
+    body('y_coordinate_data_input').isNumeric().withMessage('Y Coordinate must be numeric.'),
+    body('z_coordinate_input').isNumeric().withMessage('Z Coordinate must be numeric.'),
+    
+    async (request, response) => {
+
+    const errors = validationResult(request);
+    if (!errors.isEmpty()) {
+         return response.status(400).json({ errors: errors.array() });
+    }
     const request_user_id = request.user.guild_id;
     const botRepository = request.user.bot_repository;
 
@@ -472,7 +504,23 @@ router.post('/setspawncoordinates', isLoggedIn, checkBotRepositoryInCache, async
 });
 
 
-router.post('/setdiscordchannelids', isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
+router.post('/setdiscordchannelids', isLoggedIn, checkBotRepositoryInCache, 
+    body('bot_ingame_chat_log_channel_id_input').isString().trim().isNumeric().withMessage('In-game chat log channel ID must be numeric.'),
+    body('bot_ingame_logins_channel_id_input').isString().trim().isNumeric().withMessage('Login channel ID must be numeric.'),
+    body('bot_ingame_new_player_joined_id_input').isString().trim().isNumeric().withMessage('New player channel ID must be numeric.'),
+    body('battlemetrics_server_id_input').isString().trim().isNumeric().withMessage('Battlemetrics server ID must be numeric.'),
+    body('bot_server_info_channel_id_input').isString().trim().isNumeric().withMessage('Server info button channel ID must be numeric.'),
+    
+    async (request, response) => {
+
+    const errors = validationResult(request);
+    if (!errors.isEmpty()) {
+        request.session.alert_title = 'Validation errors';
+        request.session.alert_description = errors.array().map(err => err.msg).join(', ');
+        request.session.show_error_modal = true;
+        return response.redirect('/admin/discordchannelids');
+    }
+
     const request_user_id = request.user.guild_id;
     const botRepository = request.user.bot_repository;
 
@@ -499,7 +547,20 @@ router.post('/setdiscordchannelids', isLoggedIn, checkBotRepositoryInCache, asyn
     }
 });
 
-router.post('/setgameserverdata', isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
+router.post('/setgameserverdata', isLoggedIn, checkBotRepositoryInCache, 
+    body('game_server_hostname_input').isString().trim().notEmpty().withMessage('Game server hostname cannot be empty.'),
+    body('game_server_port_input').isNumeric().withMessage('Game server port must be a valid number.'),
+    
+    async (request, response) => {
+
+    const errors = validationResult(request);
+    if (!errors.isEmpty()) {
+        request.session.alert_title = 'Validation errors';
+        request.session.alert_description = errors.array().map(err => err.msg).join(', ');
+        request.session.show_error_modal = true;
+            return response.redirect('/admin/gameserverdata');
+    }
+
     const request_user_id = request.user.guild_id;
     const botRepository = request.user.bot_repository;
 
