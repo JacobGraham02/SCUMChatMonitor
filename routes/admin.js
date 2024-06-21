@@ -676,7 +676,26 @@ router.post('/setgameserverdata', isLoggedIn, checkBotRepositoryInCache,
 });
 
 
-router.post('/botcommand/new', isLoggedIn, checkBotRepositoryInCache, async (request, response, next) => {
+router.post('/botcommand/new', isLoggedIn, checkBotRepositoryInCache, 
+    body('command_name')
+    .trim()
+    .notEmpty()
+    .matches("^[A-Za-z0-9]{1,50}$")
+    .withMessage('The command name can be a maximum of 50 characters and numbers'),
+
+    body('command_description')
+    .trim()
+    .notEmpty()
+    .matches("^[A-Za-z0-9\\-_=+\\{};:'\",<.>/?\\[\\] ]{1,1000}$")
+    .withMessage('The command description can be a maximum of 1000 characters and numbers'),
+
+    body('command_cost_input')
+    .isNumeric()
+    .matches("^[0-9]{1,6}$")
+    .withMessage('The command cost must be a number between 0 and 6 digits long'),
+    
+    async (request, response, next) => {
+
     const new_command_name = request.body.command_name;
     const new_command_description = request.body.command_description;
     const command_cost = request.body.command_cost_input;
