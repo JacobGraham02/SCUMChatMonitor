@@ -1683,7 +1683,7 @@ client_instance.on('guildCreate', async (guild) => {
             
             const goto_bot_website_button = new ButtonBuilder()
                 .setLabel(`Go to bot web portal`)
-                .setURL("scumchatmonitorweb.azurewebsites.net")
+                .setURL("https://scumchatmonitorweb.azurewebsites.net")
                 .setStyle(ButtonStyle.Link)
         
             const button_row_bot_controls = new ActionRowBuilder().addComponents(
