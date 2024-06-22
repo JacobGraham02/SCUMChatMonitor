@@ -12,24 +12,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      mongodb_connection_string: ${{secrets.MONGODB_CONNECTION_STRING}}
-      mongodb_database_name: ${{secrets.MONGODB_DATABASE_NAME}}
-      mongodb_database_password: ${{secrets.MONGODB_DATABASE_PASSWORD}}
-      mongodb_database_username: ${{secrets.MONGODB_DATABASE_USERNAME}}
-      express_session_key: ${{secrets.EXPRESS_SESSION_KEY}}
-      gportal_ftp_hostname: ${{secrets.GPORTAL_FTP_HOSTNAME}}
-      gportal_ftp_hostname_port: ${{secrets.GPORTAL_FTP_HOSTNAME_PORT}}
-      gportal_ftp_username: ${{secrets.GPORTAL_FTP_USERNAME}}
-      gportal_ftp_password: ${{secrets.GPORTAL_FTP_PASSWORD}}
-      discord_wilson_bot_token: ${{secrets.DISCORD_WILSON_BOT_TOKEN}}
-      scum_game_server_address: ${{secrets.SCUM_GAME_SERVER_ADDRESS}}
-      scum_game_server_port: ${{secrets.SCUM_GAME_SERVER_PORT}}
-      steam_web_api_key: ${{secrets.STEAM_WEB_API_KEY}}
-      scum_battlemetrics_server_id: ${{secrets.SCUM_BATTLEMETRICS_SERVER_ID}}
-      scumbot_error_log_path: ${{secrets.SCUMBOT_ERROR_LOG_PATH}}
-      scumbot_message_log_path: ${{secrets.SCUMBOT_MESSAGE_LOG_PATH}}
-      port: ${{secrets.PORT}}
 
     steps:
       - uses: actions/checkout@v4
@@ -37,7 +19,7 @@ jobs:
       - name: Set up Node.js version
         uses: actions/setup-node@v3
         with:
-          node-version: '18.x'
+          node-version: '20.x'
 
       - name: npm install and build
         run: |
