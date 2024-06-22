@@ -22,7 +22,7 @@ jobs:
       gportal_ftp_hostname_port: ${{secrets.GPORTAL_FTP_HOSTNAME_PORT}}
       gportal_ftp_username: ${{secrets.GPORTAL_FTP_USERNAME}}
       gportal_ftp_password: ${{secrets.GPORTAL_FTP_PASSWORD}}
-      bot_token: ${{secrets.DISCORD_WILSON_BOT_TOKEN}}
+      bot_token: ${{secrets.BOT_TOKEN}}
       scum_game_server_address: ${{secrets.SCUM_GAME_SERVER_ADDRESS}}
       scum_game_server_port: ${{secrets.SCUM_GAME_SERVER_PORT}}
       steam_web_api_key: ${{secrets.STEAM_WEB_API_KEY}}
