@@ -26,7 +26,7 @@ function createWindow() {
     });
 
     // Load the index page of your app from your Express server.
-    mainWindow.loadURL('http://localhost:8080');
+    mainWindow.loadURL('https://scumchatmonitorweb.azurewebsites.net');
 
     // Open the DevTools.
     mainWindow.webContents.openDevTools();
@@ -52,7 +52,7 @@ async function processCommandQueue() {
 }
 
 async function createWebSocketConnection(websocket_id) {
-    const websocket = new WebSocket(`ws://localhost:8080?websocket_id=${encodeURIComponent(websocket_id)}`);
+    const websocket = new WebSocket(`wss://scumchatmonitorweb.azurewebsites.net?websocket_id=${encodeURIComponent(websocket_id)}`);
 
     websocket.on('message', async (message) => {
         const json_message_data = JSON.parse(message);
@@ -165,7 +165,6 @@ function getLocalTimeInISO8601Format() {
 * @returns {Promise<boolean>} A promise that resolves to a boolean indicating the connection status.
 */
 async function checkWindowsHasTcpConnectionToGameServer(game_server_address, game_server_port) {
-    console.log(`Windows is connected to game server`);
     return new Promise((resolve, reject) => {
         exec(`netstat -an | find "${game_server_address}:${game_server_port}"`, (error, stdout) => {
             if (error) reject(error);
@@ -180,7 +179,6 @@ async function checkWindowsHasTcpConnectionToGameServer(game_server_address, gam
 * @param {boolean} callback 
 */
 async function checkWindowsCanPingGameServer(game_server_address) {
-    console.log(`Windows can ping game server`);
     return new Promise((resolve, reject) => {
         exec(`ping ${game_server_address}`, (error, stdout) => {
             if (error) reject(error);
