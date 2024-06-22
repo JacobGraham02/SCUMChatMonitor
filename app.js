@@ -1287,20 +1287,6 @@ async function sendNewPlayerLoginMessagesToDiscord(user_steam_id, discord_channe
             discord_channel.send({ embeds: [embedded_message] });
 }
 
-async function startServerFunctionalityIntervals(guild_id, ftp_server_data) {
-    await establishFtpConnectionToGportal(guild_id, ftp_server_data).then(() => {
-        startFtpFileProcessingIntervalLoginLog(guild_id);
-        startFtpFileProcessingIntervalChatLog(guild_id);
-        startCheckLocalServerTimeInterval(guild_id);
-    });
-}
-
-function stopServerFunctionalityIntervals(guild_id) {
-    stopFileProcessingIntervalChatLog(guild_id);
-    stopFileProcessingIntervalLoginLog(guild_id);
-    stopCheckLocalServerTimeInterval(guild_id);
-}
-
 function checkIfGameServerOnline(bot_status, guild_id, ftp_server_data, game_server_data) {
     const websocket = cache.get(`websocket_${guild_id}`);
 
@@ -1331,6 +1317,44 @@ client_instance.on('ready', () => {
     console.log(`The bot is logged in as ${client_instance.user.tag}`);
 });
 
+async function enableBot(guild_id) {
+    try {
+        let bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
+        
+        if (!(bot_repository_instance)) {
+            cache.set(`bot_repository_${guild_id}`, new BotRepository(guild_id));
+            bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
+        }
+
+        const user_data = await bot_repository_instance.getBotDataByGuildId(guild_id);
+        if (user_data) {
+            const ftp_server_data = {
+                ftp_server_ip: user_data.ftp_server_ip,
+                ftp_server_username: user_data.ftp_server_username,
+                ftp_server_password: user_data.ftp_server_password,
+                ftp_server_port: user_data.ftp_server_port
+            };
+
+            const game_server_data = {
+                game_server_ipv4: user_data.game_server_ipv4_address,
+                game_server_port: user_data.game_server_port
+            };
+
+            const user_command_queue = new Queue();
+            cache.set(`user_command_queue_${guild_id}`, user_command_queue);
+            checkIfGameServerOnline(`enable`, guild_id, ftp_server_data, game_server_data);
+        } 
+    } catch (error) {
+        message_logger.writeLogToAzureContainer(
+            `ErrorLogs`,
+            `There was an error when attempting to initialize the check to see if the SCUM game server is online`,
+            `${guild_id}`,
+            `${guild_id}-error-logs`
+        );
+        return;
+    }
+}
+
 /**
 * When the discord API triggers the interactionCreate event, an asynchronous function is executed with the interaction passed in as a parameter value. 
 * If the interaction is not a command, the function does not continue executing.
@@ -1349,6 +1373,8 @@ client_instance.on('interactionCreate', async (interaction) => {
                 if (!(cache.get(`bot_repository_${guild_id}`))) {
                     cache.set(`bot_repository_${guild_id}`, new BotRepository(guild_id));
                 }
+
+                await interaction.reply(`Your SCUM bot has been reset`);
             } catch (error) {
                 message_logger.writeLogToAzureContainer(
                     `ErrorLogs`,
@@ -1412,6 +1438,8 @@ client_instance.on('interactionCreate', async (interaction) => {
                     cache.set(`teleport_command_y_coordinate_${guild_id}`, teleport_command_y_coordinate);
                     cache.set(`teleport_command_z_coordinate_${guild_id}`, teleport_command_z_coordinate);
 
+                    await enableBot(guild_id);
+                    
                     await interaction.reply(`Your SCUM server bot has been enabled`);
                 }
             } catch (error) {
@@ -1461,6 +1489,8 @@ client_instance.on('interactionCreate', async (interaction) => {
                 if (cache.get(`teleport_command_z_coordinate_${guild_id}`)) {
                     cache.delete(`teleport_command_z_coordinate_${guild_id}`);
                 }
+
+                checkIfGameServerOnline(`disable`, undefined, undefined, undefined);
 
                 await interaction.reply(`Your SCUM bot has been disabled. Remember to re-enable the bot by clicking the 'Enable bot' button when you want to use the bot`);
             } catch (error) {
@@ -1531,42 +1561,6 @@ client_instance.on('interactionCreate', async (interaction) => {
             } else {
                 await interaction.reply({content: `The command to set up new player spawn coordinates in your server was not found`, ephemeral: true});
             }
-        }
-
-        try {
-            let bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
-            
-            if (!(bot_repository_instance)) {
-                cache.set(`bot_repository_${guild_id}`, new BotRepository(guild_id));
-                bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
-            }
-
-            const user_data = await bot_repository_instance.getBotDataByGuildId(guild_id);
-            if (user_data) {
-                const ftp_server_data = {
-                    ftp_server_ip: user_data.ftp_server_ip,
-                    ftp_server_username: user_data.ftp_server_username,
-                    ftp_server_password: user_data.ftp_server_password,
-                    ftp_server_port: user_data.ftp_server_port
-                };
-    
-                const game_server_data = {
-                    game_server_ipv4: user_data.game_server_ipv4_address,
-                    game_server_port: user_data.game_server_port
-                };
-    
-                const user_command_queue = new Queue();
-                cache.set(`user_command_queue_${guild_id}`, user_command_queue);
-                checkIfGameServerOnline(`enable`, guild_id, ftp_server_data, game_server_data);
-            } 
-        } catch (error) {
-            message_logger.writeLogToAzureContainer(
-                `ErrorLogs`,
-                `There was an error when attempting to initialize the check to see if the SCUM game server is online`,
-                `${guild_id}`,
-                `${guild_id}-error-logs`
-            );
-            return;
         }
     }
 

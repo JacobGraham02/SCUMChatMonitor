@@ -15,13 +15,15 @@ block header
 
 block content(user)
     main#main_player_details 
-        h1 Player details 
+        h1 #{player.user_steam_name} Details
+        article#main_player_details_article
 
-        h3 Steam name: #{player.user_steam_name}
-        h4 Steam id: #{player.user_steam_id}
-        h4 Balance: #{player.user_money}
-        h4 Welcome pack uses: #{player.welcome_pack_uses || 0}
+            h4 Steam name: #{player.user_steam_name}
+            h4 Steam id: #{player.user_steam_id}
+            h4 Balance: $#{player.user_money}
+            h4 Welcome pack uses: #{player.welcome_pack_uses || 0}
 
-        a(href="/admin/players?range=1&10") Back to players list 
+        article#main_player_details_back_to_list
+            a(href="/admin/players?range=1&10") Back to players list 
 
     script(src='/javascripts/admin_index_page.js')

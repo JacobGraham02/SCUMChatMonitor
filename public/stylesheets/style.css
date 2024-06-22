@@ -372,6 +372,12 @@ main {
     margin: 10%;
 }
 
+/* The below styles are used for all modals */
+#error_message_list {
+    padding: 0;
+    list-style-type: none;
+}
+
 /* menu when being closed on mobile version */
 .header li a {
     background-image: linear-gradient(to bottom, #003366, black);
@@ -927,6 +933,26 @@ a {
     flex-direction: column;
     justify-content: center;
     align-items: center;
+}
+
+/* View player details page CSS */
+#main_player_details {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#main_player_details_article {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: fit-content;
+    margin-top: 1%;
+}
+
+#main_player_details_back_to_list {
+    margin-top: 1%;
+    font-weight: bold;
 }
 
 
