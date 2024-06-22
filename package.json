@@ -13,11 +13,10 @@
   "scripts": {
     "start": "node app.js",
     "nodemon": "nodemon app.js",
-    "build": "pkg .",
     "test": "nodemon app.js",
     "electron": "electron electron.js",
     "package": "electron-builder --dir",
-    "distribute": "electron-builder" 
+    "distribute": "electron-builder"
   },
   "build": {
     "appId": "com.jacobdamiangraham.scummonitorman",
@@ -30,9 +29,9 @@
       "node_modules/**/*",
       "public/images/WilsonBotElectron"
     ],
-  "win": {
-    "icon": "public/images/WilsonBotElectron"
-  }
+    "win": {
+      "icon": "public/images/WilsonBotElectron"
+    }
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.7",
@@ -45,8 +44,8 @@
     "@types/passport": "^1.0.16",
     "@types/passport-discord": "^0.1.13",
     "@types/passport-local": "^1.0.38",
-    "electron-builder": "^24.13.3",
     "electron": "^29.2.0",
+    "electron-builder": "^24.13.3",
     "nodemon": "^3.0.2"
   },
   "dependencies": {
