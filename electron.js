@@ -16,8 +16,8 @@ function createWindow() {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = dirname(__filename);
     mainWindow = new BrowserWindow({
-        width: 800,
-        height: 600,
+        width: 1600,
+        height: 1600,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: false,
@@ -52,7 +52,7 @@ async function processCommandQueue() {
 }
 
 async function createWebSocketConnection(websocket_id) {
-    const websocket = new WebSocket(`wss://scumchatmonitorweb.azurewebsites.net?websocket_id=${encodeURIComponent(websocket_id)}`);
+    const websocket = new WebSocket(`ws://scumchatmonitorweb.azurewebsites.net?websocket_id=${encodeURIComponent(websocket_id)}`);
 
     websocket.on('message', async (message) => {
         const json_message_data = JSON.parse(message);
