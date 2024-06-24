@@ -28,3 +28,12 @@ html(lang="en")
     block footer
       footer#footer
         +footer
+
+    #loading-screen 
+      .loading-content 
+        .loading-icon 
+          //- FontAwesome spinner icon
+          i.fas.fa-spinner.fa-spin 
+        .loading-text Loading...
+
+    script(src="/javascripts/loading_screen.js")
