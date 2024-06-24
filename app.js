@@ -30,7 +30,6 @@ import { Mutex } from 'async-mutex';
 import indexRouter from './routes/index.js';
 import adminRouter from './routes/admin.js';
 import apiExecutableRecompilation from './api/recompile/recompile-executable.js';
-import PlayerInfoCommand from './api/ipapi/PlayerInfoCommand.js';
 import SteamUserInfoCommand from './api/steam/SteamUserInfoCommand.js';
 import Cache from './utils/Cache.js';
 import { E_CANCELED } from 'async-mutex';
@@ -1579,7 +1578,7 @@ client_instance.on('interactionCreate', async (interaction) => {
         const battlemetrics_server_time = battlemetrics_server_json_data.details.time;
         const embedded_message = new EmbedBuilder()
             .setColor(0x299bcc)
-            .setTitle(`${process.env.server_name}`)
+            .setTitle(`${battlemetrics_server_name}`)
             .setThumbnail(`https://i.imgur.com/dYtjF3w.png`)
             .addFields(
                 {name:'Server name',value:battlemetrics_server_name,inline:true},
