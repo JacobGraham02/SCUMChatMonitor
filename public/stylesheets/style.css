@@ -897,7 +897,6 @@ a {
     display: flex;
     flex-direction: column;
     align-items: center;
-    border: 2px solid red;
 }
 
 /* Add this CSS to your stylesheet or within a <style> tag in your Pug template */
