@@ -52,7 +52,6 @@ const client_instance = new Client({
 
 const message_logger = new Logger();
 const cache = new Cache();
-const user_intervals = new Map();
 /**
  * The following regex string is for steam ids associated with a steam name specifically for the login log file. 
  * They are saved as a 17-digit number (e.g. 12345678912345678)
@@ -116,16 +115,6 @@ expressServer.use(session({
 expressServer.use(passport.initialize());
 expressServer.use(passport.session());
 
-const gportal_ftp_server_log_interval_seconds = {
-    "10": 10000,
-    "15": 15000,
-    "20": 20000,
-    "30": 30000,
-    "45": 45000,
-    "60": 60000,
-    "300": 300000
-}
-
 /**
  * A class instance which holds a function that hits the Battlemetrics server API
  */
@@ -139,7 +128,6 @@ const steam_web_api_player_info = new SteamUserInfoCommand(process.env.steam_web
  * */
 async function determinePlayerLoginSessionMoney(guild_id, logs) {
     const user_balance_updates = new Map();
-    let user_steam_id = {};
 
     if (!Array.isArray(logs)) {
         throw new Error('Invalid logs array');
@@ -729,25 +717,6 @@ async function readAndFormatGportalFtpServerChatLog(guild_id, ftp_client) {
     }
 }
 
-function startCheckLocalServerTimeInterval(guild_id) {
-    if (user_intervals.has(`check_local_server_time_interval_${guild_id}`)) {
-        return;
-    }
-
-    const check_local_server_time_interval = setInterval(function() {
-        checkLocalServerTime(guild_id);
-    }, gportal_ftp_server_log_interval_seconds["60"]);
-
-    user_intervals.set(`ftp_chat_file_interval_${guild_id}`, check_local_server_time_interval);
-}
-
-function stopCheckLocalServerTimeInterval(guild_id) {
-    if (user_intervals.has(`check_local_server_time_interval_${guild_id}`)) {
-        clearInterval(user_intervals.get(`check_local_server_time_interval_${guild_id}`));
-        user_intervals.delete(`check_local_server_time_interval_${guild_id}`);
-    }
-}
-
 /**
  * The function checkLocalServerTime runs once every minute, checking the current time relative to the time on the time clock on the target machine. Once the current time
  * fetched by the bot is 5:40 am, a warning message will be announced on the server informing users of a pending server restart in (6:00 - N), where N is the current time.
@@ -772,75 +741,6 @@ async function checkLocalServerTime(guild_id) {
             await enqueueCommand(`#Announce ${server_restart_messages[current_minute]}`, guild_id);
         }
     }
-}
-
-/**
- * Start an interval of reading chat log messages from gportal which repeats every 15 seconds. Clear any previously-set intervals
- */
-function startFtpFileProcessingIntervalChatLog(guild_id) {
-    if (user_intervals.has(`ftp_chat_file_interval_${guild_id}`)) {
-        return;
-    }
-
-    const ftp_chat_file_interval = setInterval(function() {
-        handleIngameSCUMChatMessages(guild_id);
-    }, gportal_ftp_server_log_interval_seconds["20"]);
-
-    user_intervals.set(`ftp_chat_file_interval_${guild_id}`, ftp_chat_file_interval);
-}
-
-/**
- * Start an interval of reading login log messages from gportal which repeats every 15 seconds. Clear any previously-set intervals
- */
-function startFtpFileProcessingIntervalLoginLog(guild_id) {
-    if (user_intervals.has(`ftp_login_file_interval_${guild_id}`)) {
-        return;
-    }
-    const ftp_login_file_interval = setInterval(function() {
-        readAndFormatGportalFtpServerLoginLog(guild_id);
-    }, gportal_ftp_server_log_interval_seconds["20"]);
-
-    user_intervals.set(`ftp_login_file_interval_${guild_id}`, ftp_login_file_interval);
-}
-
-/**
- * Terminate any existing intervals for the GPortal FTP server login file
- */
-function stopFileProcessingIntervalLoginLog(guild_id) {
-    if (user_intervals.has(`ftp_login_file_interval_${guild_id}`)) {
-        clearInterval(user_intervals.get(`ftp_login_file_interval_${guild_id}`));
-        user_intervals.delete(`ftp_login_file_interval_${guild_id}`);
-    }
-}
-
-/**
- * Terminate any existing intervals for the GPortal FTP server in-game chat file
- */
-function stopFileProcessingIntervalChatLog(guild_id) {
-    if (user_intervals.has(`ftp_chat_file_interval_${guild_id}`)) {
-        clearInterval(user_intervals.get(`ftp_chat_file_interval_${guild_id}`));
-        user_intervals.delete(`ftp_chat_file_interval_${guild_id}`);
-    }
-}
-
-/**
- * Inserts a document into the mongodb collection 'Administrators'. These users are the only ones who can access the bot web interface.
- * The admin username is passed in plain text (Effective July 09, 2023) and will be hashed at a later date. 
- * The admin password is both hashed and salted.
- * @param {string} admin_user_username A string representation of the data submitted on the login form
- * @param {string} admin_user_password A string representation of the data submitted on the login form
- * @param {UUID} admin_bot_token A UUID that represents the bot that the user is associated with
- */
-function insertAdminUserIntoDatabase(admin_user_username, admin_user_password, admin_bot_token) {
-    const hashed_admin_user_password = validatePassword.hashPassword(admin_user_password);
-
-    bot_repository.createAdminUser(admin_user_username, hashed_admin_user_password, admin_bot_token);
-}
-/**
- * Reads all of the documents from a specified collection in mongodb. 
- */
-async function readSteamUsersFromDatabase() {
-    bot_repository.findAllUsers().then((results) => { console.log(results) });
 }
 
 /**
@@ -965,10 +865,6 @@ expressServer.use(express.json());
 expressServer.use(express.urlencoded({ extended: true }));
 expressServer.use(cookieParser());
 expressServer.use(express.static(path.join(__dirname, 'public')));
-
-// expressServer.use((request, response, next) => {
-//     request.websocket_id = cache.get(``);
-// });
 
 expressServer.use('/', indexRouter);
 expressServer.use('/admin', adminRouter);
@@ -1305,16 +1201,6 @@ function checkIfGameServerOnline(bot_status, guild_id, ftp_server_data, game_ser
         );
     }
 }
-
-/**
- * The discord API triggers an event called 'ready' when the discord bot is ready to respond to commands and other input. 
- */
-client_instance.on('ready', () => {
-    /**
-     * Inform administrators that the bot has successfully logged into the Discord guild
-     */
-    console.log(`The bot is logged in as ${client_instance.user.tag}`);
-});
 
 async function enableBot(guild_id) {
     try {
@@ -2194,16 +2080,6 @@ function determineIfUserCanUseCommand(message_sender, client_command_values) {
         return true;
     }
     return message_sender.roles.cache.some(role => client_command_values.authorization_role_name.includes(role.name));
-}
-
-/**
- * When a user is attempting to use bot commands on discord, this function will tell the user if they sent the bot command in the correct chnnael.
- * @param {number} channel_message_was_sent A number data type that contains the id of the discord channel where the bot command was sent  
- * @param {number} discord_bot_channel_id A number data type that contains the id of the discord channel where the bot command must be sent
- * @returns a boolean value indicating whether the user sent the bot command in the correct channel 
- */
-function determineIfUserMessageInCorrectChannel(channel_message_was_sent, discord_bot_channel_id) { 
-    return channel_message_was_sent === discord_bot_channel_id;
 }
 
 export default expressServer;
