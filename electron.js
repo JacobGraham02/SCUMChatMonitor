@@ -4,6 +4,7 @@ import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { exec } from 'child_process';
+import { moveWindowToTopLeft } from './windowControl.js'
 
 const commandQueue = [];
 let isProcessingCommandQueue = false;
@@ -26,10 +27,12 @@ function createWindow() {
     });
 
     // Load the index page of your app from your Express server.
-    mainWindow.loadURL('https://scumchatmonitorweb.azurewebsites.net');
+    mainWindow.loadURL('http://localhost:8080');
 
     // Open the DevTools.
     mainWindow.webContents.openDevTools();
+
+    moveWindowToTopLeft("SCUM");
 
     // Emitted when the window is closed.
     mainWindow.on('closed', function () {
@@ -236,10 +239,8 @@ async function reinitializeBotOnServer(websocket_id) {
             `${websocket_id}-info-logs`
         );
         await sleep(5000);
-        moveMouseToPressOkForMessage(websocket_id);
+        moveWindowToTopLeft("SCUM");
         await sleep(100000);
-        pressMouseLeftClickButton(websocket_id);
-        await sleep(5000);
         moveMouseToContinueButtonXYLocation(websocket_id);
         await sleep(10000);
         pressMouseLeftClickButton(websocket_id);
@@ -255,7 +256,6 @@ async function reinitializeBotOnServer(websocket_id) {
             `${websocket_id}-info-logs`
         )
         await sleep(5000);
-        await enqueueCommand('Scum bot has been activated and is ready to use', guild_id);
     } catch (error) {
         return false;
     }
@@ -266,8 +266,8 @@ async function reinitializeBotOnServer(websocket_id) {
  * Executes a Windows powershell command to simulate a user moving the cursor to a specific (X, Y) location on screen. This is an asynchronous operation.
  */
 async function moveMouseToContinueButtonXYLocation(websocket_id) {
-    const x_cursor_position = 466;
-    const y_cursor_position = 619;
+    const x_cursor_position = 143;
+    const y_cursor_position = 505;
     const command = `powershell.exe -command "Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class P { [DllImport(\\"user32.dll\\")] public static extern bool SetCursorPos(int x, int y); }'; [P]::SetCursorPos(${x_cursor_position}, ${y_cursor_position})"`;
 
     try {
@@ -275,7 +275,7 @@ async function moveMouseToContinueButtonXYLocation(websocket_id) {
         if (stderr) {
             await sendLogData(
                 `ErrorLogs`,
-                `Error when moving the mouse to x 470 and y 550: ${error}`,
+                `Error when moving the mouse to x 143 and y 505: ${error}`,
                 `${websocket_id}`,
                 `${websocket_id}-error-logs`
             );
@@ -291,27 +291,25 @@ async function moveMouseToContinueButtonXYLocation(websocket_id) {
 /**
  * Executes a Windows powershell command to simulate a user moving the cursor to a specific (X, Y) location on screen. This is an asynchronous operation.
  */
-async function moveMouseToPressOkForMessage(websocket_id) {
-    const x_cursor_position = 958;
-    const y_cursor_position = 536;
-    const command = `powershell.exe -command "Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class P { [DllImport(\\"user32.dll\\")] public static extern bool SetCursorPos(int x, int y); }'; [P]::SetCursorPos(${x_cursor_position}, ${y_cursor_position})"`;
+// async function moveMouseToPressOkForMessage(websocket_id) {
+//     const command = `powershell.exe -command "Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class P { [DllImport(\\"user32.dll\\")] public static extern bool SetCursorPos(int x, int y); }'; [P]::SetCursorPos(${x_cursor_position}, ${y_cursor_position})"`;
     
-    try {
-        const { stderr } = await executeAsyncCommand(command);
-        if (stderr) {
-            await sendLogData(
-                `ErrorLogs`,
-                `Error when moving the mouse to x 958 and y 536: ${error}`,
-                `${websocket_id}`,
-                `${websocket_id}-error-logs`
-            );
-            return;
-        }
-        console.log(`Moved mouse to OK message popup`);
-    } catch (error) {
-        console.error(`Failed to move mouse to OK message popup`);
-    }
-}
+//     try {
+//         const { stderr } = await executeAsyncCommand(command);
+//         if (stderr) {
+//             await sendLogData(
+//                 `ErrorLogs`,
+//                 `Error when moving the mouse to x 958 and y 536: ${error}`,
+//                 `${websocket_id}`,
+//                 `${websocket_id}-error-logs`
+//             );
+//             return;
+//         }
+//         console.log(`Moved mouse to OK message popup`);
+//     } catch (error) {
+//         console.error(`Failed to move mouse to OK message popup`);
+//     }
+// }
 
 /**
  * Executes a Windows powershell command to simulate a left mouse button click. This is as asynchronous operation.
