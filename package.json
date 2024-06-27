@@ -27,7 +27,9 @@
       "package.json",
       "index.js",
       "node_modules/**/*",
-      "public/images/WilsonBotElectron"
+      "public/images/WilsonBotElectron",
+      "windowControl.ps1",
+      "windowControl.js"
     ],
     "win": {
       "icon": "public/images/WilsonBotElectron"
