@@ -104,7 +104,7 @@ async function createWebSocketConnection(websocket_id) {
             const x_coordinate = teleport_coordinates.x;
             const y_coordinate = teleport_coordinates.y;
             const z_coordinate = teleport_coordinates.z;
-            const teleport_command = `#Teleport ${x_coordinate} ${y_coordinate} ${z_coordinate}, ${player_steam_id}`;
+            const teleport_command = `#Teleport ${x_coordinate} ${y_coordinate} ${z_coordinate} ${player_steam_id}`;
             commandQueue.push(teleport_command);
             processCommandQueue();
         }
