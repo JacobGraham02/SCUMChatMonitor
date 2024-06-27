@@ -121,6 +121,7 @@ async function createWebSocketConnection(websocket_id) {
                 console.error(`There was an error when attempting to reinitialize the bot on the SCUM server: ${error}`);
             }
         }
+
         if (json_message_data.action === `enable` && json_message_data.guild_id 
         && json_message_data.ftp_server_data && json_message_data.game_server_data) {
             const check_server_online_and_bot_connected_interval = setInterval(async function() {
@@ -151,7 +152,7 @@ async function createWebSocketConnection(websocket_id) {
                 }
             }, 60000);
 
-            intervals.set(`enable_game_server_checks_interval`, check_server_online_and_bot_connected_interval);
+            intervals.set(`enable_game_server_checks_interval_${guild_id}`, check_server_online_and_bot_connected_interval);
         }
 
         if (json_message_data.action === `disable`) {
