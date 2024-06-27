@@ -1259,7 +1259,58 @@ client_instance.on('interactionCreate', async (interaction) => {
                     cache.set(`bot_repository_${guild_id}`, new BotRepository(guild_id));
                 }
 
-                await interaction.reply(`Your SCUM bot has been reset`);
+                const bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
+                const bot_discord_information = await bot_repository_instance.getBotDataByGuildId(guild_id);
+    
+                if (bot_discord_information) {
+                    const discord_channel_id_for_chat = bot_discord_information.scum_ingame_chat_channel_id;
+                    const discord_channel_id_for_logins = bot_discord_information.scum_ingame_logins_channel_id;
+                    const discord_channel_id_for_new_player_joins = bot_discord_information.scum_new_player_joins_channel_id;
+                    const discord_channel_id_for_server_info_button = bot_discord_information.scum_server_info_channel_id;
+                    const discord_channel_id_for_server_online = bot_discord_information.scum_server_online_channel_id;
+                    const discord_channel_id_for_bot_commands = bot_discord_information.scum_bot_commands_channel_id;
+                    
+                    const battlemetrics_server_id = bot_discord_information.scum_battlemetrics_server_id;
+                    
+                    const teleport_command_prefix = bot_discord_information.command_prefix;
+                    const teleport_command_x_coordinate = bot_discord_information.x_coordinate;
+                    const teleport_command_y_coordinate = bot_discord_information.y_coordinate;
+                    const teleport_command_z_coordinate = bot_discord_information.z_coordinate;
+                    
+                    if (battlemetrics_server_id) {
+                        const battlemetrics_server_info_instance = new ServerInfoCommand(battlemetrics_server_id);
+                        cache.set(`battlemetrics_server_info_instance_${guild_id}`, battlemetrics_server_info_instance);
+                    } 
+                    if (discord_channel_id_for_chat) {
+                        const discord_channel_for_chat = interaction.guild.channels.cache.get(discord_channel_id_for_chat);
+                        cache.set(`discord_channel_for_chat_${guild_id}`, discord_channel_for_chat);
+                    }
+                    if (discord_channel_id_for_logins) {
+                        const discord_channel_for_logins = interaction.guild.channels.cache.get(discord_channel_id_for_logins);
+                        cache.set(`discord_channel_for_logins_${guild_id}`, discord_channel_for_logins);
+                    }
+                    if (discord_channel_id_for_new_player_joins) {
+                        const discord_channel_for_new_joins = interaction.guild.channels.cache.get(discord_channel_id_for_new_player_joins);
+                        cache.set(`discord_channel_for_new_joins_${guild_id}`, discord_channel_for_new_joins);
+                    }
+                    if (discord_channel_id_for_server_info_button) {
+                        const discord_channel_for_server_info = interaction.guild.channels.cache.get(discord_channel_id_for_server_info_button);
+                        cache.set(`discord_channel_for_server_info_${guild_id}`, discord_channel_for_server_info);
+                    }
+                    if (discord_channel_id_for_server_online) {
+                        const discord_channel_for_server_online = interaction.guild.channels.cache.get(discord_channel_id_for_server_online);
+                        cache.set(`discord_channel_for_server_online_${guild_id}`, discord_channel_for_server_online);
+                    }
+                    if (discord_channel_id_for_bot_commands) {
+                        const discord_channel_for_bot_commands = interaction.guild.channels.cache.get(discord_channel_id_for_bot_commands);
+                        cache.set(`discord_channel_for_bot_commands_${guild_id}`, discord_channel_for_bot_commands);
+                    }
+                    cache.set(`teleport_command_prefix_${guild_id}`, teleport_command_prefix);
+                    cache.set(`teleport_command_x_coordinate_${guild_id}`, teleport_command_x_coordinate);
+                    cache.set(`teleport_command_y_coordinate_${guild_id}`, teleport_command_y_coordinate);
+                    cache.set(`teleport_command_z_coordinate_${guild_id}`, teleport_command_z_coordinate);
+                    }
+                await interaction.reply({ content: `Your SCUM bot has been reset`, ephemeral: true });
             } catch (error) {
                 message_logger.writeLogToAzureContainer(
                     `ErrorLogs`,
@@ -1272,7 +1323,10 @@ client_instance.on('interactionCreate', async (interaction) => {
         }
         if (interaction.customId === `enablebotbutton`) {
             try {
-                const bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
+                let bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
+                if (!bot_repository_instance) {
+                    bot_repository_instance = new BotRepository(guild_id);
+                }
                 const bot_discord_information = await bot_repository_instance.getBotDataByGuildId(guild_id);
 
                 if (bot_discord_information) {
@@ -1325,7 +1379,9 @@ client_instance.on('interactionCreate', async (interaction) => {
 
                     await enableBot(guild_id);
                     
-                    await interaction.reply(`Your SCUM server bot has been enabled`);
+                    await interaction.reply({ content: `Your SCUM server bot has been enabled`, ephemeral: true });
+                } else {
+                    await interaction.reply({ content: `Your SCUm server bot cannot find your user profile. Please ask the bot developer to register an account for you`, ephemeral: true});
                 }
             } catch (error) {
                 await interaction.reply(`There was an error when attempting to enable your SCUM bot. Please try again or contact the bot administrator: ${error}`);
@@ -1341,9 +1397,6 @@ client_instance.on('interactionCreate', async (interaction) => {
 
         if (interaction.customId === `disablebotbutton`) {
             try {
-                if (cache.get(`battlemetrics_server_info_instance_${guild_id}`)) {
-                    cache.delete(`battlemetrics_server_info_instance_${guild_id}`);
-                }
                 if (cache.get(`discord_channel_for_chat_${guild_id}`)) {
                     cache.delete(`discord_channel_for_chat_${guild_id}`);
                 }
@@ -1384,103 +1437,92 @@ client_instance.on('interactionCreate', async (interaction) => {
         }
 
         if (interaction.customId === `setupdiscordchannelids`) {
-            const setupChannelsCommand = client_instance.discord_commands.get(`setupchannels`);
-            if (setupChannelsCommand) {
-                try {
-                    await setupChannelsCommand.execute(interaction)
-                } catch (error) {
-                    await interaction.reply(`There was an error when attempting to show the set up Discord channel form. Please contact the bot administrator and inform them of the following error or try again: ${error}`);
-                }
-            } else {
-                await interaction.reply({content: `The command to set up Discord channels was not found or there was an error. Please infor`,ephemeral: true});
+            try {
+                const setupChannelsCommand = client_instance.discord_commands.get(`setupchannels`);
+                await setupChannelsCommand.execute(interaction)
+            } catch (error) {
+                await interaction.reply(`There was an error when attempting to show the set up Discord channel form. Please first restart your bot. If that does not work, contact the bot administrator and inform them of the following error or try again: ${error}`);
             }
         }
 
         if (interaction.customId === `setupftpserverdata`) {
-            const setupFtpSeverCommand = client_instance.discord_commands.get(`setupftpserver`);
-            if (setupFtpSeverCommand) {
-                try {
-                    await setupFtpSeverCommand.execute(interaction);
-                } catch (error) {
-                    await interaction.reply(`There was an error when attempting to show the set up FTP data form. Please contact the bot administrator and inform them of the following error or try again: ${error}`);
-                }
-            } else {
-                await interaction.reply({content: `The command to associate FTP server data with your bot was not found`, ephemeral: true});
+            try {
+                const setupFtpSeverCommand = client_instance.discord_commands.get(`setupftpserver`);
+                await setupFtpSeverCommand.execute(interaction);
+            } catch (error) {
+                await interaction.reply(`There was an error when attempting to show the set up FTP data form. Please first restart your bot. If that does not work, contact the bot administrator and inform them of the following error or try again: ${error}`);
             }
         }
 
         if (interaction.customId === `setupwebsiteuser`) {
-            const setupFtpSeverCommand = client_instance.discord_commands.get(`setupuser`);
-            if (setupFtpSeverCommand) {
-                try {
-                    await setupFtpSeverCommand.execute(interaction);
-                } catch (error) {
-                    await interaction.reply(`There was an error when attempting to show the set up bot website user data form. Please contact the bot administrator and inform them of the following error or try again: ${error}`);
-                }
-            } else {
-                await interaction.reply({content: `The command to set up a website user account was not found`, ephemeral: true});
+            try {
+                const setupFtpSeverCommand = client_instance.discord_commands.get(`setupuser`);
+                await setupFtpSeverCommand.execute(interaction);
+            } catch (error) {
+                await interaction.reply(`There was an error when attempting to show the set up bot website user data form. Please first restart your bot. If that does not work, contact the bot administrator and inform them of the following error or try again: ${error}`);
             }
         }
 
         if (interaction.customId === `setupgameserver`) {
-            const setupFtpSeverCommand = client_instance.discord_commands.get(`setupgameserver`);
-            if (setupFtpSeverCommand) {
-                try {
-                    await setupFtpSeverCommand.execute(interaction);
-                } catch (error) {
-                    await interaction.reply(`There was an error when attempting to show the set up SCUM server data form. Please contact the bot administrator and inform them of the following error or try again: ${error}`);
-                }
-            } else {
-                await interaction.reply({content: `The command to associate the SCUM game server data with your bot was not found`, ephemeral: true});
+            try {
+                const setupFtpSeverCommand = client_instance.discord_commands.get(`setupgameserver`);
+                await setupFtpSeverCommand.execute(interaction);
+            } catch (error) {
+                await interaction.reply(`There was an error when attempting to show the set up SCUM server data form. Please first restart your bot. If that does not work, contact the bot administrator and inform them of the following error or try again: ${error}`);
             }
         }
 
         if (interaction.customId === `setupuserspawn`) {
-            const setupFtpSeverCommand = client_instance.discord_commands.get(`setupuserspawn`);
-            if (setupFtpSeverCommand) {
-                try {
-                    await setupFtpSeverCommand.execute(interaction);
-                } catch (error) {
-                    await interaction.reply(`There was an error when attempting to show the set up new user spawn area data form. Please contact the bot administrator and inform them of the following error or try again: ${error}`);
-                }
-            } else {
-                await interaction.reply({content: `The command to set up new player spawn coordinates in your server was not found`, ephemeral: true});
+            try {
+                const setupFtpSeverCommand = client_instance.discord_commands.get(`setupuserspawn`);
+                await setupFtpSeverCommand.execute(interaction);
+            } catch (error) {
+                await interaction.reply(`There was an error when attempting to show the set up new user spawn area data form. Please first restart your bot. If that does not work, contact the bot administrator and inform them of the following error or try again: ${error}`);
             }
         }
-    }
 
-    if (interaction.customId === `serverinformationbutton`) {
-        const battlemetrics_server_info = cache.get(`battlemetrics_server_info_instance_${interaction.guild.id}`);
-        const battlemetrics_server_data_object = await battlemetrics_server_info.fetchJsonApiDataFromBattlemetrics();
-        const battlemetrics_server_json_data = battlemetrics_server_data_object.data.attributes;
-        const battlemetrics_server_id = battlemetrics_server_json_data.id;
-        const battlemetrics_server_name = battlemetrics_server_json_data.name;
-        const battlemetrics_server_ip = battlemetrics_server_json_data.ip;
-        const battlemetrics_server_port = battlemetrics_server_json_data.port;
-        const battlemetrics_server_players = battlemetrics_server_json_data.players;
-        const battlemetrics_server_max_players = battlemetrics_server_json_data.maxPlayers;
-        const battlemetrics_server_rank = battlemetrics_server_json_data.rank;
-        const battlemetrics_server_version = battlemetrics_server_json_data.details.version;
-        const battlemetrics_server_time = battlemetrics_server_json_data.details.time;
-        const embedded_message = new EmbedBuilder()
-            .setColor(0x299bcc)
-            .setTitle(`${battlemetrics_server_name}`)
-            .setThumbnail(`https://i.imgur.com/dYtjF3w.png`)
-            .addFields(
-                {name:'Server name',value:battlemetrics_server_name,inline:true},
-                {name:'Server Id',value:battlemetrics_server_id,inline:true},
-                {name:'IPv4 server address',value:battlemetrics_server_ip,inline:true},
-                {name:'Server port',value:battlemetrics_server_port.toString(),inline:true},
-                {name:'Current online players',value:String(battlemetrics_server_players),inline:true},
-                {name:'Server maximum online players',value:String(battlemetrics_server_max_players),inline:true},
-                {name:'Server ranking',value:String(battlemetrics_server_rank),inline:true},
-                {name:'Server version',value:battlemetrics_server_version,inline:true},
-                {name:'Server time',value:battlemetrics_server_time,inline:true}
-            )
-            .setTimestamp()
-            .setFooter({text:'Scum Monitor Man', iconURL: 'https://i.imgur.com/dYtjF3w.png'});
-
-        await interaction.reply({embeds:[embedded_message], ephemeral:true});
+        if (interaction.customId === `serverinformationbutton`) {
+            let battlemetrics_server_info = undefined;
+            try {
+                battlemetrics_server_info = cache.get(`battlemetrics_server_info_instance_${interaction.guild.id}`);
+            } catch (error) {
+                await interaction.reply(`There was an error when attempting to find your SCUM server information. Please first restart your bot. If that does not work, contact the bot administrator and inform them of the following error: ${error}`);  
+                return;
+            } 
+            
+            if (battlemetrics_server_info) {
+                const battlemetrics_server_data_object = await battlemetrics_server_info.fetchJsonApiDataFromBattlemetrics();
+                const battlemetrics_server_json_data = battlemetrics_server_data_object.data.attributes;
+                const battlemetrics_server_id = battlemetrics_server_json_data.id;
+                const battlemetrics_server_name = battlemetrics_server_json_data.name;
+                const battlemetrics_server_ip = battlemetrics_server_json_data.ip;
+                const battlemetrics_server_port = battlemetrics_server_json_data.port;
+                const battlemetrics_server_players = battlemetrics_server_json_data.players;
+                const battlemetrics_server_max_players = battlemetrics_server_json_data.maxPlayers;
+                const battlemetrics_server_rank = battlemetrics_server_json_data.rank;
+                const battlemetrics_server_version = battlemetrics_server_json_data.details.version;
+                const battlemetrics_server_time = battlemetrics_server_json_data.details.time;
+                const embedded_message = new EmbedBuilder()
+                    .setColor(0x299bcc)
+                    .setTitle(`${battlemetrics_server_name}`)
+                    .setThumbnail(`https://i.imgur.com/dYtjF3w.png`)
+                    .addFields(
+                        {name:'Server name',value:battlemetrics_server_name,inline:true},
+                        {name:'Server Id',value:battlemetrics_server_id,inline:true},
+                        {name:'IPv4 server address',value:battlemetrics_server_ip,inline:true},
+                        {name:'Server port',value:battlemetrics_server_port.toString(),inline:true},
+                        {name:'Current online players',value:String(battlemetrics_server_players),inline:true},
+                        {name:'Server maximum online players',value:String(battlemetrics_server_max_players),inline:true},
+                        {name:'Server ranking',value:String(battlemetrics_server_rank),inline:true},
+                        {name:'Server version',value:battlemetrics_server_version,inline:true},
+                        {name:'Server time',value:battlemetrics_server_time,inline:true}
+                    )
+                    .setTimestamp()
+                    .setFooter({text:'Scum Monitor Man', iconURL: 'https://i.imgur.com/dYtjF3w.png'});
+        
+                await interaction.reply({embeds:[embedded_message], ephemeral:true});
+            }
+        }
     }
 
     if (!interaction.isCommand()) {
