@@ -27,28 +27,28 @@ function createWindow() {
     });
 
     // Load the index page of your app from your Express server.
-    mainWindow.loadURL('http://localhost:8080');
+    mainWindow.loadURL('https://scumchatmonitorweb.azurewebsites.net');
 
-    const content_security_policy = `
-        default-src 'none';
-        script-src 'self';
-        connect-src 'self' wss://localhost:8080;
-        img-src 'self';
-        style-src 'self';
-        font-src 'self';
-        frame-src 'none';
-    `
+    // const content_security_policy = `
+    //     default-src 'none';
+    //     script-src 'self';
+    //     connect-src 'self' wss://localhost:8080;
+    //     img-src 'self';
+    //     style-src 'self';
+    //     font-src 'self';
+    //     frame-src 'none';
+    // `
 
-    mainWindow.webContents.on('did-finish-load', function() {
-        mainWindow.webContents.session.webRequest.onHeadersReceived(function(details, callback) {
-            callback({
-                responseHeaders: {
-                    ...details.responseHeaders,
-                    'Content-Security-Policy': [content_security_policy]
-                }
-            });   
-        });
-    });
+    // mainWindow.webContents.on('did-finish-load', function() {
+    //     mainWindow.webContents.session.webRequest.onHeadersReceived(function(details, callback) {
+    //         callback({
+    //             responseHeaders: {
+    //                 ...details.responseHeaders,
+    //                 'Content-Security-Policy': [content_security_policy]
+    //             }
+    //         });   
+    //     });
+    // });
 
     moveWindowToTopLeft("SCUM");
 
@@ -73,7 +73,7 @@ async function processCommandQueue() {
 }
 
 async function createWebSocketConnection(websocket_id) {
-    const websocket = new WebSocket(`wss://localhost:8080=${encodeURIComponent(websocket_id)}`);
+    const websocket = new WebSocket(`ws://scumchatmonitorweb.azurewebsites.net?websocket_id=${encodeURIComponent(websocket_id)}`);
 
     websocket.on('message', async (message) => {
         const json_message_data = JSON.parse(message);
@@ -522,7 +522,7 @@ function executeAsyncCommand(command) {
 
 async function sendLogData(log_type, message, guild_id, file_type) {
     try {
-        const response = await fetch('http://localhost:8080/admin/logdata', {
+        const response = await fetch('https://scumchatmonitorweb.azurewebsites.net/admin/logdata', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -560,7 +560,7 @@ app.whenReady().then(() => {
 app.whenReady().then(() => {
     ipcMain.handle('checkUserLogin', async (event, { email, password }) => {
         try {
-            const response = await fetch("http://localhost:8080/admin/createwebsocket", {
+            const response = await fetch("https://scumchatmonitorweb.azurewebsites.net/admin/createwebsocket", {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json', 
