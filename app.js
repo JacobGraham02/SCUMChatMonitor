@@ -1552,16 +1552,18 @@ client_instance.on('guildCreate', async (guild) => {
     cache.set(`guild_${guild_id}`, guild_id);
 
     try {
-        await registerInitialSetupCommands(bot_token, bot_id, guild_id);
-        await createBotCategoryAndChannels(guild);
         const bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
         if (!bot_repository_instance) {
             cache.set(`bot_repository_${guild_id}`, new BotRepository(guild_id));
             bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
         }
-        const bot_discord_information = await bot_repository_instance.getBotDataByGuildId(guild.id);
 
-        
+        await registerInitialSetupCommands(bot_token, bot_id, guild_id);
+        await createBotCategoryAndChannels(guild);
+        const bot_discord_information = await bot_repository_instance.getBotDataByGuildId(guild_id);
+
+        console.log(bot_discord_information);
+
         if (bot_discord_information) {
             const server_info_button = new ButtonBuilder()
                 .setCustomId('serverinformationbutton')
@@ -1834,9 +1836,14 @@ client_instance.on(Events.InteractionCreate, async interaction => {
         await interaction.reply({content: `Your submission for creating new player spawn coordinates was successful`, ephemeral: true});
       }
     }
-  });
+});
+
+client_instance.on('ready', () => {
+    console.log('Bot is online!');
+});
 
 async function createBotCategoryAndChannels(guild) {
+    console.log('Create bot channels and category');
     try {
         const category_creation_response = await guild.channels.create({
             name: `SCUM Chat Monitor Bot`,
