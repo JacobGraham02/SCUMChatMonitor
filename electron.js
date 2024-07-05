@@ -27,7 +27,7 @@ function createWindow() {
     });
 
     // Load the index page of your app from your Express server.
-    mainWindow.loadURL('https://scumchatmonitorweb.azurewebsites.net');
+    mainWindow.loadURL('http://localhost:8080');
 
     // const content_security_policy = `
     //     default-src 'none';

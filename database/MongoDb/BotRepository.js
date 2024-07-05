@@ -5,9 +5,10 @@ dotenv.config();
 
 export default class BotRepository {
 
-    constructor(websocket_id) {
-        const database_name = `ScumChatMonitor_${websocket_id}`;
+    constructor(websocket_id, user_email) {
+        const database_name = `ScumChatMonitor_${websocket_id}`; 
         this.websocket_id = websocket_id;
+        this.user_email = user_email;
         this.database_connection_manager = new DatabaseConnectionManager(database_name);
     }
 

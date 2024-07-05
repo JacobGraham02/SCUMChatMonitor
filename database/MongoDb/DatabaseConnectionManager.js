@@ -16,29 +16,7 @@ export default class DatabaseConnectionManager {
     constructor(database_name) {
         this.database_name = database_name;
         this.initializeDatabaseConnectionPool();
-        this.initializeCollectionChangeStreams();
     }
-
-    async initializeCollectionChangeStreams() {
-        this.mongo_client = new MongoClient(this.database_url, {
-            serverApi: {
-                version: ServerApiVersion.v1,
-            }
-        });
-
-        // await this.mongo_client.connect();
-        // const database = this.mongo_client.db(this.database_name);
-        // const changeStream = database.watch()
-
-        // changeStream.on("change", async (change) => {
-        //     const mongodb_connection = await this.getConnection();
-        //     if (change.ns.coll === 'Users' && 'user_welcome_pack' in change.updateDescription.updatedFields) {
-        //         const filter = { _id: change.documentKey._id };
-        //         const updated_welcome_pack_cost_document = { $inc: { user_welcome_pack_cost: 100 } };
-        //         await mongodb_connection.collection(this.users_database_collection).updateOne(filter, updated_welcome_pack_cost_document);
-        //     }
-        // })
-    };
 
     async initializeDatabaseConnectionPool() {
         const poolFactory = {
@@ -72,7 +50,6 @@ export default class DatabaseConnectionManager {
 
     async getMongoDbClientConnection() {
         if (!this.mongodb_client) {
-            console.log("Initializing MongoDB client connection...");
             this.mongodb_client = new MongoClient(this.database_url, {
                 serverApi: {
                     version: ServerApiVersion.v1,
@@ -96,4 +73,3 @@ export default class DatabaseConnectionManager {
         }
     }
 }
-
