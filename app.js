@@ -956,8 +956,12 @@ expressServer.get('/login-failure', function (request, response, next) {
 
 const passportLoginStrategy = new LocalStrategy({
     usernameField: "email",
-    passwordField: "password"
-}, verifyCredentialsCallback);
+    passwordField: "password",
+    passReqToCallback: true
+}, function(request, email, password, done) {
+    const discord_id = request.body.discord_id;
+    verifyCredentialsCallback(email, password, discord_id, done);
+});
 
 passport.use(passportLoginStrategy);
 
