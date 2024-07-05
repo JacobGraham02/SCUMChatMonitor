@@ -109,19 +109,6 @@ async function createWebSocketConnection(websocket_id) {
             processCommandQueue();
         }
 
-        if (json_message_data.action === `reinitializeBot` && json_message_data.guild_id) {
-            try {
-                const botInitializedOnServer = await reinitializeBotOnServer(json_message_data.guild_id, websocket_id);
-                websocket.send(JSON.stringify({
-                    action: `botinitialized`,
-                    guild_id: json_message_data.guild_id,
-                    botinitialized: botInitializedOnServer
-                }));
-            } catch (error) {
-                console.error(`There was an error when attempting to reinitialize the bot on the SCUM server: ${error}`);
-            }
-        }
-
         if (json_message_data.action === `enable` && json_message_data.guild_id 
         && json_message_data.ftp_server_data && json_message_data.game_server_data) {
             const check_server_online_and_bot_connected_interval = setInterval(async function() {
@@ -133,6 +120,10 @@ async function createWebSocketConnection(websocket_id) {
                     const isConnectedToServer = await checkWindowsHasTcpConnectionToGameServer(game_server_data.game_server_ipv4, game_server_data.game_server_port);
                     const isServerOnline = await checkWindowsCanPingGameServer(game_server_data.game_server_ipv4);
                     const localTimeISO = getLocalTimeInISO8601Format();
+
+                    if (!isConnectedToServer && isServerOnline) {
+                        await reinitializeBotOnServer(guild_id);
+                    }
         
                     // Send response back through WebSocket
                     websocket.send(JSON.stringify({
