@@ -775,7 +775,7 @@ const verifyCredentialsCallback = async (email, password, done) => {
 
     try {
         bot_repository_instance = new BotRepository();
-        bot_user_data = await bot_repository_instance.getBotUserByEmail(email);
+        bot_user_data = await bot_repository_instance.getBotDataByEmail(email);
     } catch (error) {
         message_logger.writeLogToAzureContainer(
             `ErrorLogs`,
@@ -1733,7 +1733,8 @@ client_instance.on(Events.InteractionCreate, async interaction => {
 
             try {
                 const bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
-                await bot_repository_instance.createBot(bot_information);            
+                await bot_repository_instance.createBot(bot_information); 
+                await bot_repository_instance.createOrUpdateUser(bot_information.bot_email);
             } catch (error) {
                 throw new Error(`There was an error when attempting to create a bot for you. Please inform the server administrator of this error: ${error}`);
             }
