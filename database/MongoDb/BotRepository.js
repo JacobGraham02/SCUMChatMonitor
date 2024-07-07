@@ -5,11 +5,10 @@ dotenv.config();
 
 export default class BotRepository {
 
-    constructor(websocket_id, user_email) {
-        const database_name = `ScumChatMonitor_${websocket_id}`; 
+    constructor(websocket_id) {
+        this.database_name = `ScumChatMonitor_${websocket_id}`; 
         this.websocket_id = websocket_id;
-        this.user_email = user_email;
-        this.database_connection_manager = new DatabaseConnectionManager(database_name);
+        this.database_connection_manager = new DatabaseConnectionManager(this.database_name);
     }
 
     async findBotByUUID(bot_uuid) {
@@ -252,40 +251,39 @@ export default class BotRepository {
         }
     }
 
-    async getBotUserByEmail(email) {
-        const database_connection = await this.database_connection_manager.getMongoDbClientConnection();
+    async createOrUpdateUser(email) {
+        const database_connection = await this.database_connection_manager.getConnection();
 
         try {
-            const admin_database = database_connection.db().admin()
-            const list_of_databases = await admin_database.listDatabases();
+            const users_database = database_connection.db('bot_owners');
+            const users = users_database.collection('users');
 
-            for (let databaseInfo of list_of_databases.databases) {
-                const database_name = databaseInfo.name;
-                const database = database_connection.db(database_name);
-                const collection = database.collection('bot')
-                const user = await collection.findOne({ bot_email: email});
+            const query = { user_email: email };
+            const update_query = { $set: { user_email: email, database_name: this.database_name }};
+            const options = { upsert: true };
 
-                if (user) {
-                    return user;
-                }
-            }
+            await users.updateOne(query, update_query, options);
         } catch (error) {
-            console.error(`There was an error when attempting to find a user associated by email: ${error}`);
-            throw new Error(`There was an error when attempting to find a user associated by email: ${error}`);
-        } 
+            throw error;
+        } finally {
+            await this.releaseConnectionSafely(database_connection);
+        }
     }
 
     async getBotDataByEmail(bot_email) {
         const database_connection = await this.database_connection_manager.getConnection();
     
         try {
-            const bot_collection = database_connection.collection('bot');
-    
+            const bot_owners_database = client.db('bot_owners');
+            const users_collection = bot_owners_database.collection('users');
+            const user = await users_collection.findOne({ user_email: bot_email });
+
+            const user_database = client.db(user.database_name);
+            const bot_collection = user_database.collection('bot');
             const bot_data = await bot_collection.findOne({ bot_email: bot_email });
-    
-            return bot_data;
+
+            return bot_data;  
         } catch (error) {
-            console.error(`There was an error when attempting to retrieve the bot data by email. Please inform the server administrator of this error: ${error}`);
             throw new Error(`There was an error when attempting to retrieve the bot data by email. Please inform the server administrator of this error: ${error}`);
         } finally {
             await this.releaseConnectionSafely(database_connection);
