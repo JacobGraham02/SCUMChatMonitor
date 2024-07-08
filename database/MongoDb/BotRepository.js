@@ -252,7 +252,7 @@ export default class BotRepository {
     }
 
     async createOrUpdateUser(email) {
-        const database_connection = await this.database_connection_manager.getConnection();
+        const database_connection = await this.database_connection_manager.getMongoClientConnection();
 
         try {
             const users_database = database_connection.db('bot_owners');
@@ -266,19 +266,19 @@ export default class BotRepository {
         } catch (error) {
             throw error;
         } finally {
-            await this.releaseConnectionSafely(database_connection);
+            await this.releaseMongoClientConnectionSafely(database_connection);
         }
     }
 
     async getBotDataByEmail(bot_email) {
-        const database_connection = await this.database_connection_manager.getConnection();
+        const database_connection = await this.database_connection_manager.getMongoClientConnection();
     
         try {
-            const bot_owners_database = client.db('bot_owners');
+            const bot_owners_database = database_connection.db('bot_owners');
             const users_collection = bot_owners_database.collection('users');
             const user = await users_collection.findOne({ user_email: bot_email });
 
-            const user_database = client.db(user.database_name);
+            const user_database = database_connection.db(user.database_name);
             const bot_collection = user_database.collection('bot');
             const bot_data = await bot_collection.findOne({ bot_email: bot_email });
 
@@ -286,7 +286,7 @@ export default class BotRepository {
         } catch (error) {
             throw new Error(`There was an error when attempting to retrieve the bot data by email. Please inform the server administrator of this error: ${error}`);
         } finally {
-            await this.releaseConnectionSafely(database_connection);
+            await this.releaseMongoClientConnectionSafely(database_connection);
         }
     }
 
@@ -508,6 +508,17 @@ export default class BotRepository {
             } catch (error) {
                 console.error(`An error has occurred during the execution of releaseConnectionSafely function: ${error}`);
                 throw new Error(`An error has occurred during the execution of releaseConnectionSafely function: ${error}`);
+            }
+        }
+    }
+
+    async releaseMongoClientConnectionSafely(database_connection) {
+        if (database_connection) {
+            try {
+                await this.database_connection_manager.releaseMongoClientConnection(database_connection);
+            } catch (error) {
+                console.error(`An error has occurred during the execution of releaseMongoClientConnectionSafely function: ${error}`);
+                throw new Error(`An error has occurred during the execution of releaseMongoClientConnectionSafely function: ${error}`);
             }
         }
     }
