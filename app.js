@@ -776,6 +776,7 @@ const verifyCredentialsCallback = async (email, password, done) => {
     try {
         bot_repository_instance = new BotRepository();
         bot_user_data = await bot_repository_instance.getBotDataByEmail(email);
+        
     } catch (error) {
         message_logger.writeLogToAzureContainer(
             `ErrorLogs`,
