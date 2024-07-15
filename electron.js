@@ -98,7 +98,7 @@ async function createWebSocketConnection(websocket_id) {
             }
         }
 
-        if (json_message_data.action === `teleportNewPlayers`) {
+        if (json_message_data.action === `teleport`) {
             const teleport_coordinates = json_message_data.teleport_coordinates;
             const player_steam_id = json_message_data.steam_id;
             const x_coordinate = teleport_coordinates.x;

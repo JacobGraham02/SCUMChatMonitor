@@ -509,7 +509,7 @@ async function teleportNewPlayersToLocation(bot_repository, user_steam_ids, chan
                     y: bot_user_y_coordinate,
                     z: bot_user_z_coordinate
                 }
-                await sendNewPlayerCommandToClient(teleport_coordinates, guild_id, steam_id);
+                await teleportPlayerToLocation(teleport_coordinates, guild_id, steam_id);
             } catch (error) {
                 await message_logger.writeLogToAzureContainer(
                     `ErrorLogs`,
@@ -1995,27 +1995,39 @@ async function processQueueIfNotProcessing(user_command_queue, guild_id) {
         const user_account = await bot_repository.findUserById(command_to_execute_player_steam_id);
         const user_account_balance = user_account.user_money;
 
+        /**
+         * Remove the weird (0-9{1,4}) value which is appended onto each username in the GPortal chat log. 
+         * The GPortal chat log generates usernames like: jacobdgraham02(102). Therefore, we will use regex to replace that with: jacobdgraham02
+         */
+        const client_ingame_chat_name = user_account.user_steam_name.replace(/\([0-9]{1,4}\)/g, '');  
+
         /*
         By using a string representation of the command to execute, we will fetch the command from the MongoDB database. If the command executed in game is '/test', 
         a document with the name 'test' will be searched for in MongoDB. MongoDB returns the bot_item_package as an object instead of an array of objects. 
         */
         const bot_item_package = await bot_repository.getBotPackageFromName(command_name.toString());
 
-        if (bot_item_package) {
-
+        if (!bot_item_package) {
+            await sendMessageToClient(`${client_ingame_chat_name}, this package does not exist`);
+            continue;
+        } else {
             if (bot_item_package.package_items) {
                 bot_package_items = bot_item_package.package_items;
             }
             if (bot_item_package.package_cost) {
                 bot_item_package_cost = bot_item_package.package_cost;
             }
-        } 
-
-        /**
-         * Remove the weird (0-9{1,4}) value which is appended onto each username in the GPortal chat log. 
-         * The GPortal chat log generates usernames like: jacobdgraham02(102). Therefore, we will use regex to replace that with: jacobdgraham02
-         */
-        const client_ingame_chat_name = user_account.user_steam_name.replace(/\([0-9]{1,4}\)/g, '');           
+            if (command_name.endsWith('trader')) {
+                const teleport_coordinates = {
+                    x: bot_package_items.package_items[0],
+                    y: bot_package_items.package_items[1],
+                    z: bot_package_items.package_items[2]
+                }
+                await sendMessageToClient(`${client_ingame_chat_name}, you will be teleported to the vehicle trader soon`, guild_id, command_to_execute_player_steam_id);
+                await teleportPlayerToLocation(teleport_coordinates, guild_id, command_to_execute_player_steam_id);
+                continue;
+            }
+        }       
 
         /**
          * All of the other commands just deduct money from the user account when executed. The command '!welcomepack' is special because it can be executed multiple times, increasing
@@ -2025,11 +2037,10 @@ async function processQueueIfNotProcessing(user_command_queue, guild_id) {
         if (command_name === 'welcomepack') {
             const welcome_pack_cost = user_account.user_welcome_pack_cost;
              if (user_account_balance < welcome_pack_cost) {
-                await sendMessageToClient(`${client_ingame_chat_name} you do not have enough money to use your welcome pack again. Use the command /balance to check your balance`, guild_id, command_to_execute_player_steam_id);
+                await sendMessageToClient(`${client_ingame_chat_name}, you do not have enough money to use your welcome pack again. Use the command /balance to check your balance`, guild_id, command_to_execute_player_steam_id);
                 continue;
              } else {
                 await bot_repository.updateUserWelcomePackUsesByOne(user_account.user_steam_id);
-                await bot_repository.updateUserAccountBalance(command_to_execute_player_steam_id, -welcome_pack_cost);
              }
         }
 
@@ -2073,12 +2084,12 @@ async function sendCommandToClient(bot_package_items_array, websocketId, player_
     }
 }
 
-async function sendNewPlayerCommandToClient(coordinates, websocket_id, steam_id) {
+async function teleportPlayerToLocation(coordinates, websocket_id, steam_id) {
     const websocket = cache.get(`websocket_${websocket_id}`);
 
     if (websocket && websocket.readyState === WebSocket.OPEN) {
         websocket.send(JSON.stringify({
-            action: `teleportNewPlayers`,
+            action: `teleport`,
             teleport_coordinates: coordinates,
             player_steam_id: steam_id
         }));
