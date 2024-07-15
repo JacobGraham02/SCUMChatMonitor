@@ -2074,7 +2074,6 @@ async function sendCommandToClient(bot_package_items_array, websocketId, player_
 }
 
 async function sendNewPlayerCommandToClient(coordinates, websocket_id, steam_id) {
-    console.log(`send new player to command client`);
     const websocket = cache.get(`websocket_${websocket_id}`);
 
     if (websocket && websocket.readyState === WebSocket.OPEN) {
