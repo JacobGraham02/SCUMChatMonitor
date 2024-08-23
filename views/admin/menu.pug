@@ -35,10 +35,6 @@ mixin menu(user, currentPage)
       a(href='/admin/gameserverdata'
       title='A link to go to the game server data page that the bot will read from to access your SCUM server'
       class=(currentPage === '/admin/gameserverdata' ? 'active' : '')) Game server data
-    li  
-      a(href='/admin/logfiles'
-      title='A link to view all of the log files for your SCUM server'
-      class=(currentPage === '/admin/logfiles' ? 'active' : '')) Log files
     -} else {
       h1#user_administrator_name_heading Welcome, anonymous!
     -}

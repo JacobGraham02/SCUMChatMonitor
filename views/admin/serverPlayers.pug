@@ -33,5 +33,3 @@ block content(user)
                     for page in page_numbers
                         li#players_pagination_list_item(class=current_page_of_players === page ? 'active' : '')
                             a#players_pagination_list_link(href=`players?range=${(page - 1) * players_per_page + 1}&${page * players_per_page}`) Page #{page}
-
-    script(src='/javascripts/admin_index_page.js')

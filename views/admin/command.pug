@@ -40,7 +40,7 @@ block content(user)
 						input#command_cost_input(class="package_item_input", type='text', name='package_cost_input', placeholder='Command cost...', value=package.package_cost) 
 
 			fieldset#edit_command_form_field_buttons.fieldset_for_form_buttons
-					//- button#save_changes_button(type='submit') Save package changes
-					//- button#cancel_changes_button(type='button') Go back
+					button#save_changes_button(type='submit') Save package changes
+					button#cancel_changes_button(type='button' onclick="history.back()") Go back
 		
 		script(src='/javascripts/commands_form.js')

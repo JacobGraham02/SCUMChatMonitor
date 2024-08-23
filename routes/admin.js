@@ -137,6 +137,8 @@ router.get(['/commands'], isLoggedIn, checkBotRepositoryInCache, async (request,
     if (bot_packages) {
         const commands_per_page = 10;
 
+        bot_packages.sort((a, b) => a.package_name.localeCompare(b.package_name));
+
         const range = request.query.range || '1&10';
         /*
         Destructure the above query range string to retrieve the numbers. In this instance, we would get numbers 1 and 10
