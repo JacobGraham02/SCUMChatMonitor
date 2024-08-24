@@ -1,8 +1,4 @@
 const cancel_command_button = document.querySelector('#cancel_changes_to_command_button');
-const advanced_command_button = document.querySelector('#toggle_advanced_command_mode_button');
-const easy_command_button = document.querySelector('#toggle_easy_command_mode_button');
-const advanced_create_command_section = document.querySelector('#new_command_section_advanced');
-const easy_create_command_section = document.querySelector('#new_command_section_easy');
 const create_command_form = document.querySelector('#create_commands_file_form');
 const create_command_form_items_datalist = document.querySelector('#items_list');
 const create_command_form_items_input = document.querySelectorAll('.item_input');
@@ -38,8 +34,8 @@ function updateCharCounter(event) {
 
 
 function registerCharCounter() {
-    const maxCharacterInputs = document.querySelectorAll('.new_command_input_field[data-maxlength]');
-    maxCharacterInputs.forEach(input => {
+    const newCommandMaxCharacterInputs = document.querySelectorAll('.new_command_input_field[data-maxlength]');
+    newCommandMaxCharacterInputs.forEach(input => {
         input.addEventListener('input', updateCharCounter);
         updateCharCounter({ target: input }); 
     });

@@ -20,27 +20,49 @@ block content(user)
 		span#span_command_file_edit_screen_name
 				h1 #{package.package_name}
 		form#command_editor_form(method='POST', action='/admin/botcommand/new' + file_name, enctype='application/x-www-form-urlencoded' class="needs-validation bot_data_form")
-			section#new_command_section_easy
-				fieldset#fieldset_for_form_heading 
-					h3.heading_for_adding_items View your bot command
+			section#edit_command_section
 
 				fieldset#command_item_name(class="edit_command_fieldset")
 					article#add_command_name_container(class="edit_command_fieldset_article")
 						label(class="new_command_label",for='command_name') Package name
-						input#command_name(class="package_item_input",type='text',name='package_name_input', placeholder='Write here...', value=package.package_name) 
+						input#command_name(class="new_command_input_field package_item_input validate-input",type='text',name='package_name_input', 
+						placeholder='Write here...', value=package.package_name, data-maxlength='100') 
+						span#command_name_feedback
+						span.char_count(data-for="command_name")
 
 				fieldset#command_item_description(class="edit_command_fieldset")
 					article#add_command_description_container(class="edit_command_fieldset_article")
 						label(class="new_command_label",for='command_description') Package description 
-						textarea#command_description(class="package_item_input",type='text',name='package_description_input', placeholder='Write here...', value=package.package_description) 
+						textarea#command_description(class="new_command_input_field package_item_input validate-input",type='text',name='package_description_input', 
+						placeholder='Write here...', value=package.package_description, data-maxlength='1000') 
+						span#command_description_feedback
+						span.char_count(data-for="command_description")
+
+				fieldset#dropdown_menu_for_spawn_item.new_command_data_fieldset 
+					label(class="new_command_label") Add new package items
+					article#add_item_fields_container.new_command_data_fieldset_article
+						div.individual_add_item_label_and_input
+							label(for='item_input') Choose package item
+							input.item_input(class="new_command_input_field",type='text', name='item_input', list='items_list', 
+							placeholder='(Required) start typing to begin searching...', maxlength='100' required, data-maxlength='100')
+							input#hidden_command_id_input(type='hidden',name='item_input_value')
+							button.delete-item-btn(type='button', onclick="this.parentNode.remove();") Delete item
+						datalist#items_list 
+					article#add_another_item_button_container
+						button#add_item_button(type='button') Add item
 
 				fieldset#add_command_cost(class="edit_command_fieldset")
 					article#add_command_cost_fields_container(class="edit_command_fieldset_article")
 						label(class="new_command_label",for='command_cost_input') Package cost
-						input#command_cost_input(class="package_item_input", type='text', name='package_cost_input', placeholder='Command cost...', value=package.package_cost) 
+						input#command_cost_input(class="new_command_input_field package_item_input validate-input", type='text', name='package_cost_input', placeholder='Command cost...', value=package.package_cost
+						, data-maxlength='6', pattern="^[0-9]{1,6}$") 
+						span#command_cost_input_feedback
+						span.char_count(data-for="command_cost_input")
 
 			fieldset#edit_command_form_field_buttons.fieldset_for_form_buttons
 					button#save_changes_button(type='submit') Save package changes
 					button#cancel_changes_button(type='button' onclick="history.back()") Go back
-		
-		script(src='/javascripts/commands_form.js')
+	
+	script(src='/javascripts/commands_form.js')
+	script(src='/javascripts/show_submit_modal.js')
+	script(src='/javascripts/validate_form_fields.js')

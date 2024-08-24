@@ -136,8 +136,13 @@ main {
     margin-bottom: 1%;
 }
 
+/* View or edit command page section */
+#command_edit_page {
+    border: 2px dotted red;
+}
+
 /*  Create new bot command section */
-#command_new_page {
+#command_new_page, #command_edit_page {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -151,7 +156,7 @@ main {
     width: 80%;
 }
 
-#new_command_form {
+#new_command_form, #command_editor_form {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -159,7 +164,7 @@ main {
     overflow: visible;
 }
 
-#new_command_section {
+#new_command_section, #edit_command_section {
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -183,14 +188,14 @@ main {
     gap: 5%;
 }
 
-.new_command_data_fieldset {
+.new_command_data_fieldset, .edit_command_fieldset {
     display: flex;
     width: 100%;
     margin-top: 2%;
     height: fit-content;
 }
 
-.new_command_data_fieldset_article {
+.new_command_data_fieldset_article, .edit_command_fieldset_article {
     display: flex;
     flex-direction: column;
     width: 100%;
