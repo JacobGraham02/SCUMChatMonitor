@@ -34,13 +34,21 @@ block content(user)
 					article#add_command_description_container(class="edit_command_fieldset_article")
 						label(class="new_command_label",for='command_description') Package description 
 						textarea#command_description(class="new_command_input_field package_item_input validate-input",type='text',name='package_description_input', 
-						placeholder='Write here...', value=package.package_description, data-maxlength='1000') 
+						placeholder='Write here...', data-maxlength='1000') #{package.package_description}
 						span#command_description_feedback
 						span.char_count(data-for="command_description")
 
 				fieldset#dropdown_menu_for_spawn_item.new_command_data_fieldset 
 					label(class="new_command_label") Add new package items
 					article#add_item_fields_container.new_command_data_fieldset_article
+						// Iterate over the package items and render each one
+						if package.package_items && package.package_items.length > 0
+							each item, index in package.package_items
+								div.individual_add_item_label_and_input
+									label(for='item_input') Package item #{index + 1}
+									input.item_input(class="new_command_input_field", type='text', name='item_input_value[]', value=item, 
+									placeholder='(Required) start typing to begin searching...', maxlength='100' required, data-maxlength='100')
+									button.delete-item-btn(type='button', onclick="this.parentNode.remove();") Delete item
 						div.individual_add_item_label_and_input
 							label(for='item_input') Choose package item
 							input.item_input(class="new_command_input_field",type='text', name='item_input', list='items_list', 

@@ -7,6 +7,7 @@ const addItemButton = document.querySelector('#add_item_button');
 const initial_spawn_item_input = document.querySelector('.item_input');
 const initial_spawn_item_hidden_input = document.querySelector('#hidden_command_id_input');
 const max_character_inputs = document.querySelectorAll(`.new_command_input_field[data-maxlength]`);
+const package_item_inputs = document.querySelectorAll('input.item_input');
 
 function updateCharCounter(event) {
     const input = event.target;
@@ -222,8 +223,6 @@ const scum_items_list = [
     { value: "#SpawnItem Weapon_SDASS", label: "SDASS shotgun" },
     { value: "#SpawnItem Weapon_590A11", label: "TEC01490 shotgun" },
     { value: "#SpawnItem BP_Weapon_DT11B", label: "DT11B shotgun" },
-    { value: "#SpawnItem 12_Gauge_Buckshot_Ammobox", label: "12 gauge buckshot ammobox" },
-    { value: "#SpawnItem 12_Gauge_Slug_Ammobox", label: "12 gauge slug ammobox" },
     { value: "#SpawnItem Magazine_M82A1", label: "M82A1 magazine" },
     { value: "#SpawnItem Weapon_Parts_M82A1", label: "M82A1 weapon parts" },
     { value: "#SpawnItem WeaponSuppressor_M82A1", label: "M82A1 weapon suppressor" },
@@ -232,11 +231,34 @@ const scum_items_list = [
     { value: "#SpawnItem WeaponSuppressor_M82A1_Black", label: "M82A1 black weapon supressor" },
     { value: "#SpawnItem Christmas_Present_M82A1", label: "M82A1 christmas present" },
     { value: "#SpawnItem Cal_7_62x54mmR_Ammobox", label: "7.62x54mmR ammobox" },
+    { value: "#SpawnItem Cal_7_62x54mmR_AP_Ammobox", label: "7.62mmR AP ammobox"},
+    { value: "#SpawnItem Cal_7_62x39mm_Ammobox_TR", label: "7.62mmR tracers ammobox"},
     { value: "#SpawnItem Cal_7_62x39mm_Ammobox", label: "7.62x39mm ammobox" },
-    { value: "#SpawnItem Cal_5_45x39mm_Ammobox", label: "5.45x39mm ammobox" },
-    { value: "#SpawnItem Cal_9x39mm_Ammobox ", label: "9.39x39mm ammobox" },
+    { value: "#SpawnItem Cal_7_62x39mm_AP_Ammobox", label: "7.62x39 AP ammobox"},
+    { value: "#SpawnItem Cal_9x39mm_Ammobox_TR", label: "9x39 tracers ammobox"},
+    { value: "#SpawnItem Cal_9x39mm_AP_Ammobox", label: "9x39 AP ammobox"},
+    { value: "#SpawnItem Cal_5_56x45mm_Ammobox_TR", label: "5.56x45 tracers ammobox"},
+    { value: "#SpawnItem Cal_5_56x45mm_AP_Ammobox", label: "5.56x45 AP ammobox"},
+    { value: "#SpawnItem Cal_9x39mm_AP_Ammobox", label: "9x39 AP ammobox"},
+    { value: "#SpawnItem Cal_9x39mm_Ammobox_TR", label: "9x39 tracers ammobox"},
+    { value: "#SpawnItem Cal_9mm_AP_Ammobox", label: "9mm AP ammobox"},
+    { value: "#SpawnItem Cal_9x39mm_Ammobox_TR", label: "9mm tracer ammobox"},
+    { value: "#SpawnItem Cal_9x39mm_Ammobox", label: "9.39x39mm ammobox" },
     { value: "#SpawnItem Cal_5_56x45mm_Ammobox", label: "5.56x45mm ammobox" },
+    { value: "#SpawnItem 12_Gauge_Buckshot_Ammobox", label: "12 gauge buckshot ammobox" },
+    { value: "#SpawnItem 12_Gauge_Slug_Ammobox", label: "12 gauge slug ammobox" },
     { value: "#SpawnItem Cal_9mm_Ammobox", label: "9mm ammobox" },
+    { value: "#SpawnItem Cal_50_AE_Ammobox_Closed", label: "50 AE ammobox" },
+    { value: "#SpawnItem Cal_22_Ammobox", label: ".22 caliber ammobox"},
+    { value: "#SpawnItem Cal_357_Ammobox_AP", label: "357 caliber AP ammobox"},
+    { value: "#SpawnItem Cal_45_AP_Ammobox", label: "45 ACP AP ammobox"},
+    { value: "#SpawnItem Cal_50BMG_AP_Ammobox", label: "50 BMG AP ammobox"},
+    { value: "#SpawnItem Cal_5_45x39mm_AP_Ammobox", label: "5.45x39mm AP ammobox"},
+    { value: "#SpawnItem Cal_5_56x45mm_AP_Ammobox", label: "5.56x45mm AP ammobox"},
+    { value: "#SpawnItem Cal_7_62x39mm_AP_Ammobox", label: "7.62x39mm AP ammobox"},
+    { value: "#SpawnItem Cal_9x39mm_AP_Ammobox", label: "9x39mm AP ammobox"},
+    { value: "#SpawnItem Cal_30-06_Ammobox_AP", label: "30-06 AP ammobox"},
+    { value: "#SpawnItem Car_Jack", label: "Car jack" },
     { value: "#SpawnItem MP5_Rail_Short", label: "Short MP5 rail" },
     { value: "#SpawnItem Magazine_MP5", label: "MP5 magazine" },
     { value: "#SpawnItem Magazine_M16", label: "M16 magazine" },
@@ -252,7 +274,6 @@ const scum_items_list = [
     { value: "#Spawnitem WeaponSuppressor_Handgun", label: "Pistol suppressor" },
     { value: "#SpawnItem WeaponSights_DEagle_RedDot", label: "Desert eagle red dot sight" },
     { value: "#SpawnItem Weapon_Block21", label: "Block 21 pistol" },
-    { value: "#SpawnItem Cal_50_AE_Ammobox_Closed", label: "50 AE ammobox" },
     { value: "#SpawnItem M1_Clip", label: "M1 Garand clip" },
     { value: "#SpawnItem Magazine_DEagle_50", label: "DEagle 50 magazine" },
     { value: "#SpawnItem Magazine_DEagle_357", label: "DEagle 357 magazine" },
@@ -1028,6 +1049,14 @@ const scum_items_list = [
     { value: "#SpawnVehicle BPC_Rager", label: "Rager pickup truck" },
     { value: "#SpawnVehicle BPC_WheelBarrow_Metal", label: "Metal wheel barrow" },
 ];
+
+package_item_inputs.forEach(input => {
+    const item_input_field = input.value;
+    const matched_item_name = scum_items_list.find(item => item.value === item_input_field.slice(0, -2));
+    if (matched_item_name) {
+        input.value = matched_item_name.label;
+    }
+});
 
 populateDataItemsList(scum_items_list);
 populateOriginalHiddenInputFieldWithValue();
