@@ -137,9 +137,6 @@ main {
 }
 
 /* View or edit command page section */
-#command_edit_page {
-    border: 2px dotted red;
-}
 
 /*  Create new bot command section */
 #command_new_page, #command_edit_page {
