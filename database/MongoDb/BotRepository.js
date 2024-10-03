@@ -437,7 +437,36 @@ export default class BotRepository {
         try {
             const user_collection = database_connection.collection('users');
             const users = await user_collection.find({}).toArray();
-            return users;
+
+                        const updated_users = users
+            // Filter out names that are empty or consist only of whitespace
+            .filter(user => user.user_steam_name && user.user_steam_name.trim() !== '')
+
+            // Sort alphabetically by user_steam_name, moving names starting with special characters or numbers to the end
+            .sort((a, b) => {
+                // Function to check if a name starts with a number or special character
+                const startsWithSpecialOrNumber = str => /^[^a-zA-Z]/.test(str);
+
+                const aStartsWithSpecialOrNumber = startsWithSpecialOrNumber(a.user_steam_name);
+                const bStartsWithSpecialOrNumber = startsWithSpecialOrNumber(b.user_steam_name);
+
+                if (aStartsWithSpecialOrNumber && !bStartsWithSpecialOrNumber) {
+                return 1; // Move 'a' to the end
+                } else if (!aStartsWithSpecialOrNumber && bStartsWithSpecialOrNumber) {
+                return -1; // Move 'b' to the end
+                } else {
+                // Both either start with numbers/special characters or neither do, so sort alphabetically
+                return a.user_steam_name.localeCompare(b.user_steam_name);
+                }
+            })
+
+            // Remove parenthesis and their content in user_steam_name
+            .map(user => ({
+                ...user, // Spread operator to preserve other properties of the user object
+                user_steam_name: user.user_steam_name.replace(/\(\d+\)/g, '').trim() // Remove '(xxx)' and trim whitespace
+            }));
+
+            return updated_users;
         } catch (error) {
             console.error(`Error finding all users: ${error}`);
             throw new Error(`Error finding all users: ${error}`);

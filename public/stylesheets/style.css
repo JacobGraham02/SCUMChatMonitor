@@ -899,15 +899,30 @@ a {
     display: flex;
     flex-direction: column;
     align-items: center;
+    text-align: center;
 }
 
-/* Add this CSS to your stylesheet or within a <style> tag in your Pug template */
 #players_pagination_list_ul, #current_server_players_list {
     list-style-type: none;
-    padding: 0; /* Ensure there is no padding that could interfere with styling */
+    padding: 0;
+}
+
+#players_pagination_list_nav {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    height: fit-content;
+}
+
+#players_pagination_list_ul {
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+    flex-direction: row;
 }
 
 #players_pagination_list_ul li a, #current_server_players_list li a {
+    font-size: 100%;
     text-decoration: none; /* Remove underline from links */
 }
 
@@ -919,7 +934,6 @@ a {
     font-weight: bold;
     display: flex;
     width: 80%;
-    gap: 5%;
     align-items: center;
     flex-direction: column;
     justify-content: center;
@@ -1005,6 +1019,23 @@ a {
             "header main main main main main"
             "header footer footer footer footer footer";
     }
+
+    /* Players on server list page */
+    #players_pagination_list_nav {
+        width: 40%;
+    }
+
+    #players_pagination_list_ul li a, #current_server_players_list li a {
+        font-size: 125%;
+        text-decoration: none; /* Remove underline from links */
+    }
+
+    #current_server_players_list li {
+        margin: 0.5%;
+    }
+
+    /* End of players on server list page */
+    
 
     .ftp_server_data_fieldset, .discord_channel_ids_fieldset, .start_zone_coordinates_fieldset {
         margin-top: 1%;
