@@ -234,6 +234,7 @@ router.get('/players', isLoggedIn, checkBotRepositoryInCache, async (request, re
 
         response.render('admin/serverPlayers', {
             title: 'Players',
+            server_players,
             current_page_players,
             current_page_of_players: current_page_number,
             total_player_files: server_players.length,

@@ -50,6 +50,4 @@ block content(user)
 				for page in page_numbers 
 					li.pagination_page_item(class=current_page_of_commands === page ? 'active': '')
 						a.pagination_page_link(href=`commands?range=${(page-1) * commands_per_page + 1}&${page * commands_per_page}`) Page #{page}
-				
-
 	script(src='/javascripts/admin_index_page.js')
