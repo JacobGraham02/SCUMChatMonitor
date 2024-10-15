@@ -17,6 +17,9 @@ block header
 block content(user)
     main#main_player_details 
         h1 #{user_steam_name_no_parenthesis}
+        -if (user.bot_username) {
+            h3#player_name_with_bot Player name with bot: #{player.user_steam_name}
+        -}
         article#main_player_details_article
             h5 Steam name: #{user_steam_name_no_parenthesis}
             h5 Steam id: #{player.user_steam_id}
