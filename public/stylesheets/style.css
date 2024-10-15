@@ -907,6 +907,12 @@ a {
     padding: 0;
 }
 
+#current_server_players_list {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 #players_pagination_list_nav {
     display: flex;
     justify-content: center;
@@ -921,8 +927,33 @@ a {
     flex-direction: row;
 }
 
+#delete_users_form {
+    display: flex;
+    flex-direction: column; /* Change to column for vertical stacking */
+    justify-content: center;
+    align-items: center; /* Center items horizontally */
+    width: 100%;
+}
+
+#current_user_container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+}
+.current_user_list_item {
+    display: flex;
+    justify-content: space-between;
+    width: 80%;
+}
+
+#delete_toggle_container {
+    display: flex;
+    width: fit-content;
+    margin-left: auto;
+}
+
 #players_pagination_list_ul li a, #current_server_players_list li a {
-    font-size: 100%;
     text-decoration: none; /* Remove underline from links */
 }
 
@@ -933,7 +964,7 @@ a {
 #current_server_players_list_article {
     font-weight: bold;
     display: flex;
-    width: 80%;
+    width: 100%;
     align-items: center;
     flex-direction: column;
     justify-content: center;
@@ -1032,6 +1063,14 @@ a {
 
     #current_server_players_list li {
         margin: 0.5%;
+    }
+
+    #delete_users_form {
+        width: 50%;
+    }
+
+    #current_user_list_item {
+        width: 50%;
     }
 
     /* End of players on server list page */

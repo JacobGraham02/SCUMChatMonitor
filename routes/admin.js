@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { validatePassword } from '../modules/hashAndValidatePassword.js';
 import Logger from '../utils/Logger.js';
 import Cache from '../utils/Cache.js';
-import { body, validationResult } from 'express-validator';
+import { body, check, validationResult } from 'express-validator';
 import BotRepository from '../database/MongoDb/BotRepository.js';
 var router = Router();
 const logger = new Logger();
@@ -240,6 +240,10 @@ router.get('/players', isLoggedIn, checkBotRepositoryInCache, async (request, re
             total_player_files: server_players.length,
             page_numbers,
             user: request.user,
+            submit_modal_title: `Delete player from bot`,
+            submit_modal_description: `Are you sure you want to delete this player from the bot`,
+            cancel_modal_title: `Go to previous page?`,
+            cancel_modal_description: `Are you sure you want to go back to the previous page?`,
             currentPage: '/admin/serverPlayers'
         });
     } else {
@@ -502,6 +506,36 @@ router.post('/setftpserverdata', isLoggedIn, checkBotRepositoryInCache,
     }
 });
 
+router.post("/deleteusers", isLoggedIn, checkBotRepositoryInCache, async function(request, response) {
+    /**
+     * user_steam_ids_to_delete will be an array of steam ids
+     */
+    let user_steam_ids_to_delete = request.body.user_ids_checkbox;
+    const botRepository = request.user.bot_repository;
+
+    if (!Array.isArray(user_steam_ids_to_delete)) {
+        user_steam_ids_to_delete = [user_steam_ids_to_delete];
+    }
+
+    let user_count_deleted = 0;
+
+    if (!(user_steam_ids_to_delete)) {
+        response.redirect('/admin/players');
+    };
+
+    try {
+        for (let i = 0; i < user_steam_ids_to_delete.length; i++) {
+            let user_deleted = await botRepository.deleteUser(steam_id);
+
+            if (user_deleted) {
+                user_count_deleted++;
+            }
+        }
+        response.redirect('/admin/players');
+    } catch (error) {
+        response.redirect('/admin/players');
+    }
+});
 
 router.post('/setspawncoordinates', isLoggedIn, checkBotRepositoryInCache,   
     body('x_coordinate_data_input')

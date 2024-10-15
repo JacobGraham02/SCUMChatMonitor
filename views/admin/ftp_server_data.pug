@@ -25,7 +25,7 @@ block content(user)
         h2#ftp_server_data_edit_page_heading(class="text-center") FTP server data
         article#article_for_ftp_data_page_disclaimer(class="text-center") On this page, you must specify the FTP server details for your server provider
 
-        form#ftp_server_data_form(method="POST", action="/admin/setftpserverdata" class="needs-validation bot_data_form")
+        form#ftp_server_data_form(class="bot_data_form" method="POST", action="/admin/setftpserverdata" class="needs-validation bot_data_form")
             section#new_ftp_server_data_section
                 fieldset#ftp_server_hostname_fieldset.ftp_server_data_fieldset
                     article#ftp_server_hostname_article(class='article_for_ftp_server_data')
