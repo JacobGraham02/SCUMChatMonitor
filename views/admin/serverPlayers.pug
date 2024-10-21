@@ -18,10 +18,10 @@ block header
         +menu(user, currentPage)
         +smallModal(submit_modal_title, submit_modal_description)
         +cancelModal(cancel_modal_title, cancel_modal_description)
-        //- if show_submit_modal
-        //-     +successModal(alert_title, alert_description)
-        //- if show_error_modal
-        //-     +errorModal(alert_title, alert_description) 
+        if show_submit_modal
+            +successModal(alert_title, alert_description, deleted_users)
+        if show_error_modal
+            +errorModal(alert_title, alert_description)
 block content(user)
     main#server_players_main 
         h1#current_server_players_heading Players
@@ -43,21 +43,22 @@ block content(user)
                                 div#delete_toggle_container
                                     div#current_user_delete_toggle
                                         input(type="checkbox" name="user_ids_checkbox" value=`${current_page_players[i].user_steam_id}`)
+                                        input(type="hidden" name="user_names_hidden_input" value=`${current_page_players[i].user_steam_name}`)
                     - }
                 button#save_changes_button(type="submit" disabled) Delete selected users
                 button#cancel_changes_button(class="" type='button') Go back to the previous page
 
         nav#players_pagination_list_nav
             ul#players_pagination_list_ul
-                li#players_pagination_list_item(class=current_page_of_players === page ? 'active' : '')
-                    a#players_pagination_list_link(href=`players?range=${`1&${players_per_page}`}`) First page
+                li.players_pagination_list_item(class=current_page_of_players === page ? 'active' : '')
+                    a.players_pagination_list_link(href=`players?range=${`1&${players_per_page}`}`) First page
 
                 for page in page_numbers
                     li#players_pagination_list_item(class=current_page_of_players === page ? 'active' : '')
                         a#players_pagination_list_link(href=`players?range=${(page - 1) * players_per_page + 1}&${page * players_per_page}`) Page #{page}
 
-                li#players_pagination_list_item(class=current_page_of_players === page ? 'active' : '')
-                    a#players_pagination_list_link(href=`players?range=${(total_number_of_pages - 1) * players_per_page + 1}&${total_player_files}`) Last page
+                li.players_pagination_list_item(class=current_page_of_players === page ? 'active' : '')
+                    a.players_pagination_list_link(href=`players?range=${(total_number_of_pages - 1) * players_per_page + 1}&${total_player_files}`) Last page
     script(src="/javascripts/sort_players.js")
     script(src="/javascripts/delete_mode.js")
     script(src="/javascripts/show_submit_modal.js")

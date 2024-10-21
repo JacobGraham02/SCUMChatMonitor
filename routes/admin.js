@@ -196,17 +196,19 @@ router.get(['/commands'], isLoggedIn, checkBotRepositoryInCache, async (request,
 router.get('/players', isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
     let server_players = undefined;
     const botRepository = request.user.bot_repository;
+    const players_deleted_count = request.query.deleted;
+    const operation_success = request.query.success;
 
     try {
         server_players = await botRepository.findAllUsers();
     } catch (error) {
         console.error(`There was an internal service error when attempting to read all the player data from MongoDB: ${error}`);
-        response.status(500).json({ error: `There was an internal service error when attempting to read all the player data from MongoDB: ${error}` });
+        response.status(500).json({error: `There was an internal service error when attempting to read all the player data from MongoDB: ${error}`});
         return;
     }
 
     if (server_players) {
-        const players_per_page = 10; 
+        const players_per_page = 10;
 
         const range = request.query.range || '1&10';
 
@@ -227,31 +229,70 @@ router.get('/players', isLoggedIn, checkBotRepositoryInCache, async (request, re
         start_page = Math.max(1, end_page - visible_players_per_page + 1);
 
         // Generate the list of page numbers to be displayed in the pagination
-        const page_numbers = Array.from({ length: (end_page - start_page) + 1 }, (_, i) => i + start_page);
-        
+        const page_numbers = Array.from({length: (end_page - start_page) + 1}, (_, i) => i + start_page);
+
         // Slice the players array to only include the players for the current page
         const current_page_players = server_players.slice(start_range_number - 1, end_range_number);
 
-        response.render('admin/serverPlayers', {
-            title: 'Players',
-            server_players,
-            current_page_players,
-            current_page_of_players: current_page_number,
-            total_player_files: server_players.length,
-            page_numbers,
-            user: request.user,
-            submit_modal_title: `Delete player from bot`,
-            submit_modal_description: `Are you sure you want to delete this player from the bot`,
-            cancel_modal_title: `Go to previous page?`,
-            cancel_modal_description: `Are you sure you want to go back to the previous page?`,
-            currentPage: '/admin/serverPlayers'
-        });
-    } else {
-        response.render('admin/serverPlayers', {
-            title: 'Players',
-            user: request.user,
-            currentPage: '/admin/serverPlayers'
-        });
+        if (typeof operation_success === 'undefined') {
+            response.render('admin/serverPlayers', {
+                title: 'Players',
+                user: request.user,
+                currentPage: '/admin/serverPlayers',
+                server_players,
+                current_page_players,
+                current_page_of_players: current_page_number,
+                total_player_files: server_players.length,
+                page_numbers,
+                submit_modal_title: `Delete player from bot`,
+                submit_modal_description: `Are you sure you want to delete this player from the bot`,
+                cancel_modal_title: `Go to previous page?`,
+                cancel_modal_description: `Are you sure you want to go back to the previous page?`,
+            });
+        }
+
+        // Second case: if operation_success is true, show success modal
+        else if (operation_success === 'true') {
+            response.render('admin/serverPlayers', {
+                title: 'Players',
+                server_players,
+                current_page_players,
+                current_page_of_players: current_page_number,
+                total_player_files: server_players.length,
+                page_numbers,
+                user: request.user,
+                submit_modal_title: `Delete player from bot`,
+                submit_modal_description: `Are you sure you want to delete this player from the bot`,
+                cancel_modal_title: `Go to previous page?`,
+                cancel_modal_description: `Are you sure you want to go back to the previous page?`,
+                currentPage: '/admin/serverPlayers',
+                show_submit_modal: true,
+                alert_title: `Success`,
+                alert_description: `Successfully deleted ${players_deleted_count} players`
+            });
+        }
+
+        // Third case: if operation_success is false, show error modal
+        else if (operation_success === 'false') {
+            console.log(operation_success);
+            response.render('admin/serverPlayers', {
+                title: 'Players',
+                server_players,
+                current_page_players,
+                current_page_of_players: current_page_number,
+                total_player_files: server_players.length,
+                page_numbers,
+                user: request.user,
+                submit_modal_title: `Delete player from bot`,
+                submit_modal_description: `Are you sure you want to delete this player from the bot`,
+                cancel_modal_title: `Go to previous page?`,
+                cancel_modal_description: `Are you sure you want to go back to the previous page?`,
+                show_error_modal: true,
+                alert_title: `Failure`,
+                alert_description: `There was an error when attempting to delete the players(s). Please try again`,
+                currentPage: '/admin/serverPlayers'
+            });
+        }
     }
 });
 
@@ -510,8 +551,13 @@ router.post("/deleteusers", isLoggedIn, checkBotRepositoryInCache, async functio
     /**
      * user_steam_ids_to_delete will be an array of steam ids
      */
+    let operation_success = true;
     let user_steam_ids_to_delete = request.body.user_ids_checkbox;
     const botRepository = request.user.bot_repository;
+
+    if (!(user_steam_ids_to_delete)) {
+        response.redirect('/admin/players');
+    }
 
     if (!Array.isArray(user_steam_ids_to_delete)) {
         user_steam_ids_to_delete = [user_steam_ids_to_delete];
@@ -519,21 +565,19 @@ router.post("/deleteusers", isLoggedIn, checkBotRepositoryInCache, async functio
 
     let user_count_deleted = 0;
 
-    if (!(user_steam_ids_to_delete)) {
-        response.redirect('/admin/players');
-    };
-
     try {
         for (let i = 0; i < user_steam_ids_to_delete.length; i++) {
-            let user_deleted = await botRepository.deleteUser(steam_id);
+            let user_deleted = await botRepository.deleteUser(user_steam_ids_to_delete[i]);
 
             if (user_deleted) {
                 user_count_deleted++;
+            } else {
+                operation_success = false;
             }
         }
-        response.redirect('/admin/players');
+        response.redirect(`/admin/players?deleted=${user_count_deleted}&success=${operation_success}`);
     } catch (error) {
-        response.redirect('/admin/players');
+        response.redirect('/admin/players?deleted=0&success=false');
     }
 });
 
@@ -754,9 +798,20 @@ router.post('/botcommand/new', isLoggedIn, checkBotRepositoryInCache,
 
     try {
         await botRepository.createBotItemPackage(new_bot_package);
-        response.render('admin/new_command', { user: request.user, page_title:`Create new command`, alert_title: `Successfuly created new package`, alert_description: `You have successfully created a new item package and registered it with your bot`, show_submit_modal: true });
+        response.render('admin/new_command', {
+            user: request.user,
+            page_title:`Create new command`, alert_title: `Successfuly created new package`,
+            alert_description: `You have successfully created a new item package and registered it with your bot`,
+            show_submit_modal: true
+        });
     } catch (error) {
-        response.render('admin/new_command', { user: request.user, page_title:`Error`, alert_title: `Error creating new package`, alert_description: `Please try submitting this form again or contact the server administrator if you believe this is an error: ${error}`, show_error_modal: true});
+        response.render('admin/new_command', {
+            user: request.user,
+            page_title:`Error`,
+            alert_title: `Error creating new package`,
+            alert_description: `Please try submitting this form again or contact the server administrator if you believe this is an error: ${error}`,
+            show_error_modal: true
+        });
     }
 });
 
