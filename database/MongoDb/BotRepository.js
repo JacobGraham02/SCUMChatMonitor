@@ -197,15 +197,28 @@ export default class BotRepository {
         };
 
         try {
-            const bot_collection = database_connection.collection('bot');
+            const bot_collection = database_connection.collection('bot_teleport_commands');
             await bot_collection.updateOne(
                 { name: bot_teleport_command.name },
                 { $set: new_bot_teleport_command },
                 { upsert: true }
             );
-            // await bot_collection.insertOne(new_bot_teleport_command, {upsert: true});
         } catch (error) {
             throw new Error(`There was an error when attempting to create a new bot teleport command: ${error}`);
+        } finally {
+            await this.releaseConnectionSafely(database_connection);
+        }
+    }
+
+    async getAllBotTeleportCommands() {
+        const database_connection = await this.database_connection_manager.getConnection();
+
+        try {
+            const bot_teleport_collection = database_connection.collection("bot_teleport_commands");
+            const bot_teleport_commands = await bot_teleport_collection.find().toArray();
+            return bot_teleport_commands;
+        } catch (error) {
+            throw new Error(`There was an error when attempting to retrieve all of the bot teleport commands. Please inform the server administrator of this error: ${error}`);
         } finally {
             await this.releaseConnectionSafely(database_connection);
         }

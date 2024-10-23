@@ -26,6 +26,10 @@ mixin menu(user, currentPage)
             title='A link to go to the site commands page'
             class=(currentPage === '/admin/command_list' ? 'active' : '')) Bot commands
         li
+            a(href='/admin/teleportcommands'
+            title=`A link to view all of the players registered with your SCUM server bot`
+            class=(currentPage === '/admin/teleport_command_list' ? 'active' : '')) Teleport commands
+        li
             a(href='/admin/players'
             title=`A link to view all of the players registered with your SCUM server bot`
             class=(currentPage === '/admin/serverPlayers' ? 'active' : '')) Players
