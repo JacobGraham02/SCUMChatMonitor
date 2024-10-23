@@ -12,14 +12,26 @@ mixin menu(user, currentPage)
             img#menu_links_image(src='../../images/WilsonBotMenu.png', alt='The WilsonBot logo')
         h4.user_administrator_name_heading Welcome, #{user.bot_username}
 
+        li.menu-divider
+            span.menu-divider-text Home
         li
             a(href='/admin/'
             title='A link to go to the site home page'
             class=(currentPage === '/admin/' ? 'active' : '')) Home
+
+        li.menu-divider
+            span.menu-divider-text Bot data
         li
-          a(href='/admin/commands'
-          title='A link to go to the site commands page'
-          class=(currentPage === '/admin/command_list' ? 'active' : '')) Bot commands
+            a(href='/admin/commands'
+            title='A link to go to the site commands page'
+            class=(currentPage === '/admin/command_list' ? 'active' : '')) Bot commands
+        li
+            a(href='/admin/players'
+            title=`A link to view all of the players registered with your SCUM server bot`
+            class=(currentPage === '/admin/serverPlayers' ? 'active' : '')) Players
+
+        li.menu-divider
+            span.menu-divider-text Application data
         li
           a(href='/admin/discordchannelids'
           title='A link to go to the Discord channel ids page that the bot will post content into'
@@ -39,10 +51,6 @@ mixin menu(user, currentPage)
     -} else {
         h1.user_administrator_name_heading Welcome, anonymous!
     -}
-    li 
-      a(href='/admin/players'
-      title=`A link to view all of the players registered with your SCUM server bot`
-      class=(currentPage === '/admin/serverPlayers' ? 'active' : '')) Players
     li 
      div#logout_button_container
       form#global_site_navigation_logout_form(action='/logout' method='POST')

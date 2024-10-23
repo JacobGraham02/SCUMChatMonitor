@@ -396,13 +396,41 @@ main {
 .header .menu-btn:hover {
     background-color: #f4f4f4;
 }
-/* menu */
+/* Beginning of menu section */
 .header .menu {
     clear: both;
     max-height: 0;
     transition: max-height .2s ease-in-out;
     -webkit-transition: max-height .2s ease-in-out;
 }
+
+.menu-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.menu-divider-text {
+    position: relative;
+    z-index: 1000;
+}
+
+.menu-divider:before {
+    content: '';
+    flex-grow: 1;
+    height: 1px;
+    background-color: #ccc; /* Color of the line */
+    margin-right: 5px;
+}
+
+.menu-divider:after {
+    content: '';
+    flex-grow: 1;
+    height: 1px;
+    background-color: #ccc; /* Color of the line */
+    margin-left: 5px;
+}
+
 /* menu icon */
 .header .menu-icon {
     cursor: pointer;
@@ -492,6 +520,8 @@ header * {
     padding: 0;
     margin: 0;
 }
+
+/* Ending of menu section */
 
 fieldset {
     border: 0;
@@ -1190,15 +1220,14 @@ a {
         padding: 0;
     }
 
+    /* Beginning of header menu */
     #header {
         border-right: 1px solid #dcdcdc;
     }
 
     .header .menu {
-        font-size: 60%;
         width: 100%;
         height: 100%;
-        font-size: 100%;
         clear: none;
         max-height: 100vh;
         /* Transform the list to top of side section */
@@ -1241,10 +1270,10 @@ a {
         width: 100%;
         height: 100%;
     }
-
     .menu {
         display: flex;
         height: 100%;
+        gap: 2%;
         flex-direction: column;
         align-items: center;
         text-align: center;
@@ -1256,6 +1285,8 @@ a {
         justify-content: center;
         height: 100%;
     }
+
+    /* Ending of header menu */
 
     #bot_command_list {
         width: 60%;
