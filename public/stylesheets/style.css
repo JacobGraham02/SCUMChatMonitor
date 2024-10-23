@@ -986,20 +986,20 @@ a {
 
 #players_page_button_container {
     width: fit-content;
-    border: 2px dotted purple;
     display: flex;
     justify-content: space-evenly;
     margin: 3%;
 }
 
 #players_page_button_container button {
+    font-size: 75%;
     width: fit-content;
     height: fit-content;
 }
 
 /* General styling for site modals */
 .modal {
-    font-size: 150%;
+    font-size: 100%;
 }
 
 
@@ -1099,8 +1099,17 @@ a {
         margin: 1%;
     }
 
+    #players_page_button_container button {
+        font-size: 100%;
+    }
+
     /* End of players on server list page */
-    
+
+    /* General styling for site modals */
+    .modal {
+        font-size: 125%;
+    }
+
 
     .ftp_server_data_fieldset, .discord_channel_ids_fieldset, .start_zone_coordinates_fieldset {
         margin-top: 1%;
