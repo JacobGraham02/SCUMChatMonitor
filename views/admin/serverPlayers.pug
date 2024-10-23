@@ -45,8 +45,9 @@ block content(user)
                                         input(type="checkbox" name="user_ids_checkbox" value=`${current_page_players[i].user_steam_id}`)
                                         input(type="hidden" name="user_names_hidden_input" value=`${current_page_players[i].user_steam_name}`)
                     - }
-                button#save_changes_button(type="submit" disabled) Delete selected users
-                button#cancel_changes_button(class="" type='button') Go back to the previous page
+                article#players_page_button_container
+                    button#save_changes_button(type="submit" disabled) Delete selected users
+                    button#cancel_changes_button(type='button') Go back to the previous page
 
         nav#players_pagination_list_nav
             ul#players_pagination_list_ul

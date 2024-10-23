@@ -245,8 +245,9 @@ router.get('/players', isLoggedIn, checkBotRepositoryInCache, async (request, re
                 total_player_files: server_players.length,
                 page_numbers,
                 submit_modal_title: `Delete player from bot`,
-                submit_modal_description: `Are you sure you want to delete this player from the bot`,
-                cancel_modal_title: `Go to previous page?`,
+                submit_modal_description: `Are you sure you want to delete the selected player(s)? If they are deleted, they will no longer be able to 
+                communicate with the bot because they are no longer going to be registered`,
+                cancel_modal_title: `Go to previous page`,
                 cancel_modal_description: `Are you sure you want to go back to the previous page?`,
             });
         }
@@ -262,12 +263,13 @@ router.get('/players', isLoggedIn, checkBotRepositoryInCache, async (request, re
                 page_numbers,
                 user: request.user,
                 submit_modal_title: `Delete player from bot`,
-                submit_modal_description: `Are you sure you want to delete this player from the bot`,
+                submit_modal_description: `Are you sure you want to delete the selected player(s)? If they are deleted, they will no longer be able to 
+                communicate with the bot because they are no longer going to be registered`,
                 cancel_modal_title: `Go to previous page?`,
                 cancel_modal_description: `Are you sure you want to go back to the previous page?`,
                 currentPage: '/admin/serverPlayers',
                 show_submit_modal: true,
-                alert_title: `Success`,
+                alert_title: `Deletion success`,
                 alert_description: `Successfully deleted ${players_deleted_count} players`
             });
         }
@@ -284,12 +286,13 @@ router.get('/players', isLoggedIn, checkBotRepositoryInCache, async (request, re
                 page_numbers,
                 user: request.user,
                 submit_modal_title: `Delete player from bot`,
-                submit_modal_description: `Are you sure you want to delete this player from the bot`,
+                submit_modal_description: `Are you sure you want to delete the selected player(s)? If they are deleted, they will no longer be able to 
+                communicate with the bot because they are no longer going to be registered`,
                 cancel_modal_title: `Go to previous page?`,
                 cancel_modal_description: `Are you sure you want to go back to the previous page?`,
                 show_error_modal: true,
-                alert_title: `Failure`,
-                alert_description: `There was an error when attempting to delete the players(s). Please try again`,
+                alert_title: `Deletion failure`,
+                alert_description: `There was an error when attempting to delete the selected players(s). Please try again`,
                 currentPage: '/admin/serverPlayers'
             });
         }
@@ -800,7 +803,8 @@ router.post('/botcommand/new', isLoggedIn, checkBotRepositoryInCache,
         await botRepository.createBotItemPackage(new_bot_package);
         response.render('admin/new_command', {
             user: request.user,
-            page_title:`Create new command`, alert_title: `Successfuly created new package`,
+            page_title:`Create new command`,
+            alert_title: `Successfully created new package`,
             alert_description: `You have successfully created a new item package and registered it with your bot`,
             show_submit_modal: true
         });

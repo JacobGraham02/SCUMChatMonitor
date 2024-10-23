@@ -975,11 +975,33 @@ a {
     display: flex;
     width: 100%;
     height: fit-content;
-    gap: 10px;
     flex-direction: column;
     justify-content: center;
     align-items: center;
 }
+
+#current_server_players_list li {
+    margin: 3%;
+}
+
+#players_page_button_container {
+    width: fit-content;
+    border: 2px dotted purple;
+    display: flex;
+    justify-content: space-evenly;
+    margin: 3%;
+}
+
+#players_page_button_container button {
+    width: fit-content;
+    height: fit-content;
+}
+
+/* General styling for site modals */
+.modal {
+    font-size: 150%;
+}
+
 
 /* View player details page CSS */
 #main_player_details {
@@ -1061,16 +1083,20 @@ a {
         text-decoration: none; /* Remove underline from links */
     }
 
-    #current_server_players_list li {
-        margin: 0.5%;
-    }
-
     #delete_users_form {
         width: 50%;
     }
 
     #current_user_list_item {
         width: 50%;
+    }
+
+    #players_page_button_container {
+        width: 100%;
+    }
+
+    #current_server_players_list li {
+        margin: 1%;
     }
 
     /* End of players on server list page */

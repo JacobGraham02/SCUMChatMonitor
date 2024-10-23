@@ -1553,7 +1553,7 @@ client_instance.on('guildCreate', async (guild) => {
     cache.set(`guild_${guild_id}`, guild_id);
 
     try {
-        const bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
+        let bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
         if (!bot_repository_instance) {
             cache.set(`bot_repository_${guild_id}`, new BotRepository(guild_id));
             bot_repository_instance = cache.get(`bot_repository_${guild_id}`);

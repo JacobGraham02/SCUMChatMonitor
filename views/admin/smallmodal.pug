@@ -7,7 +7,7 @@ mixin smallModal(modalTitle, modalContent)
                     button.close(type="button", data-dismiss="modal", aria-label="Close")
                         span(aria-hidden="true") &times;
                 div.modal-body
-                    pre#submitModalContent= modalContent
+                    pre.text-wrap#submitModalContent= modalContent
                 div.modal-footer
                     a.btn.btn-primary#submitButton(href="#") Submit
                     button.btn.btn-secondary(type="button", data-dismiss="modal") Cancel

@@ -8,6 +8,6 @@ mixin errorModal(modalTitle, modalContent)
                     button.close(type="button", data-dismiss="modal", aria-label="Close")
                         span(aria-hidden="true") &times;
                 div.modal-body
-                    p!= modalContent
+                    p.text-wrap!= modalContent
                 div.modal-footer
                     button.btn.btn-secondary(type="button", data-dismiss="modal") Close
