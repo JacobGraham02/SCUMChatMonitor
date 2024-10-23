@@ -11,20 +11,6 @@ export default class BotRepository {
         this.database_connection_manager = new DatabaseConnectionManager(this.database_name);
     }
 
-    async findBotByUUID(bot_uuid) {
-        const database_connection = await this.database_connection_manager.getConnection();
-        try {
-            const bot_collection = database_connection.collection('bot');
-            const bot = await bot_collection.findOne({ bot_uuid: bot_uuid });
-            return bot;
-        } catch (error) {
-            console.error(`There was an error when attempting to fetch all bot data given a UUID. Please inform the server administrator of this error: ${error}`);
-            throw new Error(`There was an error when attempting to fetch all bot data given a UUID. Please inform the server administrator of this error: ${error}`);
-        } finally {
-            await this.releaseConnectionSafely(database_connection);
-        }
-    }
-
     async createBot(bot_information) {
         const database_connection = await this.database_connection_manager.getConnection();
         const new_bot_document = {
@@ -198,7 +184,45 @@ export default class BotRepository {
             await this.releaseConnectionSafely(database_connection);
         }
     }
-    
+
+    async createBotTeleportCommand(bot_teleport_command) {
+        const database_connection = await this.database_connection_manager.getConnection();
+
+        const new_bot_teleport_command = {
+            name: bot_teleport_command.name,
+            x_coordinate: bot_teleport_command.x_coordinate,
+            y_coordinate: bot_teleport_command.y_coordinate,
+            z_coordinate: bot_teleport_command.z_coordinate,
+            cost: bot_teleport_command.cost
+        };
+
+        try {
+            const bot_collection = database_connection.collection('bot');
+            await bot_collection.updateOne(
+                { name: bot_teleport_command.name },
+                { $set: new_bot_teleport_command },
+                { upsert: true }
+            );
+            // await bot_collection.insertOne(new_bot_teleport_command, {upsert: true});
+        } catch (error) {
+            throw new Error(`There was an error when attempting to create a new bot teleport command: ${error}`);
+        } finally {
+            await this.releaseConnectionSafely(database_connection);
+        }
+    }
+
+    async deleteBotTeleportCommand(bot_teleport_command_name) {
+        const database_connection = await this.database_connection_manager.getConnection();
+
+        try {
+            const deletion_result = await database_connection.collection('bot_teleport_commands').deleteOne({ name: bot_teleport_command_name });
+            return deletion_result;
+        } catch (error) {
+            throw new Error(`There was an error when attempting to delete this bot teleport command: ${error}`);
+        } finally {
+            await this.releaseConnectionSafely(database_connection);
+        }
+    }
 
     async getBotItemPackagesData() {
         const database_connection = await this.database_connection_manager.getConnection();
