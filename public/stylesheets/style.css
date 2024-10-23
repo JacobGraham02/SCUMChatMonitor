@@ -994,8 +994,21 @@ a {
     height: fit-content;
 }
 
+#website_help_icon {
+    display: block;
+    top: 20px;          /* Adjust vertical alignment */
+    z-index: 1000;      /* Ensure it stays above other content */
+}
+
+#website_help_icon a {
+    display: block;
+    padding: 10px;
+}
+/* End of players page */
+
 /* General styling for site modals */
 .modal {
+    font-family: "Times New Roman", Times, serif;
     font-size: 100%;
 }
 
@@ -1028,7 +1041,6 @@ a {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.7); /* Dark background with transparency */
-    display: flex;
     justify-content: center;
     align-items: center;
     z-index: 9999;
@@ -1098,6 +1110,19 @@ a {
 
     #players_page_button_container button {
         font-size: 100%;
+    }
+
+    #website_help_icon {
+        display: block;
+        position: fixed; /* Ensure the icon stays at the far left */
+        top: 20px;          /* Adjust vertical alignment */
+        z-index: 1000;      /* Ensure it stays above other content */
+        left: calc(100% - 75%);
+    }
+
+    #website_help_icon a {
+        display: inherit;
+        padding: 10px;
     }
 
     /* End of players on server list page */
