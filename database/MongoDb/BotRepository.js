@@ -224,6 +224,20 @@ export default class BotRepository {
         }
     }
 
+    async getBotTeleportCommandFromName(name) {
+        const database_connection = await this.database_connection_manager.getConnection();
+
+        try {
+            const teleport_command_collection = database_connection.collection('bot_teleport_commands');
+            const teleport_command_data = await teleport_command_collection.findOne({ name: name });
+            return teleport_command_data;
+        } catch (error) {
+            throw new Error(`There was an error when attempting to retrieve the bot teleport command by name. Please inform the server administrator of the following error: ${error}`);
+        } finally {
+            await this.releaseConnectionSafely(database_connection);
+        }
+    }
+
     async deleteBotTeleportCommand(bot_teleport_command_name) {
         const database_connection = await this.database_connection_manager.getConnection();
 

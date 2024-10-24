@@ -114,6 +114,18 @@ router.get('/command/:commandname', isLoggedIn, checkBotRepositoryInCache, async
     }
 });
 
+router.get('/teleportcommand/:commandname', isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
+    const teleport_command_name = request.params.commandname;
+    const botRepository = request.user.bot_repository;
+
+    try {
+        const teleport_command_data = await botRepository.getBotTeleportCommandFromName(teleport_command_name);
+        response.render('admin/teleportcommand', { user: request.user, command: teleport_command_data, title: `${teleport_command_name}` });
+    } catch (error) {
+        response.render('admin/teleportcommand', { user:request.user, title: `${teleport_command_name}`});
+    }
+});
+
 
 router.get(['/login-success', '/'], isLoggedIn, function(request, response) {
     try {
