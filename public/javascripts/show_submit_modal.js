@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const cancelModalConfirmButton = document.getElementById("confirmCancelButton");
 
     submitButton.addEventListener('click', function(event) {
-        event.preventDefault(); 
+        event.preventDefault();
         modal.modal('show'); // Show the modal
     });
 
@@ -16,10 +16,9 @@ document.addEventListener("DOMContentLoaded", function() {
         form.submit(); // Submit the form
     });
 
-    cancelButton.addEventListener('click', function(event) {
-        event.preventDefault();
-        cancelModal.modal('show');
-    });
+    // cancelButton.addEventListener('click', function(event) {
+    //     cancelModal.modal('show');
+    // });
 
     cancelModalConfirmButton.addEventListener('click', function() {
         window.history.back();

@@ -2,19 +2,32 @@ extends layout
 
 block variables
     - var page_title= title
+    - let page_instructions = "<p>On this page, you can select the new player spawn location coordinates for your bot to use. Any new player that joins your game server will be teleported to these coordinates</p>"
+    - page_instructions += "<p>Below is everything you must do on this page:<br><br></p>"
+    - page_instructions += "<ol>"
+    - page_instructions += "<li>1. Initially, when the page first loads, you will be presented with an online SCUM interactive map. From here, you must click on the 'Copy TP Location' heading in the left-hand sidebar in the interactive menu window. This tool is pictured as a scope icon, or an icon that indicates you are looking through the scope of a firearm. When you click on this heading or icon, an indicator will pop up informing you to select a location on the map to copy to your computer's clipboard</li>"
+    - page_instructions += "<li>2. Next, select any location on the interactive map by either left-clicking with your mouse or pressing with your finger. An indicator will pop up on the right-hand side of the screen informing you that a teleport location has been copied to your clipboard. This dialog box will be green</li>"
+    - page_instructions += "<li>3. Finally, with this text copied to your clipboard, click on the <strong>Show form</strong> button that is listed on the top of the page, and paste the text into the input field that is labelled <strong>Paste your clipboard text below</strong></li>"
+    - page_instructions += "<li>4. You can select the <strong>Show map</strong> button at any time to restore the map</li>"
+    - page_instructions += "</ol>"
 
 include menu
 include smallModal
 include cancelModal
 include successModal
 include errorModal
+include infoModal
 
 block header
     header#header.header
         +menu(user, currentPage)
+        +infoModal("Help", page_instructions)
 
 block content(user)
-    main#coordinate_data_edit_page    
+    main#coordinate_data_edit_page
+        div#website_help_icon
+            a(href="#" data-toggle='modal', data-target='#infoModal', class='ml-2')
+                i.fa.fa-question-circle(aria-hidden="true")
         +smallModal(submit_modal_title, submit_modal_description)
         +cancelModal(cancel_modal_title, cancel_modal_description)
         if show_submit_modal
@@ -25,11 +38,6 @@ block content(user)
         button#toggle_map_view_button(type='button') Show map
         button#toggle_form_view_button(type='button') Show form
         section#iframe_instructions_section
-            article#article_for_coordinate_data_page_disclaimer(class="text-center")
-                | On this page, you must specify the spawn zone XYZ coordinates. Using the map below, follow this list of instructions:     
-                |   1. Click on 'Copy TP Location' on the left side of the screen. An indicator should pop up informing you to select a location to copy to clipboard.
-                |   2. Next, select anywhere on the map window until you see a green confirmation dialog which tells you 'Teleport location copied to the clipboard'
-                |   3. Finally, with this text copied, click the 'Show form' button, and paste the text into the 'Paste your clipboard text below' input field.
         iframe#map_selection_tool(src="https://scum-map.com/en/interactive_map") 
 
         form#coordinate_data_form(method="POST", action="/admin/setspawncoordinates" class="needs-validation bot_data_form")

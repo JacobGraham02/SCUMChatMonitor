@@ -3,19 +3,30 @@ extends layout
 
 block variables
 	- var page_title= title
+	- let page_instructions = "<p>On this page, you set the IPv4 address and port number of your SCUM server. This will allow you to view status about your game server through Discord</p>"
+	- page_instructions += "<p>Below is everything you must do on this page:<br><br></p>"
+	- page_instructions += "<ol>"
+	- page_instructions += "<li>1. <strong>IPv4 address</strong> The IP address of your SCUM game server (must be in IPv4 format). An IPv4 address is of the following format: x.x.x.x, where x is between 0 and 255. For example, a valid IPv4 address is <strong>192.168.0.1</strong></li>"
+	- page_instructions += "<li>2. <strong>Port number</strong> A valid port number is any number between 1024 and 65535 (e.g., <strong>12256</strong></li>"
+	- page_instructions += "</ol>"
 
 include menu
 include smallModal
 include cancelModal
 include successModal
 include errorModal
+include infoModal
 
 block header
 	header#header.header
 		+menu(user, currentPage)
+		+infoModal("Help", page_instructions)
 
 block content(user)
 	main#game_server_data_edit_page
+		div#website_help_icon
+			a(href="#" data-toggle='modal', data-target='#infoModal', class='ml-2')
+				i.fa.fa-question-circle(aria-hidden="true")
 		+smallModal(submit_modal_title, submit_modal_description)
 		+cancelModal(cancel_modal_title, cancel_modal_description)
 		if show_submit_modal 
@@ -29,7 +40,7 @@ block content(user)
 		form#game_server_data_form(method='POST', action='/admin/setgameserverdata/' class="needs-validation bot_data_form")
 			fieldset#game_server_hostname_fieldset.game_server_fieldset
 				article#game_server_hostname_article(class='article_for_game_server_data')
-					label(class='game_server_data_label', for='game_server_hostname_input') Game server IP address (Must be an IPv4 address of the format: x.x.x.x where x is between 0 and 255)
+					label(class='game_server_data_label', for='game_server_hostname_input') <strong>IPv4 address</strong>
 					input.validate-input#game_server_hostname_input(
 						class="game_server_data_input", 
 						type="text", 
@@ -43,7 +54,7 @@ block content(user)
 
 			fieldset#game_server_port_fieldset.game_server_fieldset
 				article#game_server_port_article(class='article_for_game_server_data')
-					label(class='game_server_data_label', for='game_server_port_input') (Port number will be between 1024 and 65535)
+					label(class='game_server_data_label', for='game_server_port_input') <strong>Port number</strong>
 					input.validate-input#game_server_port_input(
 						class="game_server_data_input", 
 						type="text", 

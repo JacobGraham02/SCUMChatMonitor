@@ -2,10 +2,16 @@ extends layout
 
 block variables
 	- var page_title= title
-	- var submit_modal_title= "Edit command"
-	- var submit_modal_description = "Are you satisfied with the current package data?"
-	- var cancel_modal_title = "Go back"
-	- var cancel_modal_description = "Are you sure you want to go back to the previous page?"
+	- let page_instructions = "<p>On this page, you can view all the details about this item package, in addition to being able to edit this item package</p>"
+	- page_instructions += "<p>What follows is a list of things that are available on this page:<br><br></p>"
+	- page_instructions += "<ol>"
+	- page_instructions += "<li>1. <strong>Package name:</strong> You can see the package name at both the top of the screen, and in its own separate field.</li>"
+	- page_instructions += "<li>2. <strong>Package description:</strong> You can see the package description that will show when a user visits this website to view all the commands available for them to use</li>"
+	- page_instructions += "<li>3. <strong>Add new package items:</strong> This allows you to add and remove items from being in the package</li>"
+	- page_instructions += "<li>4. <strong>Package cost:</strong> The cost of the item package. This will deduct this amount of money from the player who requests this package. If they do not have enough money, the package will not be delivered to them</li>"
+	- page_instructions += "<li>5. <strong>Save package changes</strong> Save any changes you have made to the item package</li>"
+	- page_instructions += "<li>5. <strong>Go back to the previous page</strong> Go back to the list of available bot commands</li>"
+	- page_instructions += "</ol>"
 
 include menu
 include smallModal
@@ -18,7 +24,7 @@ include infoModal
 block header
 	header#header.header
 		+menu(user, currentPage)
-		+infoModal(page_instructions_title, page_instructions)
+		+infoModal("Help", page_instructions)
 		+smallModal(submit_modal_title, submit_modal_description)
 		+cancelModal(cancel_modal_title, cancel_modal_description)
 		if show_submit_modal
@@ -28,7 +34,9 @@ block header
 
 block content(user)
 	main#command_edit_page
-		+cancelModal(cancel_modal_title, cancel_modal_description)
+		div#website_help_icon
+			a(href="#" data-toggle='modal', data-target='#infoModal', class='ml-2')
+				i.fa.fa-question-circle(aria-hidden="true")
 		span#span_command_file_edit_screen_name
 				h1 #{package.package_name}
 		form#command_editor_form(method='POST', action='/admin/botcommand/new' + file_name, enctype='application/x-www-form-urlencoded' class="needs-validation bot_data_form")
@@ -81,6 +89,9 @@ block content(user)
 
 			fieldset#edit_command_form_field_buttons.fieldset_for_form_buttons
 				button#save_changes_button(type='submit') Save package changes
+		form#cancel_changes_form(method='GET', action='/admin/commands')
+				button#cancel_changes_button(type='submit') Go back to the previous page
+
 
 	script(src='/javascripts/commands_form.js')
 	script(src='/javascripts/show_submit_modal.js')
