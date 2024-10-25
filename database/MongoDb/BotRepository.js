@@ -530,7 +530,7 @@ export default class BotRepository {
         const database_connection = await this.database_connection_manager.getConnection();
         try {
             const deletion_result = await database_connection.collection('bot_packages').deleteOne({ package_name: package_name });
-            return deletion_result;
+            return deletion_result.deletedCount > 0;
         } catch (error) {
             console.error(`There was an error when attempting to delete the command: ${error}`);
             throw error;

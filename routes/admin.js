@@ -139,6 +139,8 @@ router.get(['/login-success', '/'], isLoggedIn, function(request, response) {
 router.get(['/commands'], isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
     let bot_packages;
     const botRepository = request.user.bot_repository;
+    const commands_deleted_count = request.query.deleted;
+    const operation_success = request.query.success;
 
     try {
         bot_packages = await botRepository.getBotItemPackagesData();
@@ -177,27 +179,61 @@ router.get(['/commands'], isLoggedIn, checkBotRepositoryInCache, async (request,
         const total_command_files = bot_packages.length;
         const current_page_of_commands = current_page_number;
 
-        response.render('admin/command_list', {
-            title: 'Commands',
-            current_page_commands,
-            server_commands,
-            current_page_of_commands,
-            total_command_files,
-            total_number_of_pages,
-            page_numbers,
-            user: request.user,
-            currentPage: '/admin/command_list',
-            submit_modal_title: `Delete command`,
-            submit_modal_description: `Are you sure you want to delete the selected commands? If they are deleted, they can no longer be used`,
-            cancel_modal_title: `Go to the previous page`,
-            cancel_modal_description: `Are you sure you want to go back to the previous page?`
-        });
-    } else {
-        response.render('admin/command_list', {
-            title: 'Commands',
-            user: request.user,
-            currentPage: '/admin/command_list'
-        });
+        if (typeof operation_success === 'undefined') {
+            response.render('admin/command_list', {
+                title: 'Commands',
+                current_page_commands,
+                server_commands,
+                current_page_of_commands,
+                total_command_files,
+                total_number_of_pages,
+                page_numbers,
+                user: request.user,
+                currentPage: '/admin/command_list',
+                submit_modal_title: `Delete command`,
+                submit_modal_description: `Are you sure you want to delete the selected commands? If they are deleted, they can no longer be used`,
+                cancel_modal_title: `Go to the previous page`,
+                cancel_modal_description: `Are you sure you want to go back to the previous page?`
+            });
+        } else if (operation_success === 'true') {
+            response.render('admin/command_list', {
+                title: 'Commands',
+                current_page_commands,
+                server_commands,
+                current_page_of_commands,
+                total_command_files,
+                total_number_of_pages,
+                page_numbers,
+                user: request.user,
+                currentPage: '/admin/command_list',
+                submit_modal_title: `Delete command`,
+                submit_modal_description: `Are you sure you want to delete the selected commands? If they are deleted, they can no longer be used`,
+                cancel_modal_title: `Go to the previous page`,
+                cancel_modal_description: `Are you sure you want to go back to the previous page?`,
+                show_submit_modal: true,
+                alert_title: `Deletion success`,
+                alert_description: `Successfully deleted ${commands_deleted_count} command(s)`
+            });
+        } else if (operation_success === 'false') {
+            response.render('admin/command_list', {
+                title: 'Commands',
+                current_page_commands,
+                server_commands,
+                current_page_of_commands,
+                total_command_files,
+                total_number_of_pages,
+                page_numbers,
+                user: request.user,
+                currentPage: '/admin/command_list',
+                submit_modal_title: `Delete command`,
+                submit_modal_description: `Are you sure you want to delete the selected commands? If they are deleted, they can no longer be used`,
+                cancel_modal_title: `Go to the previous page`,
+                cancel_modal_description: `Are you sure you want to go back to the previous page?`,
+                show_error_modal: true,
+                alert_title: `Deletion failure`,
+                alert_description: `There was an error when attempting to delete the selected command(s). Please try again`
+            });
+        }
     }
 });
 
@@ -895,29 +931,35 @@ router.post('/botcommand/new', isLoggedIn, checkBotRepositoryInCache,
     }
 });
 
-router.delete('/deletecommand/:packageName', isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
-    const packageName = request.params.packageName;
+router.post('/deletecommands', isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
     const botRepository = request.user.bot_repository;
+    let operation_success = true;
+    let command_names_to_delete = request.body.command_names_checkbox;
+
+    if (!(command_names_to_delete)) {
+        response.redirect('/admin/commands')
+    }
+
+    if (!Array.isArray(command_names_to_delete)) {
+        command_names_to_delete = [command_names_to_delete];
+    }
+
+    let commands_deleted_count = 0;
 
     try {
-        const deletion_result = await botRepository.deleteBotPackageByName(packageName);
-        if (deletion_result.deletedCount === 1) {
-            request.session.alert_title = 'Command Deleted';
-            request.session.alert_description = `The command "${packageName}" was successfully deleted.`;
-            request.session.show_submit_modal = true;
-            response.redirect('/admin/');
-        } else {
-            request.session.alert_title = 'Deletion Failed';
-            request.session.alert_description = `The command "${packageName}" could not be found.`;
-            request.session.show_error_modal = true;
-            response.redirect('/admin/');
+        for (let i = 0; i < command_names_to_delete.length; i++) {
+            let package_deleted = await botRepository.deleteBotPackageByName(command_names_to_delete[i]);
+
+            if (package_deleted) {
+                commands_deleted_count++;
+            } else {
+                operation_success = false;
+            }
         }
+
+        response.redirect(`/admin/commands?deleted=${commands_deleted_count}&success=${operation_success}`);
     } catch (error) {
-        console.error(`There was an error when attempting to delete the command: ${error}`);
-        request.session.alert_title = 'Server Error';
-        request.session.alert_description = `An error occurred while attempting to delete the command: ${error}`;
-        request.session.show_error_modal = true;
-        response.redirect('/admin/');
+        response.redirect('/admin/commands?deleted=0&success=false');
     }
 });
 
