@@ -1,8 +1,7 @@
-const cancel_command_button = document.querySelector('#cancel_changes_to_command_button');
 const create_command_form = document.querySelector('#create_commands_file_form');
 const create_command_form_items_datalist = document.querySelector('#items_list');
 const create_command_form_items_input = document.querySelectorAll('.item_input');
-const create_command_page_buttons = document.querySelectorAll('button');
+const create_command_page_buttons = document.querySelectorAll('.button');
 const addItemButton = document.querySelector('#add_item_button');
 const initial_spawn_item_input = document.querySelector('.item_input');
 const initial_spawn_item_hidden_input = document.querySelector('#hidden_command_id_input');
@@ -1062,7 +1061,7 @@ populateDataItemsList(scum_items_list);
 populateOriginalHiddenInputFieldWithValue();
 addItemButton.addEventListener('click', generateAdditionalInputFields);
 /**
- * Populates a dropdown menu list with all of the items you can spawn in SCUM. We first clear any existing entries from the list. 
+ * Populates a dropdown menu list with all of the items you can spawn in SCUM. We first clear any existing entries from the list.
  * @param {datalist} itemsList 
  */
 function populateDataItemsList() {
@@ -1144,10 +1143,6 @@ create_command_form_items_input.forEach(input => {
         });
         populateDataItemsList(filtered_items);
     });
-});
-
-cancel_command_button.addEventListener('click', () => {
-    history.back();
 });
 
 create_command_page_buttons.forEach(button => {

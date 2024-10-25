@@ -37,7 +37,7 @@ block content(user)
 
 				fieldset#command_item_name.new_command_data_fieldset 
 					article#add_command_name_container.new_command_data_fieldset_article
-						label(class="new_command_label",for='command_name') Command name. Maximum length of 50 letters and/or numbers
+						label(class="new_command_label", for='command_name') Command name. Maximum length of 50 letters and/or numbers
 						input#command_name(class="new_command_input_field validate-input",type='text',name='command_name', 
 						placeholder='(Required) Pineapple box...', minlength='1', maxlength='50', required, data-maxlength='50' pattern="^[A-Za-z0-9]{1,50}$")
 						span#command_name_feedback
@@ -45,7 +45,7 @@ block content(user)
 
 				fieldset#command_item_description.new_command_data_fieldset 
 					article#add_command_description_container.new_command_data_fieldset_article
-						label(class="new_command_label",for='command_description') Command description. Maximum length of 1000 letters and/or numbers
+						label(class="new_command_label", for='command_description') Command description. Maximum length of 1000 letters and/or numbers
 						textarea#command_description(class="new_command_input_field validate-input",type='text',name='command_description',
 						placeholder='(Optional) This command...', minlength='1', maxlength='1000', required, data-maxlength='1000', pattern="^[A-Za-z0-9\\-_=+\\{};:'\",<.>/?\\[\\] ]{1,1000}$")
 						span#command_description_feedback
@@ -66,15 +66,14 @@ block content(user)
 
 				fieldset#add_command_cost.new_command_data_fieldset 
 					article#add_command_cost_fields_container.new_command_data_fieldset_article
-						label(class="new_command_label",for='command_cost_input') Command cost. Maximum length of 6 numbers
+						label(class="new_command_label", for='command_cost_input') Command cost. Maximum length of 6 numbers
 						input#command_cost_input(class="new_command_input_field validate-input", type='number', name='command_cost_input', 
 						placeholder='(Required) 1000...', maxlength='6', minlength='1', data-maxlength='6' pattern="^[0-9]{1,6}$")
 						span#command_cost_feedback
 						span.char_count(data-for="command_cost_input")
 
 				fieldset#edit_command_form_field_buttons.new_command_data_fieldset 
-						button#save_changes_button(type='submit') Create 
-						button#cancel_changes_button(type='button') Back
+						button#save_changes_button(type='submit') Create
 
 	script(src='/javascripts/commands_form.js')
 	script(src='/javascripts/show_submit_modal.js')

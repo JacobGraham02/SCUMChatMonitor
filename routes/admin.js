@@ -106,11 +106,23 @@ router.get('/command/:commandname', isLoggedIn, checkBotRepositoryInCache, async
     try {
         const package_data = await botRepository.getBotPackageFromName(package_name); 
 
-        response.render('admin/command', { user: request.user, package: package_data, title: `${package_name}` });
+        response.render('admin/command', {
+            user: request.user,
+            package: package_data,
+            title: `${package_name}`,
+            currentPage: '/admin/command_list',
+            submit_modal_title: `Change command`,
+            submit_modal_description: `Are you sure you want to change this command?`,
+            cancel_modal_title: `Go back`,
+            cancel_modal_description: `Are you sure you want to go back to the previous page?`
+        });
         
     } catch (error) {
         console.error(`Error fetching command data: ${error}`);
-        response.render('admin/command', { user: request.user, title: `${package_name}`});
+        response.render('admin/command', {
+            user: request.user,
+            title: `${package_name}`
+        });
     }
 });
 
@@ -137,6 +149,7 @@ router.get(['/login-success', '/'], isLoggedIn, function(request, response) {
 });
 
 router.get(['/commands'], isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
+    console.log('Commands route triggered');
     let bot_packages;
     const botRepository = request.user.bot_repository;
     const commands_deleted_count = request.query.deleted;

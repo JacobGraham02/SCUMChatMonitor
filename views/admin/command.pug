@@ -8,11 +8,23 @@ block variables
 	- var cancel_modal_description = "Are you sure you want to go back to the previous page?"
 
 include menu
+include smallModal
+include deleteModal
 include cancelModal
+include successModal
+include errorModal
+include infoModal
 
 block header
 	header#header.header
-		+menu(user)
+		+menu(user, currentPage)
+		+infoModal(page_instructions_title, page_instructions)
+		+smallModal(submit_modal_title, submit_modal_description)
+		+cancelModal(cancel_modal_title, cancel_modal_description)
+		if show_submit_modal
+			+successModal(alert_title, alert_description)
+		if show_error_modal
+			+errorModal(alert_title, alert_description)
 
 block content(user)
 	main#command_edit_page
@@ -68,9 +80,8 @@ block content(user)
 						span.char_count(data-for="command_cost_input")
 
 			fieldset#edit_command_form_field_buttons.fieldset_for_form_buttons
-					button#save_changes_button(type='submit') Save package changes
-					button#cancel_changes_button(type='button' onclick="history.back()") Go back
-	
+				button#save_changes_button(type='submit') Save package changes
+
 	script(src='/javascripts/commands_form.js')
 	script(src='/javascripts/show_submit_modal.js')
 	script(src='/javascripts/validate_form_fields.js')

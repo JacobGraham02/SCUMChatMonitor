@@ -42,7 +42,7 @@ block content(user)
                         div#ftp_server_hostname_input_feedback
 
                 fieldset#ftp_server_port_fieldset.ftp_server_data_fieldset
-                    article#bot_ingame_chat_channel_id_article(class='article_for_ftp_server_data')
+                    article#ftp_server_port_fieldset_article(class='article_for_ftp_server_data')
                         label(class="ftp_server_data_label",for='ftp_server_port_input') FTP server port number (Port number will be between 1024 and 65535)
                         input.validate-input#ftp_server_port_input(
                             class="ftp_server_data_input",
@@ -57,7 +57,7 @@ block content(user)
                         div#ftp_server_port_input_feedback
 
                 fieldset#ftp_server_username_fieldset.ftp_server_data_fieldset
-                    article#bot_ingame_logins_channel_id_article(class='article_for_ftp_server_data')
+                    article#ftp_server_username_fieldset_article(class='article_for_ftp_server_data')
                         label(class="ftp_server_data_label",for='ftp_server_username_input') FTP server username (e.g. JacobG123). This can only be the dash (-) or lowercase (_) character, upper and lowercase letters, and numbers 0 through 9
                         input.validate-input#ftp_server_username_input(
                             class="ftp_server_data_input",
@@ -71,7 +71,7 @@ block content(user)
                         div#ftp_server_username_input_feedback
 
                 fieldset#ftp_server_password_fieldset.ftp_server_data_fieldset
-                    article#bot_ingame_new_player_joins_id_article(class='article_for_ftp_server_data')
+                    article#ftp_server_password_fieldset_article(class='article_for_ftp_server_data')
                         label(class="ftp_server_data_label",for='ftp_server_password_input') FTP server password (e.g. aED1PbAfqBTjPWnRF1kKUQgd). Your password must be between 8 and 32 characters long. 
                         input.validate-input#ftp_server_password_input(
                             class="ftp_server_data_input",
@@ -85,7 +85,7 @@ block content(user)
                         div#ftp_server_password_input_feedback 
 
                 fieldset#ftp_server_password_confirm_fieldset.ftp_server_data_fieldset
-                    article#bot_ingame_new_player_joins_id_article(class='article_for_ftp_server_data')
+                    article#ftp_server_password_confirm_fieldset_article(class='article_for_ftp_server_data')
                         label(class="ftp_server_data_label",for='ftp_server_confirm_password_input') FTP server confirm password (e.g. aED1PbAfqBTjPWnRF1kKUQgd). This password must be the same as the password above
                         input.validate-input#ftp_server_confirm_password_input(
                             class="ftp_server_data_input",
@@ -100,6 +100,6 @@ block content(user)
                         
                 fieldset#ftp_server_data_form_field_buttons.fieldset_for_form_buttons
                     button#save_changes_button(class="" type='submit') Save
-                    button#cancel_changes_button(class="" type='button') Cancel
+
     script(src="/javascripts/validate_form_fields.js")
     script(src="/javascripts/show_submit_modal.js")
