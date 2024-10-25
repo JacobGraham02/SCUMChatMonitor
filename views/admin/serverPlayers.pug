@@ -74,5 +74,5 @@ block content(user)
                 li.players_pagination_list_item(class=current_page_of_players === page ? 'active' : '')
                     a.players_pagination_list_link(href=`players?range=${(total_number_of_pages - 1) * players_per_page + 1}&${total_player_files}`) Last page
     script(src="/javascripts/sort_players.js")
-    script(src="/javascripts/delete_mode.js")
+    script(src="/javascripts/delete_players.js")
     script(src="/javascripts/show_submit_modal.js")

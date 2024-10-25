@@ -139,63 +139,58 @@ router.get(['/login-success', '/'], isLoggedIn, function(request, response) {
 router.get(['/commands'], isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
     let bot_packages;
     const botRepository = request.user.bot_repository;
-    
+
     try {
         bot_packages = await botRepository.getBotItemPackagesData();
     } catch (error) {
         console.error(`There was an internal service error when attempting to read all the command data from MongoDB: ${error}`);
-        response.status(500).json({ error: `There was an internal service error when attempting to read all the command data from MongoDB: ${error}`});
+        response.status(500).json({ error: `There was an internal service error when attempting to read all the command data from MongoDB: ${error}` });
+        return; // Make sure to return after sending the response
     }
 
     if (bot_packages) {
         const commands_per_page = 10;
 
+        // Sort the commands
         bot_packages.sort((a, b) => a.package_name.localeCompare(b.package_name));
 
+        // Parse the 'range' query parameter
         const range = request.query.range || '1&10';
-        /*
-        Destructure the above query range string to retrieve the numbers. In this instance, we would get numbers 1 and 10
-        */
-        // Split the 'range' query parameter by '&' and convert both parts to numbers
-        // This will determine the range of commands to display on the current page
         const [start_range_number, end_range_number] = range.split('&').map(Number);
 
-        // Calculate the current page number based on the start range and the number of commands per page
+        // Calculate pagination variables
         const current_page_number = Math.ceil(start_range_number / commands_per_page);
-
-        // Calculate the total number of pages needed to display all bot packages
         const total_number_of_pages = Math.ceil(bot_packages.length / commands_per_page);
 
-        // Set the number of pages to be visible in the pagination at any given time
         const visible_pages = 3;
-
-        // Calculate the starting page number for pagination. Ensures it doesn't go below 1.
         let start_page = Math.max(1, current_page_number - Math.floor(visible_pages / 2));
-
-        // Calculate the ending page number for pagination. Ensures it doesn't go beyond the total number of pages.
         let end_page = Math.min(total_number_of_pages, start_page + visible_pages - 1);
+        start_page = Math.max(1, end_page - visible_pages + 1);
+        const page_numbers = Array.from({ length: end_page - start_page + 1 }, (_, i) => i + start_page);
 
-        // Adjust the start page based on the end page to ensure the correct number of visible pages are shown.
-        // This is particularly important when navigating to the last few pages.
-        start_page = Math.max(1, end_page - visible_pages + 1); 
-
-        // Generate the list of page numbers to be displayed in the pagination based on the start and end pages calculated.
-        const page_numbers = Array.from({ length: (end_page - start_page) + 1 }, (_, i) => i + start_page);
-
-        // Slice the bot_packages array to only include the packages for the current page based on the range selected.
+        // Slice the commands for the current page
         const current_page_packages = bot_packages.slice(start_range_number - 1, end_range_number);
 
-        // Map the current page's packages to their package names to be displayed as command files.
-        const commands = current_page_packages;
+        // Prepare variables for the template
+        const current_page_commands = current_page_packages;
+        const server_commands = bot_packages; // All commands for search functionality
+        const total_command_files = bot_packages.length;
+        const current_page_of_commands = current_page_number;
 
         response.render('admin/command_list', {
             title: 'Commands',
-            commands, 
-            current_page_of_commands: current_page_number, 
-            total_command_files: bot_packages.length, 
+            current_page_commands,
+            server_commands,
+            current_page_of_commands,
+            total_command_files,
+            total_number_of_pages,
             page_numbers,
             user: request.user,
-            currentPage: '/admin/command_list'
+            currentPage: '/admin/command_list',
+            submit_modal_title: `Delete command`,
+            submit_modal_description: `Are you sure you want to delete the selected commands? If they are deleted, they can no longer be used`,
+            cancel_modal_title: `Go to the previous page`,
+            cancel_modal_description: `Are you sure you want to go back to the previous page?`
         });
     } else {
         response.render('admin/command_list', {
