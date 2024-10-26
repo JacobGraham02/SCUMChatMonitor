@@ -257,63 +257,54 @@ router.get(['/teleportcommands'], isLoggedIn, checkBotRepositoryInCache, async (
     try {
         bot_teleport_commands = await botRepository.getAllBotTeleportCommands();
     } catch (error) {
-        console.error(`There was an internal service error when attempting to read all the command data from MongoDB: ${error}`);
-        response.status(500).json({ error: `There was an internal service error when attempting to read all the command data from MongoDB: ${error}`});
+        console.error(`There was an internal service error when attempting to read all the teleport command data from MongoDB: ${error}`);
+        response.status(500).json({ error: `There was an internal service error when attempting to read all the teleport command data from MongoDB: ${error}` });
+        return; // Ensure no further execution after error response
     }
 
     if (bot_teleport_commands) {
         const commands_per_page = 10;
 
-        bot_teleport_commands.sort((a, b) => a.package_name.localeCompare(b.package_name));
+        // Sort the teleport commands by name
+        bot_teleport_commands.sort((a, b) => a.name.localeCompare(b.name));
 
+        // Parse the 'range' query parameter
         const range = request.query.range || '1&10';
-        /*
-        Destructure the above query range string to retrieve the numbers. In this instance, we would get numbers 1 and 10
-        */
-        // Split the 'range' query parameter by '&' and convert both parts to numbers
-        // This will determine the range of commands to display on the current page
         const [start_range_number, end_range_number] = range.split('&').map(Number);
 
-        // Calculate the current page number based on the start range and the number of commands per page
+        // Calculate pagination variables
         const current_page_number = Math.ceil(start_range_number / commands_per_page);
-
-        // Calculate the total number of pages needed to display all bot packages
         const total_number_of_pages = Math.ceil(bot_teleport_commands.length / commands_per_page);
 
-        // Set the number of pages to be visible in the pagination at any given time
+        // Set up pagination display
         const visible_pages = 3;
-
-        // Calculate the starting page number for pagination. Ensures it doesn't go below 1.
         let start_page = Math.max(1, current_page_number - Math.floor(visible_pages / 2));
-
-        // Calculate the ending page number for pagination. Ensures it doesn't go beyond the total number of pages.
         let end_page = Math.min(total_number_of_pages, start_page + visible_pages - 1);
-
-        // Adjust the start page based on the end page to ensure the correct number of visible pages are shown.
-        // This is particularly important when navigating to the last few pages.
         start_page = Math.max(1, end_page - visible_pages + 1);
-
-        // Generate the list of page numbers to be displayed in the pagination based on the start and end pages calculated.
         const page_numbers = Array.from({ length: (end_page - start_page) + 1 }, (_, i) => i + start_page);
 
-        // Slice the bot_packages array to only include the packages for the current page based on the range selected.
-        // Map the current page's packages to their package names to be displayed as command files.
-        const teleport_commands = bot_teleport_commands.slice(start_range_number - 1, end_range_number);
+        // Get the teleport commands for the current page
+        const current_page_commands = bot_teleport_commands.slice(start_range_number - 1, end_range_number);
+
+        const server_commands = bot_teleport_commands; // All teleport commands for search functionality
+        const total_command_files = bot_teleport_commands.length;
+        const current_page_of_commands = current_page_number;
 
         response.render('admin/teleport_command_list', {
-            title: 'Teleport commands',
-            teleport_commands,
-            current_page_of_commands: current_page_number,
-            total_command_files: teleport_commands.length,
+            title: 'Teleport Commands',
+            current_page_commands,
+            server_commands,
+            current_page_of_commands,
+            total_command_files,
+            total_number_of_pages,
             page_numbers,
             user: request.user,
-            currentPage: '/admin/teleport_command_list'
-        });
-    } else {
-        response.render('admin/teleport_command_list', {
-            title: 'Teleport commands',
-            user: request.user,
-            currentPage: '/admin/teleport_command_list'
+            currentPage: '/admin/teleport_command_list',
+            // Modal titles and descriptions
+            submit_modal_title: 'Delete command',
+            submit_modal_description: 'Are you sure you want to delete the selected teleport commands? This action cannot be undone.',
+            cancel_modal_title: 'Go back',
+            cancel_modal_description: 'Are you sure you want to go back to the previous page?',
         });
     }
 });
