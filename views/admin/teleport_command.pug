@@ -55,27 +55,29 @@ block content(user)
                         input#teleport_command_cost_input(class="new_command_input_field package_item_input validate-input", type='number', name='teleport_command_cost_input',
                             placeholder='Enter cost...', value=teleport_command.cost, min='0', max='999999', required)
                         span#teleport_command_cost_feedback
-
+            div#coordinates_and_iframe
                 fieldset#teleport_command_coordinates_fieldset(class="edit_command_fieldset")
                     article#teleport_command_coordinates_container(class="edit_command_fieldset_article")
                         label(class="new_command_label") Coordinates
-                        div.coordinates_inputs
-                            label(for='x_coordinate_input') X Coordinate
-                            input#x_coordinate_input(class="new_command_input_field package_item_input validate-input", type='number', name='x_coordinate_input',
+                        div#coordinates_inputs
+                            label(for='x_coordinate_input' class="coordinate_label") <strong>X</strong>
+                            input#x_coordinate_input(class="new_command_input_field new_command_input_field_coordinate package_item_input validate-input", type='number', name='x_coordinate_input',
                                 placeholder='X...', value=teleport_command.x_coordinate, required)
-                            label(for='y_coordinate_input') Y Coordinate
-                            input#y_coordinate_input(class="new_command_input_field package_item_input validate-input", type='number', name='y_coordinate_input',
+                            label(for='y_coordinate_input' class="coordinate_label") <strong>Y</strong>
+                            input#y_coordinate_input(class="new_command_input_field new_command_input_field_coordinate package_item_input validate-input", type='number', name='y_coordinate_input',
                                 placeholder='Y...', value=teleport_command.y_coordinate, required)
-                            label(for='z_coordinate_input') Z Coordinate
-                            input#z_coordinate_input(class="new_command_input_field package_item_input validate-input", type='number', name='z_coordinate_input',
+                            label(for='z_coordinate_input' class="coordinate_label") <strong>Z</strong>
+                            input#z_coordinate_input(class="new_command_input_field new_command_input_field_coordinate package_item_input validate-input", type='number', name='z_coordinate_input',
                                 placeholder='Z...', value=teleport_command.z_coordinate, required)
 
-            fieldset#edit_command_form_field_buttons.fieldset_for_form_buttons
-                button#save_changes_button(type='submit') Save command changes
+                iframe#map_selection_tool_teleport_command(src=`https://scum-map.com/en/map/${teleport_command.x_coordinate},${teleport_command.y_coordinate},${teleport_command.z_coordinate}`)
+
+            div#edit_command_buttons_container
+                fieldset#edit_command_form_field_buttons.fieldset_for_form_buttons
+                    button#save_changes_button(type='submit') Save command changes
 
         form#cancel_changes_form(method='GET', action='/admin/teleportcommands')
             button#cancel_changes_button(type='submit') Go back to the previous page
 
-    script(src='/javascripts/teleport_command_form.js')
     script(src='/javascripts/show_submit_modal.js')
     script(src='/javascripts/validate_form_fields.js')
