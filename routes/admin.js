@@ -92,10 +92,26 @@ router.post('/createwebsocket',
 
 router.get('/newcommand', isLoggedIn, function(request, response) {
     try {
-        response.render('admin/new_command', { user: request.user, title: `New bot package` });
+        response.render('admin/new_command', {
+            user: request.user,
+            currentPage: '/admin/command_list',
+            title: `New item package`,
+            submit_modal_title: `Create item package`,
+            submit_modal_description: `Are you sure you want to create this item package?`,
+            cancel_modal_title: `Go back`,
+            cancel_modal_description: `Are you sure you want to go back to the previous page?`
+        });
     } catch (error) {
         console.error(`There was an error when attempting to load the admin new command page. Please inform the server administrator of this error or try again: ${error}`);
-        response.render('admin/new_command', { user: request.user, title: `New bot package` });
+        response.render('admin/new_command', {
+            user: request.user,
+            currentPage: '/admin/command_list',
+            title: `New item package`,
+            submit_modal_title: `Create item package`,
+            submit_modal_description: `Are you sure you want to create this item package?`,
+            cancel_modal_title: `Go back`,
+            cancel_modal_description: `Are you sure you want to go back to the previous page?`
+        });
     }
 });
 
@@ -161,7 +177,6 @@ router.get(['/login-success', '/'], isLoggedIn, function(request, response) {
 });
 
 router.get(['/commands'], isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
-    console.log('Commands route triggered');
     let bot_packages;
     const botRepository = request.user.bot_repository;
     const commands_deleted_count = request.query.deleted;
@@ -404,7 +419,6 @@ router.get('/players', isLoggedIn, checkBotRepositoryInCache, async (request, re
 
         // Third case: if operation_success is false, show error modal
         else if (operation_success === 'false') {
-            console.log(operation_success);
             response.render('admin/serverPlayers', {
                 title: 'Players',
                 server_players,
@@ -901,50 +915,73 @@ router.post('/botcommand/new', isLoggedIn, checkBotRepositoryInCache,
     .matches("^[A-Za-z0-9\\-_=+\\{};:'\",<.>/?\\[\\] ]{1,1000}$")
     .withMessage('The command description can be a maximum of 1000 characters and numbers'),
 
-    body('command_cost_input')
+    body('command_cost')
     .isNumeric()
     .matches("^[0-9]{1,6}$")
     .withMessage('The command cost must be a number between 0 and 6 digits long'),
     
     async (request, response, next) => {
 
-    const new_command_name = request.body.command_name;
-    const new_command_description = request.body.command_description;
-    const command_cost = request.body.command_cost_input;
-    let command_items = request.body.item_input_value;
-    const botRepository = request.user.bot_repository;
+        const errors = validationResult(request);
+        if (!errors.isEmpty()) {
+            const error_messages = errors.array().map(error => error.msg);
+            // There are validation errors
+            return response.render('admin/new_command', {
+                user: request.user,
+                currentPage: '/admin/command_list',
+                page_title: 'Create new command',
+                // Preserve user inputs
+                command_name: request.body.command_name,
+                command_description: request.body.command_description,
+                command_cost: request.body.command_cost,
+                submit_modal_title: `Create item package`,
+                submit_modal_description: `Are you sure you want to create this item package for your bot?`,
+                cancel_modal_title: `Go back`,
+                cancel_modal_description: `Are you sure you want to go back to the previous page?`,
+                show_error_modal: true,
+                alert_title: "Input errors",
+                alert_description: error_messages
+            });
+        }
 
-    if (!Array.isArray(command_items)) {
-        command_items = [command_items];
-    }
-    
-    const new_bot_package = {
-        package_name: new_command_name,
-        package_description: new_command_description,
-        package_cost: command_cost,
-        package_items: command_items
-    };
 
-    console.log(new_bot_package);
+        const new_command_name = request.body.command_name;
+        const new_command_description = request.body.command_description;
+        const command_cost = request.body.command_cost_input;
+        let command_items = request.body.item_input_value;
+        const botRepository = request.user.bot_repository;
 
-    try {
-        await botRepository.createBotItemPackage(new_bot_package);
-        response.render('admin/new_command', {
-            user: request.user,
-            page_title:`Create new command`,
-            alert_title: `Successfully created new package`,
-            alert_description: `You have successfully created a new item package and registered it with your bot`,
-            show_submit_modal: true
-        });
-    } catch (error) {
-        response.render('admin/new_command', {
-            user: request.user,
-            page_title:`Error`,
-            alert_title: `Error creating new package`,
-            alert_description: `Please try submitting this form again or contact the server administrator if you believe this is an error: ${error}`,
-            show_error_modal: true
-        });
-    }
+        if (!Array.isArray(command_items)) {
+            command_items = [command_items];
+        }
+
+        const new_bot_package = {
+            package_name: new_command_name,
+            package_description: new_command_description,
+            package_cost: command_cost,
+            package_items: command_items
+        };
+
+        try {
+            await botRepository.createBotItemPackage(new_bot_package);
+            response.render('admin/new_command', {
+                user: request.user,
+                currentPage: '/admin/command_list',
+                page_title:`Create new command`,
+                alert_title: `Successfully created new package`,
+                alert_description: `You have successfully created a new item package and registered it with your bot`,
+                show_submit_modal: true
+            });
+        } catch (error) {
+            response.render('admin/new_command', {
+                user: request.user,
+                currentPage: '/admin/command_list',
+                page_title:`Error`,
+                alert_title: `Error creating new package`,
+                alert_description: `Please try submitting this form again or contact the server administrator if you believe this is an error: ${error}`,
+                show_error_modal: true
+            });
+        }
 });
 
 router.post('/deletecommands', isLoggedIn, checkBotRepositoryInCache, async (request, response) => {

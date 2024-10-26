@@ -5,12 +5,10 @@ block variables
 	- let page_instructions = "<p>On this page, you can view all the details about this item package, in addition to being able to edit this item package</p>"
 	- page_instructions += "<p>What follows is a list of things that are available on this page:<br><br></p>"
 	- page_instructions += "<ol>"
-	- page_instructions += "<li>1. <strong>Package name:</strong> You can see the package name at both the top of the screen, and in its own separate field.</li>"
-	- page_instructions += "<li>2. <strong>Package description:</strong> You can see the package description that will show when a user visits this website to view all the commands available for them to use</li>"
-	- page_instructions += "<li>3. <strong>Add new package items:</strong> This allows you to add and remove items from being in the package</li>"
-	- page_instructions += "<li>4. <strong>Package cost:</strong> The cost of the item package. This will deduct this amount of money from the player who requests this package. If they do not have enough money, the package will not be delivered to them</li>"
-	- page_instructions += "<li>5. <strong>Save package changes</strong> Save any changes you have made to the item package</li>"
-	- page_instructions += "<li>5. <strong>Go back to the previous page</strong> Go back to the list of available bot commands</li>"
+	- page_instructions += "<li>1. <strong>Package name:</strong> You can see the package name at both the top of the screen, and in its own separate field. <strong>Maximum of 50 letters and/or numbers</strong></li>"
+	- page_instructions += "<li>2. <strong>Package description:</strong> You can see the package description that will show when a user visits this website to view all the commands available for them to use. <strong>Maximum of 1000 letters and/or numbers</strong></li>"
+	- page_instructions += "<li>3. <strong>Add new package items:</strong> This is the search bar where you can search for different items to put into your bot package. Simply click on the search bar, and start typing into it to look for items that you can put into the bot package. There are no pictures for the bot items at the moment, as that would make the application load this specific page much slower. You must click on the button titled <strong>Add item</strong> to add additional search bars where you can add more items to the item package, and you must click on the <strong>Delete item</strong> button that is directly underneath the item package search bar to delete that item from the package</strong></li>"
+	- page_instructions += "<li>4. <strong>Command cost:</strong> The total cost of the item package. This amount will be deducted from the player who requests this item package. If they player does not have sufficient money to buy this item package, they will not be able to buy this item package. <strong>Maximum of 6 numbers</strong></li>"
 	- page_instructions += "</ol>"
 
 include menu
@@ -39,7 +37,7 @@ block content(user)
 				i.fa.fa-question-circle(aria-hidden="true")
 		span#span_command_file_edit_screen_name
 				h1 #{package.package_name}
-		form#command_editor_form(method='POST', action='/admin/botcommand/new' + file_name, enctype='application/x-www-form-urlencoded' class="needs-validation bot_data_form")
+		form#command_editor_form(method='POST', action='/admin/botcommand/new', enctype='application/x-www-form-urlencoded' class="needs-validation bot_data_form")
 			section#edit_command_section
 
 				fieldset#command_item_name(class="edit_command_fieldset")

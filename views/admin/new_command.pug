@@ -2,26 +2,32 @@ extends layout
 
 block variables
 	- var page_title= title
+	- let page_instructions = "<p>On this page, you can view all the details about this item package, in addition to being able to edit this item package</p>"
+	- page_instructions += "<p>What follows is a list of things that are available on this page:<br><br></p>"
+	- page_instructions += "<ol>"
+	- page_instructions += "<li>1. <strong>Command name:</strong> Here, you must type in the name of the command you wish for players to be able to use. <strong>Maximum of 50 letters and/or numbers</strong></li>"
+	- page_instructions += "<li>2. <strong>Command description:</strong> Here, you must type in the description of the command you wish for players to be able to use. <strong>Maximum of 1000 letters and/or numbers</strong></li>"
+	- page_instructions += "<li>3. <strong>Add new package items:</strong> This is the search bar where you can search for different items to put into your bot package. Simply click on the search bar, and start typing into it to look for items that you can put into the bot package. There are no pictures for the bot items at the moment, as that would make the application load this specific page much slower. You must click on the button titled <strong>Add item</strong> to add additional search bars where you can add more items to the item package, and you must click on the <strong>Delete item</strong> button that is directly underneath the item package search bar to delete that item from the package</strong></li>"
+	- page_instructions += "<li>4. <strong>Command cost:</strong> The total cost of the item package. This amount will be deducted from the player who requests this item package. If they player does not have sufficient money to buy this item package, they will not be able to buy this item package. <strong>Maximum of 6 numbers</strong></li>"
+	- page_instructions += "</ol>"
 
 include menu
 include smallModal
 include successModal
 include cancelModal
 include errorModal
-
-block variables
-	- var page_title= title
-	- var submit_modal_title= "Create command"
-	- var submit_modal_description = "Are you sure you want to create this package?"
-	- var cancel_modal_title = "Cancel command creation"
-	- var cancel_modal_description = "Are you sure you want to go back to the previous page?"
+include infoModal
 
 block header
 	header#header.header
-		+menu(user)
+		+menu(user, currentPage)
+		+infoModal("Help", page_instructions)
 
 block content(user)
 	main#command_new_page
+		div#website_help_icon
+			a(href="#" data-toggle='modal', data-target='#infoModal', class='ml-2')
+				i.fa.fa-question-circle(aria-hidden="true")
 		+smallModal(submit_modal_title, submit_modal_description)
 		+cancelModal(cancel_modal_title, cancel_modal_description)
 		if show_submit_modal 
@@ -29,25 +35,41 @@ block content(user)
 		if show_error_modal
 			+errorModal(alert_title, alert_description)
 		div#create_command_page_heading_container
-			h1#create_command_page_header_h1 Create a new command and register it with the bot
+			h1#create_command_page_header_h1 Create new item package
 
 		form#new_command_form(method='POST', action='/admin/botcommand/new', enctype='application/x-www-form-urlencoded' class="needs-validation bot_data_form") 
 			section#new_command_section
 				fieldset#fieldset_for_form_heading 
 
-				fieldset#command_item_name.new_command_data_fieldset 
+				fieldset#command_item_name.new_command_data_fieldset
 					article#add_command_name_container.new_command_data_fieldset_article
-						label(class="new_command_label",for='command_name') Command name. Maximum length of 50 letters and/or numbers
-						input#command_name(class="new_command_input_field validate-input",type='text',name='command_name', 
-						placeholder='(Required) Pineapple box...', minlength='1', maxlength='50', required, data-maxlength='50' pattern="^[A-Za-z0-9]{1,50}$")
+						label(class="new_command_label", for='command_name') Package name
+						input#command_name.new_command_input_field.validate-input(
+							type='text',
+							name='command_name',
+							placeholder='(Required) Pineapple box...',
+							minlength='1',
+							maxlength='50',
+							required,
+							data-maxlength='50',
+							pattern="^[A-Za-z0-9]{1,50}$"
+							value=command_name ? command_name : ''
+						)
 						span#command_name_feedback
 						span.char_count(data-for='command_name') 
 
 				fieldset#command_item_description.new_command_data_fieldset 
 					article#add_command_description_container.new_command_data_fieldset_article
-						label(class="new_command_label",for='command_description') Command description. Maximum length of 1000 letters and/or numbers
-						textarea#command_description(class="new_command_input_field validate-input",type='text',name='command_description',
-						placeholder='(Optional) This command...', minlength='1', maxlength='1000', required, data-maxlength='1000', pattern="^[A-Za-z0-9\\-_=+\\{};:'\",<.>/?\\[\\] ]{1,1000}$")
+						label(class="new_command_label",for='command_description') Package description
+						textarea#command_description.new_command_input_field.validate-input(
+							name='command_description',
+							placeholder='(Optional) This command...',
+							minlength='1',
+							maxlength='1000',
+							required,
+							data-maxlength='1000',
+							pattern="^[A-Za-z0-9\\-_=+\\{};:'\",<.>/?\\[\\] ]{1,1000}$"
+						) #{command_description || ''}
 						span#command_description_feedback
 						span.char_count(data-for='command_description') 
 
@@ -66,15 +88,24 @@ block content(user)
 
 				fieldset#add_command_cost.new_command_data_fieldset 
 					article#add_command_cost_fields_container.new_command_data_fieldset_article
-						label(class="new_command_label",for='command_cost_input') Command cost. Maximum length of 6 numbers
-						input#command_cost_input(class="new_command_input_field validate-input", type='number', name='command_cost_input', 
-						placeholder='(Required) 1000...', maxlength='6', minlength='1', data-maxlength='6' pattern="^[0-9]{1,6}$")
+						label(class="new_command_label", for='command_cost') Package cost
+						input#command_cost.new_command_input_field.validate-input(
+							type='number',
+							name='command_cost',
+							placeholder='(Required) 1000...',
+							maxlength='6',
+							minlength='1',
+							data-maxlength='6',
+							pattern="^[0-9]{1,6}$",
+							value=command_cost ? command_cost : ''
+						)
 						span#command_cost_feedback
-						span.char_count(data-for="command_cost_input")
+						span.char_count(data-for="command_cost")
 
 				fieldset#edit_command_form_field_buttons.new_command_data_fieldset 
-						button#save_changes_button(type='submit') Create 
-						button#cancel_changes_button(type='button') Back
+						button#save_changes_button(type='submit') Create item package
+		form#cancel_changes_form(method='GET', action='/admin/commands')
+			button#cancel_changes_button(type='submit') Go back to the previous page
 
 	script(src='/javascripts/commands_form.js')
 	script(src='/javascripts/show_submit_modal.js')

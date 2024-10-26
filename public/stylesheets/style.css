@@ -398,13 +398,17 @@ main {
 
 #edit_command_form_field_buttons {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
 }
 
 #save_command_changes {
     align-items: flex-end;
+}
+
+#cancel_changes_button {
+    margin-top: 1%;
 }
 
 #cancel_command_changes {
@@ -1215,6 +1219,15 @@ a {
     font-size: 100%;
 }
 
+#error_modal_ul {
+    padding-left: 20px;
+    list-style: disc;
+}
+.error_modal_li {
+    display: block;
+    margin-bottom: 5px;
+    word-wrap: break-word;
+}
 
 /* View player details page CSS */
 #main_player_details {
