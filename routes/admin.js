@@ -90,6 +90,31 @@ router.post('/createwebsocket',
     }
 });
 
+router.get('/newteleportcommand', isLoggedIn, function(request, response) {
+    try {
+        response.render('admin/new_teleport_command', {
+            user: request.user,
+            currentPage: '/admin/teleport_command_list',
+            title: `New teleport command`,
+            submit_modal_title: `Create new teleport area`,
+            submit_modal_description: `Are you sure you want to create this new teleport command?`,
+            cancel_modal_title: `Go back`,
+            cancel_modal_description: `Are you sure you want to go back to the previous page?`
+        });
+    } catch (error) {
+        console.error(`There was an error when attempting to load the admin new command page. Please inform the server administrator of this error or try again: ${error}`);
+        response.render('admin/new_teleport_command', {
+            user: request.user,
+            currentPage: '/admin/teleport_command_list',
+            title: `New teleport command`,
+            submit_modal_title: `Create item package`,
+            submit_modal_description: `Are you sure you want to create this new teleport command?`,
+            cancel_modal_title: `Go back`,
+            cancel_modal_description: `Are you sure you want to go back to the previous page?`
+        });
+    }
+});
+
 router.get('/newcommand', isLoggedIn, function(request, response) {
     try {
         response.render('admin/new_command', {
@@ -626,7 +651,7 @@ router.get('/logfiles', isLoggedIn, async (request, response) => {
         console.error(`There was an error when attempting to retrieve the page that allows you to view your log files. Please inform the server administrator of this error: ${error}`);
         response.render('admin/logs_page', { user: request.user, currentPage: `/admin/logfiles`, title: `Log files`});
     }
-}); 
+});
 
 router.post('/setftpserverdata', isLoggedIn, checkBotRepositoryInCache, 
     body('ftp_server_hostname_input')
