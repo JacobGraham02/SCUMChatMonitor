@@ -1,0 +1,81 @@
+extends layout
+
+block variables
+    - var page_title = title
+    - let page_instructions = "<p>On this page, you can view all the details about this teleport command, in addition to being able to edit it.</p>"
+    - page_instructions += "<p>What follows is a list of things that are available on this page:<br><br></p>"
+    - page_instructions += "<ol>"
+    - page_instructions += "<li>1. <strong>Command name:</strong> You can see the command name at both the top of the screen and in its own separate field.</li>"
+    - page_instructions += "<li>2. <strong>Command cost:</strong> The cost of using this teleport command.</li>"
+    - page_instructions += "<li>3. <strong>Coordinates:</strong> You can view and edit the X, Y, and Z coordinates that the command will teleport the player to.</li>"
+    - page_instructions += "<li>4. <strong>Save command changes:</strong> Save any changes you have made to the teleport command.</li>"
+    - page_instructions += "<li>5. <strong>Go back to the previous page:</strong> Go back to the list of available teleport commands.</li>"
+    - page_instructions += "</ol>"
+
+include menu
+include smallModal
+include cancelModal
+include successModal
+include errorModal
+include infoModal
+
+block header
+    header#header.header
+        +menu(user, currentPage)
+        +infoModal("Help", page_instructions)
+        +smallModal(submit_modal_title, submit_modal_description)
+        +cancelModal(cancel_modal_title, cancel_modal_description)
+        if show_submit_modal
+            +successModal(alert_title, alert_description)
+        if show_error_modal
+            +errorModal(alert_title, alert_description)
+        if error_message
+            +errorModal('Error', error_message)
+
+block content(user)
+    main#teleport_command_edit_page
+        div#website_help_icon
+            a(href="#" data-toggle='modal', data-target='#infoModal', class='ml-2')
+                i.fa.fa-question-circle(aria-hidden="true")
+        h1#teleport_command_name_heading #{teleport_command.name}
+        form#teleport_command_editor_form(method='POST', action=`/admin/updateteleportcommand/${encodeURIComponent(teleport_command.name)}`, enctype='application/x-www-form-urlencoded', class="needs-validation bot_data_form")
+            section#edit_teleport_command_section
+
+                fieldset#teleport_command_name_fieldset(class="edit_command_fieldset")
+                    article#teleport_command_name_container(class="edit_command_fieldset_article")
+                        label(class="new_command_label", for='teleport_command_name_input') Command Name
+                        input#teleport_command_name_input(class="new_command_input_field package_item_input validate-input", type='text', name='teleport_command_name_input',
+                            placeholder='Write here...', value=teleport_command.name, data-maxlength='100', required)
+                        span#teleport_command_name_feedback
+                        span.char_count(data-for="teleport_command_name_input")
+
+                fieldset#teleport_command_cost_fieldset(class="edit_command_fieldset")
+                    article#teleport_command_cost_container(class="edit_command_fieldset_article")
+                        label(class="new_command_label", for='teleport_command_cost_input') Command Cost
+                        input#teleport_command_cost_input(class="new_command_input_field package_item_input validate-input", type='number', name='teleport_command_cost_input',
+                            placeholder='Enter cost...', value=teleport_command.cost, min='0', max='999999', required)
+                        span#teleport_command_cost_feedback
+
+                fieldset#teleport_command_coordinates_fieldset(class="edit_command_fieldset")
+                    article#teleport_command_coordinates_container(class="edit_command_fieldset_article")
+                        label(class="new_command_label") Coordinates
+                        div.coordinates_inputs
+                            label(for='x_coordinate_input') X Coordinate
+                            input#x_coordinate_input(class="new_command_input_field package_item_input validate-input", type='number', name='x_coordinate_input',
+                                placeholder='X...', value=teleport_command.x_coordinate, required)
+                            label(for='y_coordinate_input') Y Coordinate
+                            input#y_coordinate_input(class="new_command_input_field package_item_input validate-input", type='number', name='y_coordinate_input',
+                                placeholder='Y...', value=teleport_command.y_coordinate, required)
+                            label(for='z_coordinate_input') Z Coordinate
+                            input#z_coordinate_input(class="new_command_input_field package_item_input validate-input", type='number', name='z_coordinate_input',
+                                placeholder='Z...', value=teleport_command.z_coordinate, required)
+
+            fieldset#edit_command_form_field_buttons.fieldset_for_form_buttons
+                button#save_changes_button(type='submit') Save command changes
+
+        form#cancel_changes_form(method='GET', action='/admin/teleportcommands')
+            button#cancel_changes_button(type='submit') Go back to the previous page
+
+    script(src='/javascripts/teleport_command_form.js')
+    script(src='/javascripts/show_submit_modal.js')
+    script(src='/javascripts/validate_form_fields.js')

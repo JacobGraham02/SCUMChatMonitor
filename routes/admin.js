@@ -132,9 +132,21 @@ router.get('/teleportcommand/:commandname', isLoggedIn, checkBotRepositoryInCach
 
     try {
         const teleport_command_data = await botRepository.getBotTeleportCommandFromName(teleport_command_name);
-        response.render('admin/teleportcommand', { user: request.user, command: teleport_command_data, title: `${teleport_command_name}` });
+        response.render('admin/teleport_command', {
+            user: request.user,
+            teleport_command: teleport_command_data,
+            title: `${teleport_command_name}`,
+            currentPage: `/admin/teleport_command_list`,
+            submit_modal_title: `Change teleport command`,
+            submit_modal_description: `Are you sure you want to change this teleport command?`,
+            cancel_modal_title: `Go back`,
+            cancel_modal_description: `Are you sure you want to go back to the previous page?`
+        });
     } catch (error) {
-        response.render('admin/teleportcommand', { user:request.user, title: `${teleport_command_name}`});
+        response.render('admin/teleport_command', {
+            user:request.user,
+            title: `${teleport_command_name}`
+        });
     }
 });
 
