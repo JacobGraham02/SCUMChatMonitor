@@ -344,7 +344,7 @@ main {
 .new_command_data_fieldset, .edit_command_fieldset {
     display: flex;
     width: 100%;
-    margin-bottom: 10%;
+    margin-bottom: 5%;
     height: fit-content;
 }
 
@@ -851,7 +851,7 @@ a {
 }
 
 .fieldset_for_form_buttons {
-    width: 50%;
+    width: 100%;
     margin-top: 1%;
 }
 
@@ -1295,6 +1295,10 @@ a {
         text-decoration: none; /* Remove underline from links */
     }
 
+    .new_command_data_fieldset, .edit_command_fieldset {
+        margin-bottom: 2%;
+    }
+
     #delete_users_form, #delete_commands_form {
         width: 50%;
     }
@@ -1453,7 +1457,7 @@ a {
     }
 
     .fieldset_for_form_buttons {
-        width: 25%;
+        width: 100%;
     }
 
     #menu_links_image {
