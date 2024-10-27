@@ -305,6 +305,8 @@ router.get(['/commands'], isLoggedIn, checkBotRepositoryInCache, async (request,
 router.get(['/teleportcommands'], isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
     let bot_teleport_commands;
     const botRepository = request.user.bot_repository;
+    const teleport_commands_deleted_count = request.query.deleted;
+    const operation_success = request.query.success;
 
     try {
         bot_teleport_commands = await botRepository.getAllBotTeleportCommands();
@@ -342,22 +344,64 @@ router.get(['/teleportcommands'], isLoggedIn, checkBotRepositoryInCache, async (
         const total_command_files = bot_teleport_commands.length;
         const current_page_of_commands = current_page_number;
 
-        response.render('admin/teleport_command_list', {
-            title: 'Teleport Commands',
-            current_page_commands,
-            server_commands,
-            current_page_of_commands,
-            total_command_files,
-            total_number_of_pages,
-            page_numbers,
-            user: request.user,
-            currentPage: '/admin/teleport_command_list',
-            // Modal titles and descriptions
-            submit_modal_title: 'Delete command',
-            submit_modal_description: 'Are you sure you want to delete the selected teleport commands? This action cannot be undone.',
-            cancel_modal_title: 'Go back',
-            cancel_modal_description: 'Are you sure you want to go back to the previous page?',
-        });
+        if (typeof operation_success === 'undefined') {
+            response.render('admin/teleport_command_list', {
+                title: 'Teleport Commands',
+                current_page_commands,
+                server_commands,
+                current_page_of_commands,
+                total_command_files,
+                total_number_of_pages,
+                page_numbers,
+                user: request.user,
+                currentPage: '/admin/teleport_command_list',
+                // Modal titles and descriptions
+                submit_modal_title: 'Delete command',
+                submit_modal_description: 'Are you sure you want to delete the selected teleport commands? This action cannot be undone.',
+                cancel_modal_title: 'Go back',
+                cancel_modal_description: 'Are you sure you want to go back to the previous page?',
+            });
+        } else if (operation_success === 'true') {
+            response.render('admin/teleport_command_list', {
+                title: 'Teleport Commands',
+                current_page_commands,
+                server_commands,
+                current_page_of_commands,
+                total_command_files,
+                total_number_of_pages,
+                page_numbers,
+                user: request.user,
+                currentPage: '/admin/teleport_command_list',
+                // Modal titles and descriptions
+                submit_modal_title: 'Delete command',
+                submit_modal_description: 'Are you sure you want to delete the selected teleport commands? This action cannot be undone.',
+                cancel_modal_title: 'Go back',
+                cancel_modal_description: 'Are you sure you want to go back to the previous page?',
+                show_submit_modal: true,
+                alert_title: `Deletion success`,
+                alert_description: `Successfully deleted ${teleport_commands_deleted_count} teleport command(s)`
+            });
+        } else if (operation_success === 'false') {
+            response.render('admin/teleport_command_list', {
+                title: 'Teleport Commands',
+                current_page_commands,
+                server_commands,
+                current_page_of_commands,
+                total_command_files,
+                total_number_of_pages,
+                page_numbers,
+                user: request.user,
+                currentPage: '/admin/teleport_command_list',
+                // Modal titles and descriptions
+                submit_modal_title: 'Delete command',
+                submit_modal_description: 'Are you sure you want to delete the selected teleport commands? This action cannot be undone.',
+                cancel_modal_title: 'Go back',
+                cancel_modal_description: 'Are you sure you want to go back to the previous page?',
+                show_error_modal: true,
+                alert_title: `Deletion failure`,
+                alert_description: `There was an error when attempting to delete the selected teleport command(s). Please try again`
+            });
+        }
     }
 });
 
@@ -700,7 +744,6 @@ router.post('/setftpserverdata', isLoggedIn, checkBotRepositoryInCache,
 });
 
 router.post("/createteleportcommand", isLoggedIn, checkBotRepositoryInCache,
-
     body('teleport_command_name_input')
         .trim()
         .isString()
@@ -811,6 +854,36 @@ router.post("/createteleportcommand", isLoggedIn, checkBotRepositoryInCache,
         }
 });
 
+router.post("/deleteteleportcommands", isLoggedIn, checkBotRepositoryInCache, async function(request, response)  {
+    let operation_success = true;
+    const botRepository = request.user.bot_repository;
+    let teleport_command_names = request.body.command_names_checkbox;
+
+    if (!teleport_command_names) {
+        response.redirect('/admin/teleportcommands?deleted=0&success=false')
+    }
+
+    if (!Array.isArray(teleport_command_names)) {
+        teleport_command_names = [teleport_command_names];
+    }
+
+    let teleport_command_count_deleted = 0;
+
+    try {
+        for (let i = 0; i < teleport_command_names.length; i++) {
+            let teleport_command_deleted = await botRepository.deleteBotTeleportCommand(teleport_command_names[i]);
+            if (teleport_command_deleted) {
+                teleport_command_count_deleted++;
+            } else {
+                operation_success = false;
+            }
+        }
+        response.redirect(`/admin/teleportcommands?deleted=${teleport_command_count_deleted}&success=${operation_success}`);
+    } catch (error) {
+        response.redirect('/admin/teleportcommands?deleted=0&success=false')
+    }
+});
+
 router.post("/deleteusers", isLoggedIn, checkBotRepositoryInCache, async function(request, response) {
     /**
      * user_steam_ids_to_delete will be an array of steam ids
@@ -820,7 +893,7 @@ router.post("/deleteusers", isLoggedIn, checkBotRepositoryInCache, async functio
     const botRepository = request.user.bot_repository;
 
     if (!(user_steam_ids_to_delete)) {
-        response.redirect('/admin/players');
+        response.redirect('/admin/players?deleted=0&success=false');
     }
 
     if (!Array.isArray(user_steam_ids_to_delete)) {

@@ -241,7 +241,7 @@ export default class BotRepository {
 
         try {
             const deletion_result = await database_connection.collection('bot_teleport_commands').deleteOne({ name: bot_teleport_command_name });
-            return deletion_result;
+            return deletion_result.deletedCount >= 1;
         } catch (error) {
             throw new Error(`There was an error when attempting to delete this bot teleport command: ${error}`);
         } finally {
