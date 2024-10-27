@@ -501,12 +501,6 @@ router.get('/discordchannelids', isLoggedIn, async (request, response) => {
         const alert_title = request.session.alert_title || '';
         const alert_description = request.session.alert_description || '';
 
-        // Clear the session variables
-        request.session.show_submit_modal = false;
-        request.session.show_error_modal = false;
-        request.session.alert_title = '';
-        request.session.alert_description = '';
-
         response.render('admin/discord_channel_ids', {
             user: request.user,
             title: `Discord channel ids`,
@@ -535,12 +529,6 @@ router.get('/ftpserverdata', isLoggedIn, async (request, response) => {
         const show_error_modal = request.session.show_error_modal || false;
         const alert_title = request.session.alert_title || '';
         const alert_description = request.session.alert_description || '';
-
-        // Clear the session variables
-        request.session.show_submit_modal = false;
-        request.session.show_error_modal = false;
-        request.session.alert_title = '';
-        request.session.alert_description = '';
 
         response.render('admin/ftp_server_data', {
             user: request.user,
@@ -571,12 +559,6 @@ router.get('/gameserverdata', isLoggedIn, (request, response) => {
         const show_error_modal = request.session.show_error_modal || false;
         const alert_title = request.session.alert_title || '';
         const alert_description = request.session.alert_description || '';
-
-        // Clear the session variables
-        request.session.show_submit_modal = false;
-        request.session.show_error_modal = false;
-        request.session.alert_title = '';
-        request.session.alert_description = '';
 
         response.render('admin/game_server_data', {
             user: request.user,
@@ -717,6 +699,118 @@ router.post('/setftpserverdata', isLoggedIn, checkBotRepositoryInCache,
     }
 });
 
+router.post("/createteleportcommand", isLoggedIn, checkBotRepositoryInCache,
+
+    body('teleport_command_name_input')
+        .trim()
+        .isString()
+        .withMessage('The teleport command name must be a valid string of lowercase and/or uppercase characters (a-z, A-Z)'),
+
+    body('teleport_command_cost_input')
+        .trim()
+        .isNumeric()
+        .withMessage('The teleport command cost must be a number'),
+
+    body('x_coordinate_data_input')
+        .trim()
+        .isNumeric()
+        .withMessage('The spawn zone x coordinate must be a number'),
+
+    body('y_coordinate_data_input')
+        .trim()
+        .isNumeric()
+        .withMessage('The spawn zone y coordinate must be a number'),
+
+    body('y_coordinate_data_input')
+        .trim()
+        .isNumeric()
+        .withMessage('The spawn zone z coordinate must be a number'),
+
+    async function(request, response) {
+
+        const errors = validationResult(request);
+        if (!errors.isEmpty()) {
+            const error_messages = errors.array().map(error => error.msg);
+            // There are validation errors
+            return response.render('admin/new_teleport_command', {
+                user: request.user,
+                currentPage: '/admin/new_teleport_command',
+                page_title: 'New teleport command',
+                // Preserve user inputs
+                teleport_command_name: request.body.teleport_command_name_input,
+                teleport_command_cost: request.body.teleport_command_cost_input,
+                teleport_command_coordinates: request.body.paste_coordinates_input,
+                teleport_command_x: request.body.x_coordinate_data_input,
+                teleport_command_y: request.body.y_coordinate_data_input,
+                teleport_command_z: request.body.z_coordinate_data_input,
+                submit_modal_title: `Create teleport command`,
+                submit_modal_description: `Are you sure you want to create this teleport command for your bot?`,
+                cancel_modal_title: `Go back`,
+                cancel_modal_description: `Are you sure you want to go back to the previous page?`,
+                show_error_modal: true,
+                alert_title: "Input errors",
+                alert_description: error_messages
+            });
+        }
+
+        let operation_success = true;
+        const x_coordinate = request.body.x_coordinate_data_input;
+        const y_coordinate = request.body.y_coordinate_data_input;
+        const z_coordinate = request.body.z_coordinate_data_input;
+        const command_name = request.body.teleport_command_name_input;
+        const command_cost = request.body.teleport_command_cost_input;
+        const botRepository = request.user.bot_repository;
+
+        const teleport_command = {
+            name: command_name,
+            cost: command_cost,
+            x_coordinate: x_coordinate,
+            y_coordinate: y_coordinate,
+            z_coordinate: z_coordinate
+        };
+
+        try {
+            await botRepository.createBotTeleportCommand(teleport_command);
+            response.render('admin/new_teleport_command', {
+                user: request.user,
+                currentPage: `/admin/new_teleport_command`,
+                page_title: `New teleport command`,
+                alert_title: `Successfully created new teleport command`,
+                alert_description: `You have successfully created a new bot teleport command and registered it with your bot`,
+                show_submit_modal: true,
+                teleport_command_name: request.body.teleport_command_name_input,
+                teleport_command_cost: request.body.teleport_command_cost_input,
+                teleport_command_coordinates: request.body.paste_coordinates_input,
+                teleport_command_x: request.body.x_coordinate_data_input,
+                teleport_command_y: request.body.y_coordinate_data_input,
+                teleport_command_z: request.body.z_coordinate_data_input,
+                submit_modal_title: `Create teleport command`,
+                submit_modal_description: `Are you sure you want to create this teleport command for your bot?`,
+                cancel_modal_title: `Go back`,
+                cancel_modal_description: `Are you sure you want to go back to the previous page?`
+            });
+        } catch (error) {
+            response.render('admin/new_teleport_command', {
+                user: request.user,
+                currentPage: `/admin/new_teleport_command`,
+                page_title: `New teleport command`,
+                alert_title: `Error creating new teleport command`,
+                alert_description: `Please try creating the bot teleport command again or contact the server administrator if you believe this is an error: ${error}`,
+                show_error_modal: true,
+                teleport_command_name: request.body.teleport_command_name_input,
+                teleport_command_cost: request.body.teleport_command_cost_input,
+                teleport_command_coordinates: request.body.paste_coordinates_input,
+                teleport_command_x: request.body.x_coordinate_data_input,
+                teleport_command_y: request.body.y_coordinate_data_input,
+                teleport_command_z: request.body.z_coordinate_data_input,
+                submit_modal_title: `Create teleport command`,
+                submit_modal_description: `Are you sure you want to create this item package for your bot?`,
+                cancel_modal_title: `Go back`,
+                cancel_modal_description: `Are you sure you want to go back to the previous page?`
+            });
+        }
+});
+
 router.post("/deleteusers", isLoggedIn, checkBotRepositoryInCache, async function(request, response) {
     /**
      * user_steam_ids_to_delete will be an array of steam ids
@@ -769,38 +863,38 @@ router.post('/setspawncoordinates', isLoggedIn, checkBotRepositoryInCache,
     
     async (request, response) => {
 
-    const errors = validationResult(request);
-    if (!errors.isEmpty()) {
-        request.session.alert_title = 'Validation errors';
-        request.session.alert_description = '<ul id="error_message_list">' + errors.array().map(error => `<li>${error.msg}</li>`).join('') + '</ul>';
-        request.session.show_error_modal = true;
-        return response.redirect('/admin/spawncoordinates');
-    }
-    const request_user_id = request.user.guild_id;
-    const botRepository = request.user.bot_repository;
+        const errors = validationResult(request);
+        if (!errors.isEmpty()) {
+            request.session.alert_title = 'Validation errors';
+            request.session.alert_description = '<ul id="error_message_list">' + errors.array().map(error => `<li>${error.msg}</li>`).join('') + '</ul>';
+            request.session.show_error_modal = true;
+            return response.redirect('/admin/spawncoordinates');
+        }
+        const request_user_id = request.user.guild_id;
+        const botRepository = request.user.bot_repository;
 
-    const coordinates_object = {
-        guild_id: request_user_id,
-        command_prefix: "#Teleport",
-        x_coordinate: request.body.x_coordinate_data_input,
-        y_coordinate: request.body.y_coordinate_data_input,
-        z_coordinate: request.body.z_coordinate_input
-    };
-    try {
-        await botRepository.createBotTeleportNewPlayerCoordinates(coordinates_object);
-        // Store the success message in the session
-        request.session.alert_title = 'Successfully updated spawn zone coordinates';
-        request.session.alert_description = 'You have successfully changed the coordinates for the new player spawn zone';
-        request.session.show_submit_modal = true;
-        response.redirect('/admin/spawncoordinates');
-    } catch (error) {
-        console.error(`There was an error when attempting to update the spawn zone coordinates: ${error}`);
-        // Store the error message in the session
-        request.session.alert_title = 'Error updating spawn zone coordinates';
-        request.session.alert_description = `Please try submitting this form again or contact the site administrator if you believe this is an error: ${error}`;
-        request.session.show_error_modal = true;
-        response.redirect('/admin/spawncoordinates');
-    }
+        const coordinates_object = {
+            guild_id: request_user_id,
+            command_prefix: "#Teleport",
+            x_coordinate: request.body.x_coordinate_data_input,
+            y_coordinate: request.body.y_coordinate_data_input,
+            z_coordinate: request.body.z_coordinate_input
+        };
+        try {
+            await botRepository.createBotTeleportNewPlayerCoordinates(coordinates_object);
+            // Store the success message in the session
+            request.session.alert_title = 'Successfully updated spawn zone coordinates';
+            request.session.alert_description = 'You have successfully changed the coordinates for the new player spawn zone';
+            request.session.show_submit_modal = true;
+            response.redirect('/admin/spawncoordinates');
+        } catch (error) {
+            console.error(`There was an error when attempting to update the spawn zone coordinates: ${error}`);
+            // Store the error message in the session
+            request.session.alert_title = 'Error updating spawn zone coordinates';
+            request.session.alert_description = `Please try submitting this form again or contact the site administrator if you believe this is an error: ${error}`;
+            request.session.show_error_modal = true;
+            response.redirect('/admin/spawncoordinates');
+        }
 });
 
 

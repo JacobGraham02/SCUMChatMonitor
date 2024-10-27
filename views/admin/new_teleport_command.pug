@@ -46,31 +46,60 @@ block content(user)
 			section#coordinate_data_form_section
 				fieldset.paste_coordinates_fieldset.start_zone_coordinates_fieldset
 					article.paste_coordinates_article(class='article_for_coordinate_data')
-						label(class="coordinate_data_label", for='paste_coordinates_input') Paste your clipboard text below
+						label(class="coordinate_data_label", for='paste_coordinates_input') <strong>Name</strong>
+						input.validate-input#coordinates_name_input(
+							class="coordinate_data_input",
+							type='text',
+							name='teleport_command_name_input',
+							placeholder='trader',
+							title="Please input a valid name for your teleport command"
+							value=teleport_command_name ? teleport_command_name : ''
+						)
+						div#coordinates_name_input_feedback
+
+				fieldset.paste_coordinates_fieldset.start_zone_coordinates_fieldset
+					article.paste_coordinates_article(class='article_for_coordinate_data')
+						label(class="coordinate_data_label", for='paste_coordinates_input') <strong>Cost</strong>
+						input.validate-input#coordinates_cost_input(
+							class="coordinate_data_input",
+							type='text',
+							name='teleport_command_cost_input',
+							placeholder='100',
+							title="Please input a valid cost for your teleport command. Must be a number"
+							value=teleport_command_cost ? teleport_command_cost : ''
+						)
+						div#coordinates_cost_input_feedback
+
+				fieldset.paste_coordinates_fieldset.start_zone_coordinates_fieldset
+					article.paste_coordinates_article(class='article_for_coordinate_data')
+						label(class="coordinate_data_label", for='paste_coordinates_input') <strong>Paste your clipboard teleport coordinates below</strong>
 						input.validate-input#paste_coordinates_input(
 							class="coordinate_data_input",
 							type='text',
 							name='paste_coordinates_input',
 							placeholder='#Teleport 218096.6355 64808.3453 0',
-							title="Please paste the entire #Teleport command that you acquired from the website")
+							title="Please paste the entire #Teleport command that you acquired from the map"
+							value=teleport_command_coordinates ? teleport_command_coordinates : ''
+							)
 						div#paste_coordinates_input_feedback
 
 				fieldset#start_zone_x_coordinate_fieldset.start_zone_coordinates_fieldset
 					article#x_coordinate_article(class='article_for_coordinate_data')
-						label(class="coordinate_data_label", for='x_coordinate_input') X coordinate (e.g., 218593.6683)
+						label(class="coordinate_data_label", for='x_coordinate_input') <strong>X</strong>
 						input.validate-input#x_coordinate_input(
 							class="coordinate_data_input",
 							type='text',
 							name='x_coordinate_data_input',
 							pattern="^-?\\d{0,6}(\\.\\d{0,6})?$",
 							placeholder='218593.6683',
-							value= user.x_coordinate ? user.x_coordinate : "",
-							title="Please enter an x coordinate that corresponds with the rule described above")
+							value= teleport_command_x ? teleport_command_x : "",
+							title="Please enter an x coordinate that corresponds with the rule described above"
+							)
 						div#x_coordinate_input_feedback
 
 				fieldset#start_zone_y_coordinate_fieldset.start_zone_coordinates_fieldset
 					article#y_coordinate_article(class='article_for_coordinate_data')
-						label(class="coordinate_data_label",for='y_coordinate_input') Y coordinate (e.g., 72405.7868)
+						label(class="coordinate_data_label", for='y_coordinate_input') <strong>Y</strong>
 						input.validate-input#y_coordinate_input(
 							class="coordinate_data_input",
 							type='text',
@@ -78,20 +107,20 @@ block content(user)
 							pattern="^-?\\d{0,6}(\\.\\d{0,6})?$",
 							title="Please enter a y coordinate that corresponds with the rule described above",
 							name='y_coordinate_data_input',
-							value= user.y_coordinate ? user.y_coordinate : "",
+							value= teleport_command_y ? teleport_command_y : "",
 							placeholder='72405.7868')
 						div#y_coordinate_input_feedback
 
 				fieldset#start_zone_z_coordinate_fieldset.start_zone_coordinates_fieldset
 					article#z_coordinate_article(class='article_for_coordinate_data')
-						label(class="coordinate_data_label", for='z_coordinate_input') Z coordinate (e.g., 0)
+						label(class="coordinate_data_label", for='z_coordinate_input') <strong>Z</strong>
 						input.validate-input#z_coordinate_input(
 							class="coordinate_data_input",
 							type='text',
 							title="Please enter a z coordinate that corresponds with the rule described above",
 							pattern="^-?\\d{0,6}(\\.\\d{0,6})?$",
-							name='z_coordinate_input',
-							value= user.z_coordinate ? user.z_coordinate : "",
+							name='z_coordinate_data_input',
+							value= teleport_command_z ? teleport_command_z : "",
 							placeholder='0')
 						div#z_coordinate_input_feedback
 
