@@ -1968,6 +1968,8 @@ async function processQueueIfNotProcessing(user_command_queue, guild_id) {
     const bot_repository = cache.get(`bot_repository_${guild_id}`);
     let bot_package_items = undefined;
     let bot_item_package_cost = undefined;
+    let bot_item_package = undefined;
+    let teleport_coordinates = undefined;
 
     while (user_command_queue.size() > 0) { 
         /**
@@ -2008,7 +2010,27 @@ async function processQueueIfNotProcessing(user_command_queue, guild_id) {
         By using a string representation of the command to execute, we will fetch the command from the MongoDB database. If the command executed in game is '/test', 
         a document with the name 'test' will be searched for in MongoDB. MongoDB returns the bot_item_package as an object instead of an array of objects. 
         */
-        const bot_item_package = await bot_repository.getBotPackageFromName(command_name.toString());
+        if (command_name.toString().startsWith('teleport')) {
+            bot_item_package = await bot_repository.getBotTeleportCommandFromName(command_name.toString());
+            teleport_coordinates = {
+                name: bot_item_package.name,
+                x: bot_item_package.x_coordinate,
+                y: bot_item_package.y_coordinate,
+                z: bot_item_package.z_coordinate,
+                cost: bot_item_package.cost
+            };
+            await sendMessageToClient(`${client_ingame_chat_name}, you will soon be teleported to the zone ${teleport_coordinates.name}`, guild_id, command_to_execute_player_steam_id);
+            await bot_repository.updateUserAccountBalance(command_to_execute_player_steam_id, -teleport_coordinates.cost);
+            await teleportPlayerToLocation(teleport_coordinates, guild_id, command_to_execute_player_steam_id);
+            continue;
+        } else {
+            try {
+                bot_item_package = await bot_repository.getBotPackageFromName(command_name.toString());
+            } catch (error) {
+                await sendMessageToClient(`${client_ingame_chat_name}, this package does not exist`);
+                continue;
+            }
+        }
 
         if (!bot_item_package) {
             await sendMessageToClient(`${client_ingame_chat_name}, this package does not exist`);
@@ -2020,16 +2042,6 @@ async function processQueueIfNotProcessing(user_command_queue, guild_id) {
             if (bot_item_package.package_cost) {
                 bot_item_package_cost = bot_item_package.package_cost;
             }
-            if (command_name.endsWith('trader')) {
-                const teleport_coordinates = {
-                    x: bot_package_items.package_items[0],
-                    y: bot_package_items.package_items[1],
-                    z: bot_package_items.package_items[2]
-                }
-                await sendMessageToClient(`${client_ingame_chat_name}, you will be teleported to the vehicle trader soon`, guild_id, command_to_execute_player_steam_id);
-                await teleportPlayerToLocation(teleport_coordinates, guild_id, command_to_execute_player_steam_id);
-                continue;
-            }
         }       
 
         /**
@@ -2038,12 +2050,18 @@ async function processQueueIfNotProcessing(user_command_queue, guild_id) {
          * an increment by 1 for the field 'user_welcome_pack_uses'. Each time this command is executed, we update the user welcome pack uses by one. 
          */
         if (command_name === 'welcomepack') {
-            const welcome_pack_cost = user_account.user_welcome_pack_cost;
+            const welcome_pack_uses = user_account.user_welcome_pack_uses || 0;
+            const welcome_pack_cost = 1000 * (welcome_pack_uses + 1);
+
              if (user_account_balance < welcome_pack_cost) {
-                await sendMessageToClient(`${client_ingame_chat_name}, you do not have enough money to use your welcome pack again. Use the command /balance to check your balance`, guild_id, command_to_execute_player_steam_id);
+                await sendMessageToClient(
+                    `${client_ingame_chat_name}, you do not have enough money to use your welcome pack again. Use the command /balance to check your balance`,
+                    guild_id,
+                    command_to_execute_player_steam_id);
                 continue;
              } else {
                 await bot_repository.updateUserWelcomePackUsesByOne(user_account.user_steam_id);
+                await bot_repository.updateUserAccountBalance(user_account.user_steam_id, -welcome_pack_cost);
              }
         }
 
