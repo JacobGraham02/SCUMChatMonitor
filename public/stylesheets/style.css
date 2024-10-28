@@ -701,11 +701,15 @@ fieldset {
 }
 
 /* Log in page stylings */
+
+
+
 #login_section {
     display: flex;
     flex-direction: column;
     height: 100%;
     align-items: center;
+    text-align: center;
 }
 
 .login_fieldset {
@@ -715,6 +719,7 @@ fieldset {
     flex-direction: column;
     text-align: center;
     width: 100%;
+    margin-top: 5%;
 }
 
 #login_fields_form_fieldset_container {
@@ -725,19 +730,13 @@ fieldset {
 }
 
 .login_input {
+    font-size: 80%;
     width: 80%;
     height: 80%;
 }
 
-.login_label {
-    font-weight: bold;
-}
-
-#invalid_login_message {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
+#login_form_submit_button_article {
+    margin-top: 5%;
 }
 
 #login_fields_form {
@@ -748,6 +747,15 @@ fieldset {
     height: fit-content;
     font-size: 125%;
     line-height: 150%;
+}
+
+.login_label {
+    font-weight: bold;
+    font-size: 80%;
+}
+
+.login_label_hint {
+    font-size: 80%;
 }
 
 /* End of log in page stylings */
@@ -1571,8 +1579,27 @@ a {
         display: none;
     }
 
+    /* Start of log in page stylings */
     .login_input {
         width: 60%;
         height: 60%;
     }
+
+    .login_fieldset {
+        margin-top: 5%;
+    }
+
+    .login_label {
+        font-weight: bold;
+        font-size: 90%;
+    }
+
+    .login_label_hint {
+        font-size: 90%;
+    }
+
+    #login_form_submit_button_article {
+        margin-top: 2%;
+    }
+    /* End of log in page stylings */
 }

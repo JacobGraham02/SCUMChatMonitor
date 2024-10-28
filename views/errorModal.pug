@@ -1,0 +1,19 @@
+//- Because the server handles sending HTML content to this modal, we can safely supply unescaped HTML content into this modal
+mixin errorModal(modalTitle, modalContent)
+    div.modal.fade#errorModal(tabindex="-1", role="dialog", aria-labelledby="errorModalLabel", aria-hidden="true")
+        div.modal-dialog.modal-lg(role="document")
+            div.modal-content
+                div.modal-header
+                    h5.modal-title#errorModalLabel #{modalTitle}
+                    button.close(type="button", data-dismiss="modal", aria-label="Close")
+                        span(aria-hidden="true") &times;
+                div.modal-body
+                    if Array.isArray(modalContent)
+                        ul#error_modal_ul
+                            each msg in modalContent
+                                li(class="error_modal_li text-wrap")= msg
+                                br
+                    else
+                        p.text-wrap!= modalContent
+                div.modal-footer
+                    button.btn.btn-secondary(type="button", data-dismiss="modal") Close

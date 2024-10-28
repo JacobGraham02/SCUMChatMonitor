@@ -951,7 +951,10 @@ expressServer.post('/login', passport.authenticate('local', {
 
 expressServer.get('/login-failure', function (request, response, next) {
     response.render('login', {
-        title: "Invalid login", invalid_login_message: 'Invalid login credentials. Please try again with a different set of credentials.'
+        title: "Invalid login",
+        show_error_modal: true,
+        alert_title: `Error logging in`,
+        alert_description: `There was an error when attempting to log in to your account. Please check your account credentials and attempt to log in again. Feel free to email the site administrator using the email account at the bottom of the page`
     });
 });
 

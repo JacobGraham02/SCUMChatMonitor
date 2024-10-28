@@ -9,19 +9,12 @@ mixin menu(data)
      div#navbar_wilson_image
       a#index_page_home_button(href='/' title='A link to go to the website home page')
        img#menu_links_image(src='../../images/WilsonBotMenu.png', alt='The WilsonBot logo')
-    li 
-       div#navbar_welcome
-        -if (user === undefined) {
-          h1#user_administrator_name_heading Welcome, user 
-        -} else {
-          a#index_commands_page(href='admin/' title='A link to go to the site commands page') Bot commands
-          h1#user_administrator_name_heading Welcome, #{user.admin_username}
-        -}
+
     li
      div#logout_button_container
      -if (user !== undefined) {    
-      form#global_site_navigation_logout_form(action='/logout' method='POST')
-       button#gui_bot_web_interface_logout_button(type="submit") Log out
+       form#global_site_navigation_logout_form(action='/logout' method='POST')
+        button#gui_bot_web_interface_logout_button(type="submit") Go to the log in page
      -} else {
-       a#index_page_login_button.menu_item(href='login' title='A link to go to the site login page') Log in to your account 
+        a#index_page_login_button.menu_item(href='login' title='A link to go to the site login page') Log in to your account
      -}

@@ -194,10 +194,23 @@ router.get('/teleportcommand/:commandname', isLoggedIn, checkBotRepositoryInCach
 
 router.get(['/login-success', '/'], isLoggedIn, function(request, response) {
     try {
-        response.render('admin/index', { user: request.user, currentPage: '/admin/', title: `Admin dashboard` });
+        response.render('admin/index', {
+            user: request.user,
+            currentPage: '/admin/',
+            title: `Admin dashboard`,
+            show_submit_modal: true,
+            alert_title: `Success`,
+            alert_description: `You successfully logged in to your account`
+        });
     } catch (error) {
-        console.error(`There was an error when attempting to load the admin index file after logging in. Please inform the server administrator of this error or try again: ${error}`);
-        response.render('admin/index', { user: request.user, currentPage: '/admin/', title: `Admin dashboard` });
+        response.render('admin/index', {
+            user: request.user,
+            currentPage: '/admin/',
+            title: `Admin dashboard`,
+            show_error_modal: true,
+            alert_title: `Error when logging in`,
+            alert_description: `There was an error when attempting to load the admin index file after logging in. Please inform the server administrator of this error or try again: ${error}`
+        });
     }
 });
 

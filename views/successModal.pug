@@ -1,0 +1,19 @@
+mixin successModal(modalTitle, modalContent, modalList)
+    - modalList = typeof modalList !== 'undefined' ? modalList : null
+    div.modal.fade#successModal(tabindex="-1", role="dialog", aria-labelledby="successModalLabel", aria-hidden="true")
+        div.modal-dialog.modal-lg(role="document")
+            div.modal-content
+                div.modal-header
+                    h5.modal-title#successModalLabel #{modalTitle}
+                    button.close(type="button", data-dismiss="modal", aria-label="Close")
+                        span(aria-hidden="true") &times;
+                div.modal-body
+                    p #{modalContent}
+                    //Check if modalList array exists and has content
+                    if modalList && modalList.length
+                        p The following users were deleted:
+                        ul
+                            each item in modalList
+                                li= item
+                div.modal-footer
+                    button.btn.btn-secondary(type="button", data-dismiss="modal") Close
