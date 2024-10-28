@@ -1,37 +1,77 @@
 extends layout
 
 block variables
-    - var page_title = title 
-    - var players_per_page = 10
-    - var current_page_number = 1
-    - var total_number_of_pages = Math.ceil(total_player_files / players_per_page)
+    - let page_title = title;
+    - let players_per_page = 10
+    - let current_page_number = 1
+    - let total_number_of_pages = Math.ceil(total_player_files / players_per_page)
+    - let page_instructions_title = "Help"
+    - let page_instructions = "<p>On this page, you can view a list of players who are registered with your bot, and are able to use bot commands."
+        - page_instructions += "What follows is a list of things that are available on this page:<br><br></p>"
+        - page_instructions += "<ol><li>1. See all players registered with your bot. You can do this by either searching for a name using the search bar at the top of the page, or by manually using the navigation at the bottom of the page.</li></ol>"
+        - page_instructions += "<ol><li>2. View individual player details. You can do this by clicking on the name of any player. This will show you what the bot knows about this player, such as their account balance and welcome pack uses.</li></ol>"
+        - page_instructions += "<ol><li>3. Delete one or more players. This will make it so the bot does not know anything about that player anymore. You can do this by clicking on one or more of the checkboxes to the right-hand side of the player name, and then hitting the button at the bottom of the page titled <strong>Delete selected users</strong>.</li></ol>"
+        - page_instructions += "<ol><li>4. Go back to the previous page. Clicking the button at the bottom of the page titled <strong>Go back to the previous page</strong> will take you back to the page you were on before you went to this one.</li>"
+
 
 include menu
 include smallModal
 include deleteModal
+include cancelModal
 include successModal
 include errorModal
+include infoModal
 
 block header
     header#header.header
+        +infoModal(page_instructions_title, page_instructions)
         +menu(user, currentPage)
-
+        +smallModal(submit_modal_title, submit_modal_description)
+        +cancelModal(cancel_modal_title, cancel_modal_description)
+        if show_submit_modal
+            +successModal(alert_title, alert_description, deleted_users)
+        if show_error_modal
+            +errorModal(alert_title, alert_description)
 block content(user)
-    main#server_players_main 
+    main#server_players_main
+        div#website_help_icon
+            a(href="#" data-toggle='modal', data-target='#infoModal', class='ml-2')
+                i.fa.fa-question-circle(aria-hidden="true")
         h1#current_server_players_heading Players
-        h4#current_server_players_heading_todo Click on any of the player names listed here to view more details about them
+        h5#current_player_page Currently on page #{current_page_of_players}
+        h5#current_server_players_heading_todo Click on any of the player names listed here to view more details about them
+        h6#player_search_disclaimer Matching player name results automatically appear in the list as you type in the search box
+        input(id="player_search_input" type="text" placeholder="Search names...")
 
-        article#current_server_players_list_article
-            ul#current_server_players_list
-                - for (let i = (current_page_number - 1) * players_per_page; i < Math.min(current_page_number * players_per_page, current_page_players.length); i++) {
-                    li 
-                        a(href=`player/${current_page_players[i].user_steam_id}`)= current_page_players[i].user_steam_name
-                - }
+        // Hidden input field containing server players as a serialized JSON string
+        input(type="hidden" id="server_players_data" value=`${JSON.stringify(server_players)}`)
 
-            nav#players_pagination_list_nav
-                ul#players_pagination_list_ul
-                    for page in page_numbers
-                        li#players_pagination_list_item(class=current_page_of_players === page ? 'active' : '')
-                            a#players_pagination_list_link(href=`players?range=${(page - 1) * players_per_page + 1}&${page * players_per_page}`) Page #{page}
+        form#delete_users_form(class="bot_data_form", action='/admin/deleteusers/' method='POST') 
+            article#current_server_players_list_article
+                ul#current_server_players_list
+                    - for (let i = (current_page_number - 1) * players_per_page; i < Math.min(current_page_number * players_per_page, current_page_players.length); i++) {
+                        li.current_user_list_item 
+                            div#current_user_container
+                                a(href=`player/${current_page_players[i].user_steam_id}`)= current_page_players[i].user_steam_name
+                                div#delete_toggle_container
+                                    div#current_user_delete_toggle
+                                        input(type="checkbox" name="user_ids_checkbox" value=`${current_page_players[i].user_steam_id}`)
+                                        input(type="hidden" name="user_names_hidden_input" value=`${current_page_players[i].user_steam_name}`)
+                    - }
+                article#players_page_button_container
+                    button#save_changes_button(type="submit" disabled) Delete selected users
 
-    script(src='/javascripts/admin_index_page.js')
+        nav#players_pagination_list_nav
+            ul#players_pagination_list_ul
+                li.players_pagination_list_item(class=current_page_of_players === page ? 'active' : '')
+                    a.players_pagination_list_link(href=`players?range=${`1&${players_per_page}`}`) First page
+
+                for page in page_numbers
+                    li#players_pagination_list_item(class=current_page_of_players === page ? 'active' : '')
+                        a#players_pagination_list_link(href=`players?range=${(page - 1) * players_per_page + 1}&${page * players_per_page}`) Page #{page}
+
+                li.players_pagination_list_item(class=current_page_of_players === page ? 'active' : '')
+                    a.players_pagination_list_link(href=`players?range=${(total_number_of_pages - 1) * players_per_page + 1}&${total_player_files}`) Last page
+    script(src="/javascripts/sort_players.js")
+    script(src="/javascripts/delete_players.js")
+    script(src="/javascripts/show_submit_modal.js")

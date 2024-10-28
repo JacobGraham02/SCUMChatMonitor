@@ -2,6 +2,7 @@ extends layout
 
 block variables 
     - var page_title = title 
+    - var user_steam_name_no_parenthesis = player.user_steam_name.replace(/\(\d+\)/, '') 
 
 include menu 
 include smallModal 
@@ -15,13 +16,15 @@ block header
 
 block content(user)
     main#main_player_details 
-        h1 #{player.user_steam_name} Details
+        h1 #{user_steam_name_no_parenthesis}
+        -if (user.bot_username) {
+            h3#player_name_with_bot Player name with bot: #{player.user_steam_name}
+        -}
         article#main_player_details_article
-
-            h4 Steam name: #{player.user_steam_name}
-            h4 Steam id: #{player.user_steam_id}
-            h4 Balance: $#{player.user_money}
-            h4 Welcome pack uses: #{player.welcome_pack_uses || 0}
+            h5 Steam name: #{user_steam_name_no_parenthesis}
+            h5 Steam id: #{player.user_steam_id}
+            h5 Balance: $#{player.user_money}
+            h5 Welcome pack uses: #{player.welcome_pack_uses || 0}
 
         article#main_player_details_back_to_list
             a(href="/admin/players?range=1&10") Back to players list 

@@ -1,0 +1,132 @@
+extends layout
+
+block variables
+	- var page_title= title
+	- let page_instructions = "<p>On this page, you can select the location for a new teleport command that users will be able to teleport to</p>"
+	- page_instructions += "<p>Below is everything you must do on this page:<br><br></p>"
+	- page_instructions += "<ol>"
+	- page_instructions += "<li>1. Initially, when the page first loads, you will be presented with an online SCUM interactive map. From here, you must click on the 'Copy TP Location' heading in the left-hand sidebar in the interactive menu window. This tool is pictured as a scope icon, or an icon that indicates you are looking through the scope of a firearm. When you click on this heading or icon, an indicator will pop up informing you to select a location on the map to copy to your computer's clipboard</li>"
+	- page_instructions += "<li>2. Next, select any location on the interactive map by either left-clicking with your mouse or pressing with your finger. An indicator will pop up on the right-hand side of the screen informing you that a teleport location has been copied to your clipboard. This dialog box will be green</li>"
+	- page_instructions += "<li>3. Finally, with this text copied to your clipboard, click on the <strong>Show form</strong> button that is listed on the top of the page, and paste the text into the input field that is labelled <strong>Paste your clipboard text below</strong></li>"
+	- page_instructions += "<li>4. You can select the <strong>Show map</strong> button at any time to restore the map</li>"
+	- page_instructions += "</ol>"
+
+include menu
+include smallModal
+include successModal
+include cancelModal
+include errorModal
+include infoModal
+
+block header
+	header#header.header
+		+menu(user, currentPage)
+		+infoModal("Help", page_instructions)
+
+block content(user)
+	main#command_new_page
+		div#website_help_icon
+			a(href="#" data-toggle='modal', data-target='#infoModal', class='ml-2')
+				i.fa.fa-question-circle(aria-hidden="true")
+		+smallModal(submit_modal_title, submit_modal_description)
+		+cancelModal(cancel_modal_title, cancel_modal_description)
+		if show_submit_modal 
+			+successModal(alert_title, alert_description)
+		if show_error_modal
+			+errorModal(alert_title, alert_description)
+		div#create_command_page_heading_container
+			h1#create_command_page_header_h1 Create new teleport command
+
+		h2#coordinate_data_edit_page_heading(class="text-center") Spawn zone coordinates
+		button#toggle_map_view_button(type='button') Show map
+		button#toggle_form_view_button(type='button') Show form
+		iframe#map_selection_tool(src="https://scum-map.com/en/interactive_map")
+
+		form#coordinate_data_form(method='POST', action='/admin/createteleportcommand', enctype='application/x-www-form-urlencoded' class="needs-validation bot_data_form")
+			section#coordinate_data_form_section
+				fieldset.paste_coordinates_fieldset.start_zone_coordinates_fieldset
+					article.paste_coordinates_article(class='article_for_coordinate_data')
+						label(class="coordinate_data_label", for='paste_coordinates_input') <strong>Name</strong>
+						input.validate-input#coordinates_name_input(
+							class="coordinate_data_input",
+							type='text',
+							name='teleport_command_name_input',
+							placeholder='trader',
+							title="Please input a valid name for your teleport command"
+							value=teleport_command_name ? teleport_command_name : ''
+						)
+						div#coordinates_name_input_feedback
+
+				fieldset.paste_coordinates_fieldset.start_zone_coordinates_fieldset
+					article.paste_coordinates_article(class='article_for_coordinate_data')
+						label(class="coordinate_data_label", for='paste_coordinates_input') <strong>Cost</strong>
+						input.validate-input#coordinates_cost_input(
+							class="coordinate_data_input",
+							type='text',
+							name='teleport_command_cost_input',
+							placeholder='100',
+							title="Please input a valid cost for your teleport command. Must be a number"
+							value=teleport_command_cost ? teleport_command_cost : ''
+						)
+						div#coordinates_cost_input_feedback
+
+				fieldset.paste_coordinates_fieldset.start_zone_coordinates_fieldset
+					article.paste_coordinates_article(class='article_for_coordinate_data')
+						label(class="coordinate_data_label", for='paste_coordinates_input') <strong>Paste your clipboard teleport coordinates below</strong>
+						input.validate-input#paste_coordinates_input(
+							class="coordinate_data_input",
+							type='text',
+							name='paste_coordinates_input',
+							placeholder='#Teleport 218096.6355 64808.3453 0',
+							title="Please paste the entire #Teleport command that you acquired from the map"
+							value=teleport_command_coordinates ? teleport_command_coordinates : ''
+							)
+						div#paste_coordinates_input_feedback
+
+				fieldset#start_zone_x_coordinate_fieldset.start_zone_coordinates_fieldset
+					article#x_coordinate_article(class='article_for_coordinate_data')
+						label(class="coordinate_data_label", for='x_coordinate_input') <strong>X</strong>
+						input.validate-input#x_coordinate_input(
+							class="coordinate_data_input",
+							type='text',
+							name='x_coordinate_data_input',
+							pattern="^-?\\d{0,6}(\\.\\d{0,6})?$",
+							placeholder='218593.6683',
+							value= teleport_command_x ? teleport_command_x : "",
+							title="Please enter an x coordinate that corresponds with the rule described above"
+							)
+						div#x_coordinate_input_feedback
+
+				fieldset#start_zone_y_coordinate_fieldset.start_zone_coordinates_fieldset
+					article#y_coordinate_article(class='article_for_coordinate_data')
+						label(class="coordinate_data_label", for='y_coordinate_input') <strong>Y</strong>
+						input.validate-input#y_coordinate_input(
+							class="coordinate_data_input",
+							type='text',
+							min='0',
+							pattern="^-?\\d{0,6}(\\.\\d{0,6})?$",
+							title="Please enter a y coordinate that corresponds with the rule described above",
+							name='y_coordinate_data_input',
+							value= teleport_command_y ? teleport_command_y : "",
+							placeholder='72405.7868')
+						div#y_coordinate_input_feedback
+
+				fieldset#start_zone_z_coordinate_fieldset.start_zone_coordinates_fieldset
+					article#z_coordinate_article(class='article_for_coordinate_data')
+						label(class="coordinate_data_label", for='z_coordinate_input') <strong>Z</strong>
+						input.validate-input#z_coordinate_input(
+							class="coordinate_data_input",
+							type='text',
+							title="Please enter a z coordinate that corresponds with the rule described above",
+							pattern="^-?\\d{0,6}(\\.\\d{0,6})?$",
+							name='z_coordinate_data_input',
+							value= teleport_command_z ? teleport_command_z : "",
+							placeholder='0')
+						div#z_coordinate_input_feedback
+
+				fieldset#coordinate_data_form_buttons.fieldset_for_form_buttons
+					button#save_changes_button(class="" type='submit') Save
+
+	script(src="/javascripts/coordinate_chooser_iframe.js")
+	script(src='/javascripts/show_submit_modal.js')
+	script(src='/javascripts/validate_form_fields.js')

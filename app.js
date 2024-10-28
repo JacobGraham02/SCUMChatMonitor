@@ -178,12 +178,12 @@ async function determinePlayerLoginSessionMoney(guild_id, logs) {
                         const calculated_elapsed_time = ((formatted_date_and_time - login_time) / 1000 / 60 / 60);
                         const user_account_balance = Math.round(calculated_elapsed_time * 1000);
 
-                        message_logger.writeLogToAzureContainer(
-                            `InfoLogs`, 
-                            `User ${user_steam_id} has an added account balance of ${user_account_balance}`, 
-                            guild_id, 
-                            `${guild_id}-info-logs`
-                        );
+                        // message_logger.writeLogToAzureContainer(
+                        //     `InfoLogs`,
+                        //     `User ${user_steam_id} has an added account balance of ${user_account_balance}`,
+                        //     guild_id,
+                        //     `${guild_id}-info-logs`
+                        // );
 
                         user_balance_updates.set(user_steam_id, user_account_balance);
                         cache.delete(`login_time_${user_steam_id}`);
@@ -203,12 +203,12 @@ async function determinePlayerLoginSessionMoney(guild_id, logs) {
             await bot_repository.updateUserAccountBalance(user_steam_id, update, guild_id);
             user_balance_updates.delete(user_steam_id);
         } catch (database_updated_error) {
-            message_logger.writeLogToAzureContainer(
-                `ErrorLogs`, 
-                `Failed to update the user account balance for user with steam id ${user_steam_id}`, 
-                guild_id, 
-                `${guild_id}-error-logs`
-            );
+            // message_logger.writeLogToAzureContainer(
+            //     `ErrorLogs`,
+            //     `Failed to update the user account balance for user with steam id ${user_steam_id}`,
+            //     guild_id,
+            //     `${guild_id}-error-logs`
+            // );
         }
     }
 }
@@ -228,43 +228,43 @@ async function createNewFtpClient(guild_id, ftp_server_data) {
 
     return await new Promise((resolve, reject) => {
         gportal_log_file_ftp_client.on('ready', () => {
-            message_logger.writeLogToAzureContainer(
-                `InfoLogs`, 
-                `The FTP connection has been successfully established`, 
-                guild_id, 
-                `${guild_id}-info-logs`
-            );
+            // message_logger.writeLogToAzureContainer(
+            //     `InfoLogs`,
+            //     `The FTP connection has been successfully established`,
+            //     guild_id,
+            //     `${guild_id}-info-logs`
+            // );
             cache.set(`ftp_server_configuration_${guild_id}`, gportal_log_file_ftp_client);
             resolve(gportal_log_file_ftp_client);
         });
         gportal_log_file_ftp_client.on('error', (error) => {
-            message_logger.writeLogToAzureContainer(
-                `ErrorLogs`, 
-                `There was a connection error with the FTP server: ${error.message}`, 
-                guild_id, 
-                `${guild_id}-error-logs`
-            );
+            // message_logger.writeLogToAzureContainer(
+            //     `ErrorLogs`,
+            //     `There was a connection error with the FTP server: ${error.message}`,
+            //     guild_id,
+            //     `${guild_id}-error-logs`
+            // );
             reject(error); 
         });
         gportal_log_file_ftp_client.on('close', () => {
-            message_logger.writeLogToAzureContainer(
-                `InfoLogs`, 
-                `The FTP connection has been closed. Attempting to reconnect with the FTP server`, 
-                guild_id, 
-                `${guild_id}-info-logs`
-            );
+            // message_logger.writeLogToAzureContainer(
+            //     `InfoLogs`,
+            //     `The FTP connection has been closed. Attempting to reconnect with the FTP server`,
+            //     guild_id,
+            //     `${guild_id}-info-logs`
+            // );
             retryConnection(guild_id, ftp_server_data);
         });
 
         gportal_log_file_ftp_client.connect(gportal_ftp_config);
 
     }).catch(error => {
-        message_logger.writeLogToAzureContainer(
-            `ErrorLogs`, 
-            `An error has occurred when attempting to establish a connection to the FTP server: ${error}`, 
-            guild_id, 
-            `${guild_id}-error-logs`
-        );
+        // message_logger.writeLogToAzureContainer(
+        //     `ErrorLogs`,
+        //     `An error has occurred when attempting to establish a connection to the FTP server: ${error}`,
+        //     guild_id,
+        //     `${guild_id}-error-logs`
+        // );
     });
 }
 
@@ -284,12 +284,12 @@ async function establishFtpConnectionToGportal(guild_id, ftp_server_data) {
  */
 function retryConnection(guild_id, ftp_server_data) {
     const ftp_retry_delay = 5000;
-    message_logger.writeLogToAzureContainer(
-        `InfoLogs`, 
-        `Retrying connection to FTP server`, 
-        guild_id, 
-        `${guild_id}-info-logs`
-    );
+    // message_logger.writeLogToAzureContainer(
+    //     `InfoLogs`,
+    //     `Retrying connection to FTP server`,
+    //     guild_id,
+    //     `${guild_id}-info-logs`
+    // );
     setTimeout(() => {
         establishFtpConnectionToGportal(guild_id, ftp_server_data);
     }, ftp_retry_delay);
@@ -318,12 +318,12 @@ async function readAndFormatGportalFtpServerLoginLog(bot_repository, guild_id, f
         const files = await new Promise((resolve, reject) => {
             ftp_client.list(gportal_ftp_server_target_directory, async (error, files) => {
                 if (error) {
-                    await message_logger.writeLogToAzureContainer(
-                        `ErrorLogs`, 
-                        `There was an error when attempting to retrieve the login files from GPortal FTP server: ${error}`, 
-                        guild_id, 
-                        `${guild_id}-error-logs`
-                    );
+                    // await message_logger.writeLogToAzureContainer(
+                    //     `ErrorLogs`,
+                    //     `There was an error when attempting to retrieve the login files from GPortal FTP server: ${error}`,
+                    //     guild_id,
+                    //     `${guild_id}-error-logs`
+                    // );
                     reject('Failed to retrieve file listing');
                 } else {
                     resolve(files);
@@ -336,12 +336,12 @@ async function readAndFormatGportalFtpServerLoginLog(bot_repository, guild_id, f
             .sort((file_one, file_two) => file_two.date - file_one.date);
 
         if (matching_files.length === 0) {
-            await message_logger.writeLogToAzureContainer(
-                `ErrorLogs`, 
-                `No files were found that started with the prefix ${gportal_ftp_server_filename_prefix_login}`, 
-                guild_id, 
-                `${guild_id}-error-logs`
-            );
+            // await message_logger.writeLogToAzureContainer(
+            //     `ErrorLogs`,
+            //     `No files were found that started with the prefix ${gportal_ftp_server_filename_prefix_login}`,
+            //     guild_id,
+            //     `${guild_id}-error-logs`
+            // );
             return;
         }
 
@@ -350,12 +350,12 @@ async function readAndFormatGportalFtpServerLoginLog(bot_repository, guild_id, f
         stream = await new Promise((resolve, reject) => {
             ftp_client.get(file_path, async (error, stream) => {
                 if (error) {
-                    await message_logger.writeLogToAzureContainer(
-                        `ErrorLogs`, 
-                        `The FTP file was present in GPortal, but could not be fetched: ${error}`, 
-                        guild_id, 
-                        `${guild_id}-error-logs`
-                    );
+                    // await message_logger.writeLogToAzureContainer(
+                    //     `ErrorLogs`,
+                    //     `The FTP file was present in GPortal, but could not be fetched: ${error}`,
+                    //     guild_id,
+                    //     `${guild_id}-error-logs`
+                    // );
                     reject(new Error(`The ftp login file was present in GPortal, but could not be fetched. ${error}`));
                 } else {
                     resolve(stream);
@@ -443,12 +443,12 @@ async function readAndFormatGportalFtpServerLoginLog(bot_repository, guild_id, f
             stream.on('error', reject);
         });
     } catch (error) {
-        await message_logger.writeLogToAzureContainer(
-            `ErrorLogs`, 
-            `There was an error when processing the GPortal FTP login log file: ${error}`, 
-            guild_id, 
-            `${guild_id}-error-logs`
-        );
+        // await message_logger.writeLogToAzureContainer(
+        //     `ErrorLogs`,
+        //     `There was an error when processing the GPortal FTP login log file: ${error}`,
+        //     guild_id,
+        //     `${guild_id}-error-logs`
+        // );
     } finally {
         if (stream) {
             stream = null;
@@ -495,12 +495,12 @@ async function teleportNewPlayersToLocation(bot_repository, user_steam_ids, chan
             try {
                 myEmitter.emit('newUserJoinedServer', steam_id, channel_for_new_joins, guild_id);
             } catch (error) {
-                await message_logger.writeLogToAzureContainer(
-                    `ErrorLogs`,
-                    `An error occurred when sending the new player login messages to discord: ${error}`,
-                    guild_id,
-                    `${guild_id}-error-logs`
-                );
+                // await message_logger.writeLogToAzureContainer(
+                //     `ErrorLogs`,
+                //     `An error occurred when sending the new player login messages to discord: ${error}`,
+                //     guild_id,
+                //     `${guild_id}-error-logs`
+                // );
             }
 
             try {
@@ -511,12 +511,12 @@ async function teleportNewPlayersToLocation(bot_repository, user_steam_ids, chan
                 }
                 await teleportPlayerToLocation(teleport_coordinates, guild_id, steam_id);
             } catch (error) {
-                await message_logger.writeLogToAzureContainer(
-                    `ErrorLogs`,
-                    `An error occurred when attempting to teleport the player to the spawn location area: ${error}`,
-                    guild_id,
-                    `${guild_id}-error-logs`
-                );
+                // await message_logger.writeLogToAzureContainer(
+                //     `ErrorLogs`,
+                //     `An error occurred when attempting to teleport the player to the spawn location area: ${error}`,
+                //     guild_id,
+                //     `${guild_id}-error-logs`
+                // );
             }
 
             await bot_repository.updateUser(steam_id, { user_joining_server_first_time: 1 });
@@ -549,12 +549,12 @@ async function readAndFormatGportalFtpServerChatLog(guild_id, ftp_client) {
         const files = await new Promise((resolve, reject) => {
             ftp_client.list(gportal_ftp_server_target_directory, (error, files) => {
                 if (error) {
-                    message_logger.writeLogToAzureContainer(
-                        `ErrorLogs`, 
-                        `Failed to retrieve file listings from GPortal: ${error.message}`, 
-                        guild_id, 
-                        `${guild_id}-error-logs`
-                    );
+                    // message_logger.writeLogToAzureContainer(
+                    //     `ErrorLogs`,
+                    //     `Failed to retrieve file listings from GPortal: ${error.message}`,
+                    //     guild_id,
+                    //     `${guild_id}-error-logs`
+                    // );
                     reject(new Error(`Failed to retrieve file listings: ${error.message}`));
                 } else {
                     resolve(files);
@@ -576,12 +576,12 @@ async function readAndFormatGportalFtpServerChatLog(guild_id, ftp_client) {
          * indicating that no target files were found
          */
         if (matching_files.length === 0) {
-            message_logger.writeLogToAzureContainer(
-                `ErrorLogs`, 
-                `No files were found that started with the prefix ${gportal_ftp_server_filename_prefix_chat}: ${error}`, 
-                guild_id, 
-                `${guild_id}-error-logs`
-            );
+            // message_logger.writeLogToAzureContainer(
+            //     `ErrorLogs`,
+            //     `No files were found that started with the prefix ${gportal_ftp_server_filename_prefix_chat}: ${error}`,
+            //     guild_id,
+            //     `${guild_id}-error-logs`
+            // );
             return;
         }
 
@@ -592,12 +592,12 @@ async function readAndFormatGportalFtpServerChatLog(guild_id, ftp_client) {
         stream = await new Promise((resolve, reject) => {
             ftp_client.get(file_path, (error, stream) => {
                 if (error) {
-                    message_logger.writeLogToAzureContainer(
-                        `ErrorLogs`, 
-                        `The file is present in GPortal, but can not be fetched: ${error}`, 
-                        guild_id, 
-                        `${guild_id}-error-logs`
-                    );
+                    // message_logger.writeLogToAzureContainer(
+                    //     `ErrorLogs`,
+                    //     `The file is present in GPortal, but can not be fetched: ${error}`,
+                    //     guild_id,
+                    //     `${guild_id}-error-logs`
+                    // );
                     reject(new Error(`The file was present in gportal, but could not be fetched: ${error}`));
                 }
                 else {
@@ -692,22 +692,22 @@ async function readAndFormatGportalFtpServerChatLog(guild_id, ftp_client) {
                 );
             });
             stream.on('error', (error) => {
-                message_logger.writeLogToAzureContainer(
-                    `ErrorLogs`, 
-                    `There was a stream error when attempting to read data from FTP chat log file: ${error}`, 
-                    guild_id, 
-                    `${guild_id}-error-logs`
-                );
+                // message_logger.writeLogToAzureContainer(
+                //     `ErrorLogs`,
+                //     `There was a stream error when attempting to read data from FTP chat log file: ${error}`,
+                //     guild_id,
+                //     `${guild_id}-error-logs`
+                // );
                 reject(new Error(`Stream error: ${error.message}`));
             });
         });
     } catch (error) {
-        message_logger.writeLogToAzureContainer(
-            `ErrorLogs`, 
-            `There was an error when processing the SCUM chat log files: ${error}`, 
-            guild_id, 
-            `${guild_id}-error-logs`
-        );
+        // message_logger.writeLogToAzureContainer(
+        //     `ErrorLogs`,
+        //     `There was an error when processing the SCUM chat log files: ${error}`,
+        //     guild_id,
+        //     `${guild_id}-error-logs`
+        // );
     } finally {
         if (stream) {
             stream = null;
@@ -778,22 +778,22 @@ const verifyCredentialsCallback = async (email, password, done) => {
         bot_user_data = await bot_repository_instance.getBotDataByEmail(email);
         
     } catch (error) {
-        message_logger.writeLogToAzureContainer(
-            `ErrorLogs`,
-            `An error has occurred when attempting to verify that you are logged in. Please contact the server administrator with the following error: ${error}`,
-            bot_user_data.guild_id,
-            `${bot_user_data.guild_id}-error-logs`
-        );
-        return done(null, false);
+        // message_logger.writeLogToAzureContainer(
+        //     `ErrorLogs`,
+        //     `An error has occurred when attempting to verify that you are logged in. Please contact the server administrator with the following error: ${error}`,
+        //     bot_user_data.guild_id,
+        //     `${bot_user_data.guild_id}-error-logs`
+        // );
+        // return done(null, false);
     }
     if (!bot_user_data) {
-        message_logger.writeLogToAzureContainer(
-            `InfoLogs`,
-            `No user with this log in information exists`,
-            bot_user_data.guild_id,
-            `${bot_user_data.guild_id}-info-logs`
-        )
-        return done(null, false);
+        // message_logger.writeLogToAzureContainer(
+        //     `InfoLogs`,
+        //     `No user with this log in information exists`,
+        //     bot_user_data.guild_id,
+        //     `${bot_user_data.guild_id}-info-logs`
+        // )
+        // return done(null, false);
     }
 
     bot_repository_instance = new BotRepository(bot_user_data.guild_id);
@@ -840,12 +840,12 @@ const verifyCredentialsCallback = async (email, password, done) => {
         z_coordinate: bot_user_spawn_z_coordinate,
     };
 
-    message_logger.writeLogToAzureContainer(
-        `InfoLogs`, 
-        `The user with guild id ${bot_user_guild_id} with username ${bot_user_username} has just logged in`,
-        `${bot_user_guild_id}`,
-        `${bot_user_guild_id}-info-logs`
-    );
+    // message_logger.writeLogToAzureContainer(
+    //     `InfoLogs`,
+    //     `The user with guild id ${bot_user_guild_id} with username ${bot_user_username} has just logged in`,
+    //     `${bot_user_guild_id}`,
+    //     `${bot_user_guild_id}-info-logs`
+    // );
 
     if (valid_user_account) {
         cache.set(`bot_repository_${bot_user_data.guild_id}`, new BotRepository(bot_user_data.guild_id));
@@ -925,22 +925,22 @@ web_socket_server_instance.on('connection', function(websocket, request) {
     });
 
     websocket.on('error', function(error) {
-        message_logger.writeLogToAzureContainer(
-            `ErrorLogs`,
-            `There was an error when attempting to establish a web socket connection to the server: ${error}`,
-            websocket.id,
-            `${websocket_id}-error-logs`
-        );
+        // message_logger.writeLogToAzureContainer(
+        //     `ErrorLogs`,
+        //     `There was an error when attempting to establish a web socket connection to the server: ${error}`,
+        //     websocket.id,
+        //     `${websocket_id}-error-logs`
+        // );
     });
 
     websocket.on('close', function() {
         cache.delete(`websocket_${websocket_id}`);
-        message_logger.writeLogToAzureContainer(
-            `InfoLogs`,
-            `The websocket connection ${websocket.id} was closed`,
-            websocket.id,
-            `${websocket.id}-info-logs`
-        );
+        // message_logger.writeLogToAzureContainer(
+        //     `InfoLogs`,
+        //     `The websocket connection ${websocket.id} was closed`,
+        //     websocket.id,
+        //     `${websocket.id}-info-logs`
+        // );
     });
 });
 
@@ -951,7 +951,10 @@ expressServer.post('/login', passport.authenticate('local', {
 
 expressServer.get('/login-failure', function (request, response, next) {
     response.render('login', {
-        title: "Invalid login", invalid_login_message: 'Invalid login credentials. Please try again with a different set of credentials.'
+        title: "Invalid login",
+        show_error_modal: true,
+        alert_title: `Error logging in`,
+        alert_description: `There was an error when attempting to log in to your account. Please check your account credentials and attempt to log in again. Feel free to email the site administrator using the email account at the bottom of the page`
     });
 });
 
@@ -983,12 +986,12 @@ passport.deserializeUser(async (guildId, done) => {
             return done(null, false);
         }
     } catch (error) {
-        message_logger.writeLogToAzureContainer(
-            `ErrorLogs`,
-            `There was an error when attempting to deserialize the user object for guild id: ${guildId}`,
-            guildId,
-            `${guildId}`
-        );
+        // message_logger.writeLogToAzureContainer(
+        //     `ErrorLogs`,
+        //     `There was an error when attempting to deserialize the user object for guild id: ${guildId}`,
+        //     guildId,
+        //     `${guildId}`
+        // );
         return done(error, null);
     }
 });
@@ -1030,22 +1033,22 @@ function botConnectedToGameServer(guild_id) {
 
 function sendPlayerMessagesToDiscord(scum_game_chat_messages, discord_channel, guild_id) {
     if (!scum_game_chat_messages) {
-        message_logger.writeLogToAzureContainer(
-            `ErrorLogs`, 
-            `The in-game chat messages on your scum server cannot be fetched`, 
-            guild_id, 
-            `${guild_id}-error-logs`
-        );
+        // message_logger.writeLogToAzureContainer(
+        //     `ErrorLogs`,
+        //     `The in-game chat messages on your scum server cannot be fetched`,
+        //     guild_id,
+        //     `${guild_id}-error-logs`
+        // );
         return;
     };
 
     if (!discord_channel) {
-        message_logger.writeLogToAzureContainer(
-            `ErrorLogs`, 
-            `The Discord channel for logging player chat messages could not be fetched`, 
-            guild_id, 
-            `${guild_id}-error-logs`
-        );
+        // message_logger.writeLogToAzureContainer(
+        //     `ErrorLogs`,
+        //     `The Discord channel for logging player chat messages could not be fetched`,
+        //     guild_id,
+        //     `${guild_id}-error-logs`
+        // );
         return;
     };
 
@@ -1070,22 +1073,22 @@ function isValidMessage(message) {
 
 async function sendPlayerLoginMessagesToDiscord(scum_game_login_messages, discord_channel, guild_id) {
     if (!scum_game_login_messages) {
-        message_logger.writeLogToAzureContainer(
-            `ErrorLogs`, 
-            `The in-game scum log in messages could not be fetched`, 
-            guild_id, 
-            `${guild_id}-error-logs`
-        );
+        // message_logger.writeLogToAzureContainer(
+        //     `ErrorLogs`,
+        //     `The in-game scum log in messages could not be fetched`,
+        //     guild_id,
+        //     `${guild_id}-error-logs`
+        // );
         return;
     };
 
     if (!discord_channel) {
-        message_logger.writeLogToAzureContainer(
-            `ErrorLogs`, 
-            `The discord channel for logging server log in messages could not be fetched`, 
-            guild_id, 
-            `${guild_id}-error-logs`
-        );
+        // message_logger.writeLogToAzureContainer(
+        //     `ErrorLogs`,
+        //     `The discord channel for logging server log in messages could not be fetched`,
+        //     guild_id,
+        //     `${guild_id}-error-logs`
+        // );
         return;
     };
 
@@ -1157,12 +1160,12 @@ async function sendPlayerLoginMessagesToDiscord(scum_game_login_messages, discor
 
 async function sendNewPlayerLoginMessagesToDiscord(user_steam_id, discord_channel, guild_id) {
     if (!discord_channel) {
-        message_logger.writeLogToAzureContainer(
-            `ErrorLogs`, 
-            `The discord channel for new player log in messages could not be fetched`, 
-            guild_id, 
-            `${guild_id}-error-logs`
-        );
+        // message_logger.writeLogToAzureContainer(
+        //     `ErrorLogs`,
+        //     `The discord channel for new player log in messages could not be fetched`,
+        //     guild_id,
+        //     `${guild_id}-error-logs`
+        // );
         return;
     };
 
@@ -1194,12 +1197,12 @@ function checkIfGameServerOnline(bot_status, guild_id, ftp_server_data, game_ser
             ftp_server_data: ftp_server_data,
         }));
     } else {
-        message_logger.writeLogToAzureContainer(
-            `ErrorLogs`,
-            `The websocket to enable or disable the bot either does not exist or is not open`,
-            `${guild_id}`,
-            `${guild_id}-error-logs`
-        );
+        // message_logger.writeLogToAzureContainer(
+        //     `ErrorLogs`,
+        //     `The websocket to enable or disable the bot either does not exist or is not open`,
+        //     `${guild_id}`,
+        //     `${guild_id}-error-logs`
+        // );
     }
 }
 
@@ -1231,12 +1234,12 @@ async function enableBot(guild_id) {
             checkIfGameServerOnline(`enable`, guild_id, ftp_server_data, game_server_data);
         } 
     } catch (error) {
-        message_logger.writeLogToAzureContainer(
-            `ErrorLogs`,
-            `There was an error when attempting to initialize the check to see if the SCUM game server is online`,
-            `${guild_id}`,
-            `${guild_id}-error-logs`
-        );
+        // message_logger.writeLogToAzureContainer(
+        //     `ErrorLogs`,
+        //     `There was an error when attempting to initialize the check to see if the SCUM game server is online`,
+        //     `${guild_id}`,
+        //     `${guild_id}-error-logs`
+        // );
         return;
     }
 }
@@ -1313,12 +1316,12 @@ client_instance.on('interactionCreate', async (interaction) => {
                     }
                 await interaction.reply({ content: `Your SCUM bot has been reset`, ephemeral: true });
             } catch (error) {
-                message_logger.writeLogToAzureContainer(
-                    `ErrorLogs`,
-                    `There was an error when registering initial bot set up commands and creating the Discord bot category and text channels: ${error}`,
-                    `${guild_id}`,
-                    `${guild_id}-error-logs`
-                )
+                // message_logger.writeLogToAzureContainer(
+                //     `ErrorLogs`,
+                //     `There was an error when registering initial bot set up commands and creating the Discord bot category and text channels: ${error}`,
+                //     `${guild_id}`,
+                //     `${guild_id}-error-logs`
+                // )
                 throw new Error(error);
             }
         }
@@ -1386,12 +1389,12 @@ client_instance.on('interactionCreate', async (interaction) => {
                 }
             } catch (error) {
                 await interaction.reply(`There was an error when attempting to enable your SCUM bot. Please try again or contact the bot administrator: ${error}`);
-                message_logger.writeLogToAzureContainer(
-                    `ErrorLogs`,
-                    `There was an error when creating the Discord bot category and text channels: ${error}`,
-                    `${guild_id}`,
-                    `${guild_id}-error-logs`
-                );
+                // message_logger.writeLogToAzureContainer(
+                //     `ErrorLogs`,
+                //     `There was an error when creating the Discord bot category and text channels: ${error}`,
+                //     `${guild_id}`,
+                //     `${guild_id}-error-logs`
+                // );
                 return;
             }
         }
@@ -1553,7 +1556,7 @@ client_instance.on('guildCreate', async (guild) => {
     cache.set(`guild_${guild_id}`, guild_id);
 
     try {
-        const bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
+        let bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
         if (!bot_repository_instance) {
             cache.set(`bot_repository_${guild_id}`, new BotRepository(guild_id));
             bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
@@ -1698,12 +1701,12 @@ client_instance.on('guildCreate', async (guild) => {
             cache.set(`teleport_command_z_coordinate_${guild_id}`, teleport_command_z_coordinate);
         }
     } catch (error) {
-        message_logger.writeLogToAzureContainer(
-            `ErrorLogs`,
-            `There was an error when registering initial bot set up commands and creating the Discord bot category, buttons, and text channels: ${error}`,
-            `${guild_id}`,
-            `${guild_id}-error-logs`
-        )
+        // message_logger.writeLogToAzureContainer(
+        //     `ErrorLogs`,
+        //     `There was an error when registering initial bot set up commands and creating the Discord bot category, buttons, and text channels: ${error}`,
+        //     `${guild_id}`,
+        //     `${guild_id}-error-logs`
+        // )
         return;
     }
 });
@@ -1923,19 +1926,19 @@ async function registerInitialSetupCommands(bot_token, bot_id, guild_id) {
         rest.put(Routes.applicationGuildCommands(bot_id, guild_id), {
             body: commands
         }).then(() => {
-            message_logger.writeLogToAzureContainer(
-                `InfoLogs`,
-                `Successfully initialized the application seutp commands for ${bot_id} in the guild ${guild_id}`,
-                guild_id,
-                `${guild_id}-error-logs`
-            )
+            // message_logger.writeLogToAzureContainer(
+            //     `InfoLogs`,
+            //     `Successfully initialized the application seutp commands for ${bot_id} in the guild ${guild_id}`,
+            //     guild_id,
+            //     `${guild_id}-error-logs`
+            // )
         }).catch((error) => {
-            message_logger.writeLogToAzureContainer(
-                `ErrorLogs`,
-                `There was an error when attempting to register the initial application commands for ${bot_id} in the guild ${guild_id}: ${error}`,
-                guild_id,
-                `${guild_id}-error-logs`
-            )
+            // message_logger.writeLogToAzureContainer(
+            //     `ErrorLogs`,
+            //     `There was an error when attempting to register the initial application commands for ${bot_id} in the guild ${guild_id}: ${error}`,
+            //     guild_id,
+            //     `${guild_id}-error-logs`
+            // )
         });
     }
 }
@@ -1965,6 +1968,8 @@ async function processQueueIfNotProcessing(user_command_queue, guild_id) {
     const bot_repository = cache.get(`bot_repository_${guild_id}`);
     let bot_package_items = undefined;
     let bot_item_package_cost = undefined;
+    let bot_item_package = undefined;
+    let teleport_coordinates = undefined;
 
     while (user_command_queue.size() > 0) { 
         /**
@@ -2005,7 +2010,27 @@ async function processQueueIfNotProcessing(user_command_queue, guild_id) {
         By using a string representation of the command to execute, we will fetch the command from the MongoDB database. If the command executed in game is '/test', 
         a document with the name 'test' will be searched for in MongoDB. MongoDB returns the bot_item_package as an object instead of an array of objects. 
         */
-        const bot_item_package = await bot_repository.getBotPackageFromName(command_name.toString());
+        if (command_name.toString().startsWith('teleport')) {
+            bot_item_package = await bot_repository.getBotTeleportCommandFromName(command_name.toString());
+            teleport_coordinates = {
+                name: bot_item_package.name,
+                x: bot_item_package.x_coordinate,
+                y: bot_item_package.y_coordinate,
+                z: bot_item_package.z_coordinate,
+                cost: bot_item_package.cost
+            };
+            await sendMessageToClient(`${client_ingame_chat_name}, you will soon be teleported to the zone ${teleport_coordinates.name}`, guild_id, command_to_execute_player_steam_id);
+            await bot_repository.updateUserAccountBalance(command_to_execute_player_steam_id, -teleport_coordinates.cost);
+            await teleportPlayerToLocation(teleport_coordinates, guild_id, command_to_execute_player_steam_id);
+            continue;
+        } else {
+            try {
+                bot_item_package = await bot_repository.getBotPackageFromName(command_name.toString());
+            } catch (error) {
+                await sendMessageToClient(`${client_ingame_chat_name}, this package does not exist`);
+                continue;
+            }
+        }
 
         if (!bot_item_package) {
             await sendMessageToClient(`${client_ingame_chat_name}, this package does not exist`);
@@ -2017,16 +2042,6 @@ async function processQueueIfNotProcessing(user_command_queue, guild_id) {
             if (bot_item_package.package_cost) {
                 bot_item_package_cost = bot_item_package.package_cost;
             }
-            if (command_name.endsWith('trader')) {
-                const teleport_coordinates = {
-                    x: bot_package_items.package_items[0],
-                    y: bot_package_items.package_items[1],
-                    z: bot_package_items.package_items[2]
-                }
-                await sendMessageToClient(`${client_ingame_chat_name}, you will be teleported to the vehicle trader soon`, guild_id, command_to_execute_player_steam_id);
-                await teleportPlayerToLocation(teleport_coordinates, guild_id, command_to_execute_player_steam_id);
-                continue;
-            }
         }       
 
         /**
@@ -2035,12 +2050,18 @@ async function processQueueIfNotProcessing(user_command_queue, guild_id) {
          * an increment by 1 for the field 'user_welcome_pack_uses'. Each time this command is executed, we update the user welcome pack uses by one. 
          */
         if (command_name === 'welcomepack') {
-            const welcome_pack_cost = user_account.user_welcome_pack_cost;
+            const welcome_pack_uses = user_account.user_welcome_pack_uses || 0;
+            const welcome_pack_cost = 1000 * (welcome_pack_uses + 1);
+
              if (user_account_balance < welcome_pack_cost) {
-                await sendMessageToClient(`${client_ingame_chat_name}, you do not have enough money to use your welcome pack again. Use the command /balance to check your balance`, guild_id, command_to_execute_player_steam_id);
+                await sendMessageToClient(
+                    `${client_ingame_chat_name}, you do not have enough money to use your welcome pack again. Use the command /balance to check your balance`,
+                    guild_id,
+                    command_to_execute_player_steam_id);
                 continue;
              } else {
                 await bot_repository.updateUserWelcomePackUsesByOne(user_account.user_steam_id);
+                await bot_repository.updateUserAccountBalance(user_account.user_steam_id, -welcome_pack_cost);
              }
         }
 
@@ -2075,12 +2096,12 @@ async function sendCommandToClient(bot_package_items_array, websocketId, player_
             steam_id: player_steam_id
         }));
     } else {
-        message_logger.writeLogToAzureContainer(
-            `ErrorLogs`,
-            `The websocket to send commands to execute back to the client either does not exist or is not open`,
-            `${websocketId}`,
-            `${websocketId}-error-logs`
-        );
+        // message_logger.writeLogToAzureContainer(
+        //     `ErrorLogs`,
+        //     `The websocket to send commands to execute back to the client either does not exist or is not open`,
+        //     `${websocketId}`,
+        //     `${websocketId}-error-logs`
+        // );
     }
 }
 
@@ -2094,12 +2115,12 @@ async function teleportPlayerToLocation(coordinates, websocket_id, steam_id) {
             player_steam_id: steam_id
         }));
     } else {
-        message_logger.writeLogToAzureContainer(
-            `ErrorLogs`,
-            `The websocket to send new player join messages to execute back to the client either does not exist or is not open`,
-            `${websocket_id}`,
-            `${websocket_id}-error-logs`
-        )
+        // message_logger.writeLogToAzureContainer(
+        //     `ErrorLogs`,
+        //     `The websocket to send new player join messages to execute back to the client either does not exist or is not open`,
+        //     `${websocket_id}`,
+        //     `${websocket_id}-error-logs`
+        // )
     }
 }
 
@@ -2115,12 +2136,12 @@ async function sendMessageToClient(message, websocket_id, steam_id) {
             player_steam_id: steam_id
         }));
     } else {
-        message_logger.writeLogToAzureContainer(
-            `ErrorLogs`,
-            `The websocket to send messages to execute back to the client either does not exist or is not open`,
-            `${websocket_id}`,
-            `${websocket_id}-error-logs`
-        )
+        // message_logger.writeLogToAzureContainer(
+        //     `ErrorLogs`,
+        //     `The websocket to send messages to execute back to the client either does not exist or is not open`,
+        //     `${websocket_id}`,
+        //     `${websocket_id}-error-logs`
+        // )
     }
 }
 

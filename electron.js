@@ -66,7 +66,9 @@ async function processCommandQueue() {
 
     while (commandQueue.length > 0) {
         const { command, websocket_id, steam_id } = commandQueue.shift();
-        await runCommand(command, websocket_id, steam_id);
+        if (command && websocket_id && steam_id) {
+            await runCommand(command, websocket_id, steam_id);
+        }
     }
 
     isProcessingCommandQueue = false;
@@ -81,7 +83,7 @@ async function createWebSocketConnection(websocket_id) {
         if (json_message_data.action === `announceMessage`) {
             if (Array.isArray(json_message_data.messages)) {
                 for (const command of json_message_data.messages) {
-                    commandQueue.push({ command, websocket_id });
+                    commandQueue.push({ command: command, websocket_id: websocket_id, player_steam_id: 0 });
                 }
                 processCommandQueue();
             }
@@ -92,7 +94,7 @@ async function createWebSocketConnection(websocket_id) {
                 const commands_array = json_message_data.package_items;
                 const player_steam_id = json_message_data.steam_id;
                 for (const command of commands_array) {
-                    commandQueue.push({ command, websocket_id, steam_id: player_steam_id });
+                    commandQueue.push({ command: command, websocket_id: websocket_id, player_steam_id: player_steam_id });
                 }
                 processCommandQueue();
             }
@@ -100,12 +102,12 @@ async function createWebSocketConnection(websocket_id) {
 
         if (json_message_data.action === `teleport`) {
             const teleport_coordinates = json_message_data.teleport_coordinates;
-            const player_steam_id = json_message_data.steam_id;
+            const player_steam_id = json_message_data.player_steam_id;
             const x_coordinate = teleport_coordinates.x;
             const y_coordinate = teleport_coordinates.y;
             const z_coordinate = teleport_coordinates.z;
             const teleport_command = `#Teleport ${x_coordinate} ${y_coordinate} ${z_coordinate} ${player_steam_id}`;
-            commandQueue.push(teleport_command);
+            commandQueue.push({ command: teleport_command, websocket_id: websocket_id, player_steam_id: player_steam_id });
             processCommandQueue();
         }
 
@@ -212,12 +214,14 @@ function sleep(milliseconds) {
 }
 
 /**
- * This function utilizes all of the above utility functions that interact with Windows via powershell. As mentioned, each time on of those functions are used, 
- * an 'await sleep()' blocker must be used for system stability. 
+ * This function utilizes all of the above utility functions that interact with Windows via powershell. As mentioned, each time on of those functions are used,
+ * an 'await sleep()' blocker must be used for system stability.
  * @param {string} command A string value containing the SCUM command to run in-game
- * @returns if the system cannot detect the SCUM process currently running, the function will cease execution. 
+ * @param websocket_id An integer containing the websocket id that is associated with a scum player's server for logging purposes
+ * @param steam_id An integer containing the steam id of the user that executed the command
+ * @returns if the system cannot detect the SCUM process currently running, the function will cease execution.
  */
-async function runCommand(command, websocket_id) {
+async function runCommand(command, websocket_id, steam_id) {
     await sleep(1000);
     copyToClipboard(command, websocket_id);
     await sleep(1000);
@@ -230,7 +234,6 @@ async function runCommand(command, websocket_id) {
     pressEnterKey(websocket_id);
     await sleep(1000);
 }
-
 
 /**
  * This is the sequence of operations which executes after the server restarts, and the bot must log back into the server.
@@ -332,7 +335,7 @@ async function pressMouseLeftClickButton(websocket_id) {
         if (stderr) {
             await sendLogData(
                 `ErrorLogs`,
-                `Error when left clicking the mouse: ${error}`,
+                `Error when left clicking the mouse: ${stderr}`,
                 `${websocket_id}`,
                 `${websocket_id}-error-logs`
             );
@@ -347,7 +350,7 @@ async function pressMouseLeftClickButton(websocket_id) {
 /**
  * Uses the Windows powershell command 'System.Windows.Forms.Clipboard]::SetText() to copy some text to the system clipboard
  * In the else clause, there is a debug log message if you want to uncomment that for development purposes
- * @param {string} text A string of text which will be copied to the system clipboard 
+ * @param {string} text A string of text which will be copied to the system clipboard
  */
 async function copyToClipboard(text, websocket_id) {
     const command = `powershell.exe -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Clipboard]::SetText('${text.replace(/'/g, "''")}')"`;
@@ -383,7 +386,7 @@ async function pasteFromClipboard(websocket_id) {
         if (stderr) {
             await sendLogData(
                 `ErrorLogs`,
-                `There was an error when pasting contents from the clipboard: ${error}`,
+                `There was an error when pasting contents from the clipboard: ${stderr}`,
                 `${websocket_id}`,
                 `${websocket_id}-error-logs`
             );
@@ -409,7 +412,7 @@ async function pressTabKey(websocket_id) {
         if (stderr) {
             await sendLogData(
                 `ErrorLogs`,
-                `There was an error when pressing the tab key: ${error}`,
+                `There was an error when pressing the tab key: ${stderr}`,
                 `${websocket_id}`,
                 `${websocket_id}-error-logs`
             );
@@ -428,14 +431,14 @@ async function pressTabKey(websocket_id) {
  * change states appropriately and not cause bottlenecks. 
  */
 async function pressCharacterKeyT(websocket_id) {
-    const command = `powershell.exe -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('t')`;
+    const command = `powershell.exe -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('t')"`;
 
     try {
         const { stderr } = await executeAsyncCommand(command);
         if (stderr) {
             await sendLogData(
                 `ErrorLogs`,
-                `There was an error when pressing the T character key: ${error}`,
+                `There was an error when pressing the T character key: ${stderr}`,
                 `${websocket_id}`,
                 `${websocket_id}-error-logs`
             );
@@ -455,14 +458,14 @@ async function pressCharacterKeyT(websocket_id) {
  * change states appropriately and not cause bottlenecks. 
  */
 async function pressBackspaceKey(websocket_id) {
-    const command = `powershell.exe -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('{BACKSPACE}')`;
+    const command = `powershell.exe -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('{BACKSPACE}"')`;
 
     try {
         const { stderr } = await executeAsyncCommand(command);
         if (stderr) {
             await sendLogData(
                 `ErrorLogs`,
-                `There was an error when pressing the backspace key: ${error}`,
+                `There was an error when pressing the backspace key: ${stderr}`,
                 `${websocket_id}`,
                 `${websocket_id}-error-logs`
             );
@@ -481,14 +484,14 @@ async function pressBackspaceKey(websocket_id) {
  * change states appropriately and not cause bottlenecks. 
  */
 async function pressEnterKey(websocket_id) {
-    const command = `powershell.exe -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('{Enter}')`;
+    const command = `powershell.exe -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('{Enter}')"`;
 
     try {
         const { stderr } = await executeAsyncCommand(command);
         if (stderr) {
             await sendLogData(
                 `ErrorLogs`,
-                `There was an error when pressing the enter key: ${error}`,
+                `There was an error when pressing the enter key: ${stderr}`,
                 `${websocket_id}`,
                 `${websocket_id}-error-logs`
             );

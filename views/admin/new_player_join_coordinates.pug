@@ -2,19 +2,32 @@ extends layout
 
 block variables
     - var page_title= title
+    - let page_instructions = "<p>On this page, you can select the new player spawn location coordinates for your bot to use. Any new player that joins your game server will be teleported to these coordinates</p>"
+    - page_instructions += "<p>Below is everything you must do on this page:<br><br></p>"
+    - page_instructions += "<ol>"
+    - page_instructions += "<li>1. Initially, when the page first loads, you will be presented with an online SCUM interactive map. From here, you must click on the 'Copy TP Location' heading in the left-hand sidebar in the interactive menu window. This tool is pictured as a scope icon, or an icon that indicates you are looking through the scope of a firearm. When you click on this heading or icon, an indicator will pop up informing you to select a location on the map to copy to your computer's clipboard</li>"
+    - page_instructions += "<li>2. Next, select any location on the interactive map by either left-clicking with your mouse or pressing with your finger. An indicator will pop up on the right-hand side of the screen informing you that a teleport location has been copied to your clipboard. This dialog box will be green</li>"
+    - page_instructions += "<li>3. Finally, with this text copied to your clipboard, click on the <strong>Show form</strong> button that is listed on the top of the page, and paste the text into the input field that is labelled <strong>Paste your clipboard text below</strong></li>"
+    - page_instructions += "<li>4. You can select the <strong>Show map</strong> button at any time to restore the map</li>"
+    - page_instructions += "</ol>"
 
 include menu
 include smallModal
 include cancelModal
 include successModal
 include errorModal
+include infoModal
 
 block header
     header#header.header
         +menu(user, currentPage)
+        +infoModal("Help", page_instructions)
 
 block content(user)
-    main#coordinate_data_edit_page    
+    main#coordinate_data_edit_page
+        div#website_help_icon
+            a(href="#" data-toggle='modal', data-target='#infoModal', class='ml-2')
+                i.fa.fa-question-circle(aria-hidden="true")
         +smallModal(submit_modal_title, submit_modal_description)
         +cancelModal(cancel_modal_title, cancel_modal_description)
         if show_submit_modal
@@ -24,12 +37,6 @@ block content(user)
         h2#coordinate_data_edit_page_heading(class="text-center") Spawn zone coordinates
         button#toggle_map_view_button(type='button') Show map
         button#toggle_form_view_button(type='button') Show form
-        section#iframe_instructions_section
-            article#article_for_coordinate_data_page_disclaimer(class="text-center")
-                | On this page, you must specify the spawn zone XYZ coordinates. Using the map below, follow this list of instructions:     
-                |   1. Click on 'Copy TP Location' on the left side of the screen. An indicator should pop up informing you to select a location to copy to clipboard.
-                |   2. Next, select anywhere on the map window until you see a green confirmation dialog which tells you 'Teleport location copied to the clipboard'
-                |   3. Finally, with this text copied, click the 'Show form' button, and paste the text into the 'Paste your clipboard text below' input field.
         iframe#map_selection_tool(src="https://scum-map.com/en/interactive_map") 
 
         form#coordinate_data_form(method="POST", action="/admin/setspawncoordinates" class="needs-validation bot_data_form")
@@ -42,12 +49,13 @@ block content(user)
                             type='text',
                             name='paste_coordinates_input',
                             placeholder='#Teleport 218096.6355 64808.3453 0',
-                            title="Please paste the entire #Teleport command that you acquired from the website")
+                            title="Please paste the entire #Teleport command that you acquired from the website",
+                            value="")
                         div#paste_coordinates_input_feedback
 
                 fieldset#start_zone_x_coordinate_fieldset.start_zone_coordinates_fieldset
                     article#x_coordinate_article(class='article_for_coordinate_data')
-                        label(class="coordinate_data_label",for='x_coordinate_data_input') X coordinate (e.g., 218593.6683)
+                        label(class="coordinate_data_label", for='x_coordinate_input') X coordinate (e.g., 218593.6683)
                         input.validate-input#x_coordinate_input(
                             class="coordinate_data_input",
                             type='text',
@@ -60,7 +68,7 @@ block content(user)
 
                 fieldset#start_zone_y_coordinate_fieldset.start_zone_coordinates_fieldset
                     article#y_coordinate_article(class='article_for_coordinate_data')
-                        label(class="coordinate_data_label",for='y_coordinate_data_input') Y coordinate (e.g., 72405.7868)
+                        label(class="coordinate_data_label",for='y_coordinate_input') Y coordinate (e.g., 72405.7868)
                         input.validate-input#y_coordinate_input(
                             class="coordinate_data_input",
                             type='text',
@@ -74,7 +82,7 @@ block content(user)
 
                 fieldset#start_zone_z_coordinate_fieldset.start_zone_coordinates_fieldset
                     article#z_coordinate_article(class='article_for_coordinate_data')
-                        label(class="coordinate_data_label",for='x_coordinate_input') Z coordinate (e.g., 0)
+                        label(class="coordinate_data_label", for='z_coordinate_input') Z coordinate (e.g., 0)
                         input.validate-input#z_coordinate_input(
                             class="coordinate_data_input",
                             type='text',
@@ -87,7 +95,7 @@ block content(user)
                                
                 fieldset#coordinate_data_form_buttons.fieldset_for_form_buttons
                     button#save_changes_button(class="" type='submit') Save
-                    button#cancel_changes_button(class="" type='button') Cancel
+
     script(src="/javascripts/validate_form_fields.js")
     script(src="/javascripts/coordinate_chooser_iframe.js")
     script(src="/javascripts/show_submit_modal.js")

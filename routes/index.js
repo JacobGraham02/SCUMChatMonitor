@@ -50,7 +50,11 @@ router.get('/botcallback', async function(request, response, next) {
 });
 
 router.get('/login', async function (request, response, next) {
-    response.render('login', { title: "Login page", user: request.user });
+    response.render('login', {
+        title: "Login page",
+        user: request.user,
+        currentPage: `/`
+    });
 }); 
 
 router.post('/logout', isLoggedIn, function (request, response, next) {
@@ -58,7 +62,14 @@ router.post('/logout', isLoggedIn, function (request, response, next) {
         if (error) {
             return next(error);
         }
-        response.redirect('/login');
+        response.render(
+            'login', {
+                user: request.user,
+                currentPage: '/login',
+                show_submit_modal: true,
+                alert_title: "Successful log out",
+                alert_description: "You have successfully logged out of your account"
+            });
     });
 });
 

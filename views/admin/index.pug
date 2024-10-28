@@ -4,10 +4,16 @@ block variables
     - var page_title= 'Welcome to Scum Chat Monitor!' 
 
 include menu
+include errorModal
+include successModal
 
 block header
     header#header.header
         +menu(user, currentPage)
+        if show_submit_modal
+            +successModal(alert_title, alert_description)
+        if show_error_modal
+            +errorModal(alert_title, alert_description)
 
 block content(user)
     main#admin_index_main
@@ -15,3 +21,4 @@ block content(user)
             h1#welcome_to_scumbot_interface_heading 
              | Welcome to version 1.0 of the official Scum Monitor Man™ web interface!
             p.welcome_to_scumbot_interface_paragraph This website interface is currently in-progress, and is lacking certain features. Right now, you can access all of the available bot functions from the menu on the left-hand side of the screen if on a computer. If you are on a mobile device, you can access this functionality from the hamburger menu (3-horizontal bars) at the top left of your screen. 
+    script(src="/javascripts/show_modal_no_form.js")

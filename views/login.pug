@@ -2,29 +2,41 @@ extends layout
 
 block variables
 	- var page_title = "Log in to your account"
+	- let page_instructions = "<p>On this page, you must log in to the account that you set up on Discord</p>"
+	- page_instructions += "<p>Below is everything you must do on this page:<br><br></p>"
+	- page_instructions += "<ol>"
+	- page_instructions += "<li>1. <strong>Email address:</strong> The email address of the bot admin user that you set up in Discord (e.g., <strong>bobsmith01@gmail.com</strong></strong></li>"
+	- page_instructions += "<li>2. <strong>Password:</strong> The password that is associated with the email address of the bot admin user that you set up in Discord (e.g., <strong>1tfoBp4wdqxbhxcPZzNM71zB)</strong></li>"
+	- page_instructions += "</ol>"
 
 include menu
+include infoModal
+include smallModal
+include errorModal
+include successModal
 
 block header
 	header#header.header
-		+menu
+		+menu(user, currentPage)
+		+infoModal("Help", page_instructions)
+		if show_submit_modal
+			+successModal(alert_title, alert_description)
+		if show_error_modal
+			+errorModal(alert_title, alert_description)
 	
 block content
 	main#main
+		div#website_help_icon
+			a(href="#" data-toggle='modal', data-target='#infoModal', class='ml-2')
+				i.fa.fa-question-circle(aria-hidden="true")
 		section#login_section
-			-if (invalid_login_message !== undefined) {
-				p#failed_login_message= invalid_login_message
-			-}
 			h1#log_in_to_account_heading Log in to your account
 			aside#invalid_login_message
-			-if (invalid_login_message !== undefined) {
-				p#failed_login_message= invalid_login_message
-			-}
 			form#login_fields_form(action='/login' method='post') 
 				article#login_fields_form_fieldset_container
 					fieldset#login_username_field.login_fieldset
-						label#form_login_username_label.login_label(for='email') Email address:
-						label#form_login_username_label_hint.login_label_hint(for='email') Must be the same as the email address you registered with your bot in Discord (e.g., bobsmith01@gmail.com)
+						label#form_login_username_label.login_label(for='form_login_username_input') Email address:
+						label#form_login_username_label_hint.login_label_hint(for='form_login_username_input') Must be the same as the email address you registered with your bot in Discord (e.g., bobsmith01@gmail.com)
 						input#form_login_username_input.login_input(
 							type='email' 
 							name='email', 
@@ -33,8 +45,8 @@ block content
 							maxlength='100')
 
 					fieldset#login_password_field.login_fieldset
-						label#form_login_password_label.login_label(for='password') Password:
-						label#form_login_password_label_hint.login_label_hint(for='password') Must be the same as the password you registered with your bot in Discord (e.g., 1tfoBp4wdqxbhxcPZzNM71zB)
+						label#form_login_password_label.login_label(for='form_login_password_input') Password:
+						label#form_login_password_label_hint.login_label_hint(for='form_login_password_input') Must be the same as the password you registered with your bot in Discord (e.g., 1tfoBp4wdqxbhxcPZzNM71zB)
 						input#form_login_password_input.login_input(
 							type='password' 
 							name='password',
@@ -43,6 +55,7 @@ block content
 							maxlength='32')
 
 				article#login_form_submit_button_article
-					button#button_submit_login(action='submit') Log in
+					button#button_submit_login() Log in
 	script(src="/javascripts/login_page.js")
+	script(src="/javascripts/show_modal_no_form.js")
 	

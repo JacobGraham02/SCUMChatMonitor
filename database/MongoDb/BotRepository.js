@@ -11,20 +11,6 @@ export default class BotRepository {
         this.database_connection_manager = new DatabaseConnectionManager(this.database_name);
     }
 
-    async findBotByUUID(bot_uuid) {
-        const database_connection = await this.database_connection_manager.getConnection();
-        try {
-            const bot_collection = database_connection.collection('bot');
-            const bot = await bot_collection.findOne({ bot_uuid: bot_uuid });
-            return bot;
-        } catch (error) {
-            console.error(`There was an error when attempting to fetch all bot data given a UUID. Please inform the server administrator of this error: ${error}`);
-            throw new Error(`There was an error when attempting to fetch all bot data given a UUID. Please inform the server administrator of this error: ${error}`);
-        } finally {
-            await this.releaseConnectionSafely(database_connection);
-        }
-    }
-
     async createBot(bot_information) {
         const database_connection = await this.database_connection_manager.getConnection();
         const new_bot_document = {
@@ -183,8 +169,6 @@ export default class BotRepository {
             package_cost: bot_package.package_cost,
             package_items: bot_package.package_items
         };
-
-        console.log(new_bot_item_package_document);
     
         try {
             const bot_collection = database_connection.collection('bot_packages');
@@ -198,7 +182,72 @@ export default class BotRepository {
             await this.releaseConnectionSafely(database_connection);
         }
     }
-    
+
+    async createBotTeleportCommand(bot_teleport_command) {
+        const database_connection = await this.database_connection_manager.getConnection();
+
+        const new_bot_teleport_command = {
+            name: bot_teleport_command.name,
+            x_coordinate: bot_teleport_command.x_coordinate,
+            y_coordinate: bot_teleport_command.y_coordinate,
+            z_coordinate: bot_teleport_command.z_coordinate,
+            cost: bot_teleport_command.cost
+        };
+
+        try {
+            const bot_collection = database_connection.collection('bot_teleport_commands');
+            await bot_collection.updateOne(
+                { name: bot_teleport_command.name },
+                { $set: new_bot_teleport_command },
+                { upsert: true }
+            );
+        } catch (error) {
+            throw new Error(`There was an error when attempting to create a new bot teleport command: ${error}`);
+        } finally {
+            await this.releaseConnectionSafely(database_connection);
+        }
+    }
+
+    async getAllBotTeleportCommands() {
+        const database_connection = await this.database_connection_manager.getConnection();
+
+        try {
+            const bot_teleport_collection = database_connection.collection("bot_teleport_commands");
+            const bot_teleport_commands = await bot_teleport_collection.find().toArray();
+            return bot_teleport_commands;
+        } catch (error) {
+            throw new Error(`There was an error when attempting to retrieve all of the bot teleport commands. Please inform the server administrator of this error: ${error}`);
+        } finally {
+            await this.releaseConnectionSafely(database_connection);
+        }
+    }
+
+    async getBotTeleportCommandFromName(name) {
+        const database_connection = await this.database_connection_manager.getConnection();
+
+        try {
+            const teleport_command_collection = database_connection.collection('bot_teleport_commands');
+            const teleport_command_data = await teleport_command_collection.findOne({ name: name });
+            return teleport_command_data;
+        } catch (error) {
+            throw new Error(`There was an error when attempting to retrieve the bot teleport command by name. Please inform the server administrator of the following error: ${error}`);
+        } finally {
+            await this.releaseConnectionSafely(database_connection);
+        }
+    }
+
+    async deleteBotTeleportCommand(bot_teleport_command_name) {
+        const database_connection = await this.database_connection_manager.getConnection();
+
+        try {
+            const deletion_result = await database_connection.collection('bot_teleport_commands').deleteOne({ name: bot_teleport_command_name });
+            return deletion_result.deletedCount >= 1;
+        } catch (error) {
+            throw new Error(`There was an error when attempting to delete this bot teleport command: ${error}`);
+        } finally {
+            await this.releaseConnectionSafely(database_connection);
+        }
+    }
 
     async getBotItemPackagesData() {
         const database_connection = await this.database_connection_manager.getConnection();
@@ -437,7 +486,36 @@ export default class BotRepository {
         try {
             const user_collection = database_connection.collection('users');
             const users = await user_collection.find({}).toArray();
-            return users;
+
+                        const updated_users = users
+            // Filter out names that are empty or consist only of whitespace
+            .filter(user => user.user_steam_name && user.user_steam_name.trim() !== '')
+
+            // Sort alphabetically by user_steam_name, moving names starting with special characters or numbers to the end
+            .sort((a, b) => {
+                // Function to check if a name starts with a number or special character
+                const startsWithSpecialOrNumber = str => /^[^a-zA-Z]/.test(str);
+
+                const aStartsWithSpecialOrNumber = startsWithSpecialOrNumber(a.user_steam_name);
+                const bStartsWithSpecialOrNumber = startsWithSpecialOrNumber(b.user_steam_name);
+
+                if (aStartsWithSpecialOrNumber && !bStartsWithSpecialOrNumber) {
+                return 1; // Move 'a' to the end
+                } else if (!aStartsWithSpecialOrNumber && bStartsWithSpecialOrNumber) {
+                return -1; // Move 'b' to the end
+                } else {
+                // Both either start with numbers/special characters or neither do, so sort alphabetically
+                return a.user_steam_name.localeCompare(b.user_steam_name);
+                }
+            })
+
+            // Remove parenthesis and their content in user_steam_name
+            .map(user => ({
+                ...user, // Spread operator to preserve other properties of the user object
+                user_steam_name: user.user_steam_name.replace(/\(\d+\)/g, '').trim() // Remove '(xxx)' and trim whitespace
+            }));
+
+            return updated_users;
         } catch (error) {
             console.error(`Error finding all users: ${error}`);
             throw new Error(`Error finding all users: ${error}`);
@@ -450,7 +528,7 @@ export default class BotRepository {
         const database_connection = await this.database_connection_manager.getConnection();
         try {
             const deletion_result = await database_connection.collection('bot_packages').deleteOne({ package_name: package_name });
-            return deletion_result;
+            return deletion_result.deletedCount > 0;
         } catch (error) {
             console.error(`There was an error when attempting to delete the command: ${error}`);
             throw error;

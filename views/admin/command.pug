@@ -2,45 +2,95 @@ extends layout
 
 block variables
 	- var page_title= title
-	- var submit_modal_title= "Edit command"
-	- var submit_modal_description = "Are you satisfied with the current package data?"
-	- var cancel_modal_title = "Go back"
-	- var cancel_modal_description = "Are you sure you want to go back to the previous page?"
+	- let page_instructions = "<p>On this page, you can view all the details about this item package, in addition to being able to edit this item package</p>"
+	- page_instructions += "<p>What follows is a list of things that are available on this page:<br><br></p>"
+	- page_instructions += "<ol>"
+	- page_instructions += "<li>1. <strong>Package name:</strong> You can see the package name at both the top of the screen, and in its own separate field. <strong>Maximum of 50 letters and/or numbers</strong></li>"
+	- page_instructions += "<li>2. <strong>Package description:</strong> You can see the package description that will show when a user visits this website to view all the commands available for them to use. <strong>Maximum of 1000 letters and/or numbers</strong></li>"
+	- page_instructions += "<li>3. <strong>Add new package items:</strong> This is the search bar where you can search for different items to put into your bot package. Simply click on the search bar, and start typing into it to look for items that you can put into the bot package. There are no pictures for the bot items at the moment, as that would make the application load this specific page much slower. You must click on the button titled <strong>Add item</strong> to add additional search bars where you can add more items to the item package, and you must click on the <strong>Delete item</strong> button that is directly underneath the item package search bar to delete that item from the package</strong></li>"
+	- page_instructions += "<li>4. <strong>Command cost:</strong> The total cost of the item package. This amount will be deducted from the player who requests this item package. If they player does not have sufficient money to buy this item package, they will not be able to buy this item package. <strong>Maximum of 6 numbers</strong></li>"
+	- page_instructions += "</ol>"
 
 include menu
+include smallModal
+include deleteModal
 include cancelModal
+include successModal
+include errorModal
+include infoModal
 
 block header
 	header#header.header
-		+menu(user)
+		+menu(user, currentPage)
+		+infoModal("Help", page_instructions)
+		+smallModal(submit_modal_title, submit_modal_description)
+		+cancelModal(cancel_modal_title, cancel_modal_description)
+		if show_submit_modal
+			+successModal(alert_title, alert_description)
+		if show_error_modal
+			+errorModal(alert_title, alert_description)
 
 block content(user)
 	main#command_edit_page
-		+cancelModal(cancel_modal_title, cancel_modal_description)
+		div#website_help_icon
+			a(href="#" data-toggle='modal', data-target='#infoModal', class='ml-2')
+				i.fa.fa-question-circle(aria-hidden="true")
 		span#span_command_file_edit_screen_name
 				h1 #{package.package_name}
-		form#command_editor_form(method='POST', action='/admin/botcommand/new' + file_name, enctype='application/x-www-form-urlencoded' class="needs-validation bot_data_form")
-			section#new_command_section_easy
-				fieldset#fieldset_for_form_heading 
-					h3.heading_for_adding_items View your bot command
+		form#command_editor_form(method='POST', action='/admin/botcommand/new', enctype='application/x-www-form-urlencoded' class="needs-validation bot_data_form")
+			section#edit_command_section
 
 				fieldset#command_item_name(class="edit_command_fieldset")
 					article#add_command_name_container(class="edit_command_fieldset_article")
 						label(class="new_command_label",for='command_name') Package name
-						input#command_name(class="package_item_input",type='text',name='package_name_input', placeholder='Write here...', value=package.package_name) 
+						input#command_name(class="new_command_input_field package_item_input validate-input",type='text',name='package_name_input', 
+						placeholder='Write here...', value=package.package_name, data-maxlength='100') 
+						span#command_name_feedback
+						span.char_count(data-for="command_name")
 
 				fieldset#command_item_description(class="edit_command_fieldset")
 					article#add_command_description_container(class="edit_command_fieldset_article")
 						label(class="new_command_label",for='command_description') Package description 
-						textarea#command_description(class="package_item_input",type='text',name='package_description_input', placeholder='Write here...', value=package.package_description) 
+						textarea#command_description(class="new_command_input_field package_item_input validate-input",type='text',name='package_description_input', 
+						placeholder='Write here...', data-maxlength='1000') #{package.package_description}
+						span#command_description_feedback
+						span.char_count(data-for="command_description")
+
+				fieldset#dropdown_menu_for_spawn_item.new_command_data_fieldset 
+					label(class="new_command_label") Add new package items
+					article#add_item_fields_container.new_command_data_fieldset_article
+						// Iterate over the package items and render each one
+						if package.package_items && package.package_items.length > 0
+							each item, index in package.package_items
+								div.individual_add_item_label_and_input
+									label(for='item_input') Package item #{index + 1}
+									input.item_input(class="new_command_input_field", type='text', name='item_input_value[]', value=item, 
+									placeholder='(Required) start typing to begin searching...', maxlength='100' required, data-maxlength='100')
+									button.delete-item-btn(type='button', onclick="this.parentNode.remove();") Delete item
+						div.individual_add_item_label_and_input
+							label(for='item_input') Choose package item
+							input.item_input(class="new_command_input_field",type='text', name='item_input', list='items_list', 
+							placeholder='(Required) start typing to begin searching...', maxlength='100' required, data-maxlength='100')
+							input#hidden_command_id_input(type='hidden',name='item_input_value')
+							button.delete-item-btn(type='button', onclick="this.parentNode.remove();") Delete item
+						datalist#items_list 
+					article#add_another_item_button_container
+						button#add_item_button(type='button') Add item
 
 				fieldset#add_command_cost(class="edit_command_fieldset")
 					article#add_command_cost_fields_container(class="edit_command_fieldset_article")
 						label(class="new_command_label",for='command_cost_input') Package cost
-						input#command_cost_input(class="package_item_input", type='text', name='package_cost_input', placeholder='Command cost...', value=package.package_cost) 
+						input#command_cost_input(class="new_command_input_field package_item_input validate-input", type='text', name='package_cost_input', placeholder='Command cost...', value=package.package_cost
+						, data-maxlength='6', pattern="^[0-9]{1,6}$") 
+						span#command_cost_input_feedback
+						span.char_count(data-for="command_cost_input")
 
 			fieldset#edit_command_form_field_buttons.fieldset_for_form_buttons
-					//- button#save_changes_button(type='submit') Save package changes
-					//- button#cancel_changes_button(type='button') Go back
-		
-		script(src='/javascripts/commands_form.js')
+				button#save_changes_button(type='submit') Save package changes
+		form#cancel_changes_form(method='GET', action='/admin/commands')
+				button#cancel_changes_button(type='submit') Go back to the previous page
+
+
+	script(src='/javascripts/commands_form.js')
+	script(src='/javascripts/show_submit_modal.js')
+	script(src='/javascripts/validate_form_fields.js')
