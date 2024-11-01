@@ -1220,6 +1220,23 @@ a {
 }
 /* End of players page */
 
+/* General styling for site buttons */
+button {
+    background: none;
+    border: none;
+    color: blue;
+    text-decoration: none;
+    cursor: pointer;
+    padding: 0;
+    font: inherit;
+}
+
+button:hover {
+    color: darkblue;
+}
+
+/* End of general styling for site buttons */
+
 
 /* General styling for site modals */
 .modal {
