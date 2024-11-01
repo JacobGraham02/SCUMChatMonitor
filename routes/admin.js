@@ -192,7 +192,7 @@ router.get('/teleportcommand/:commandname', isLoggedIn, checkBotRepositoryInCach
 });
 
 
-router.get(['/login-success', '/'], isLoggedIn, function(request, response) {
+router.get(['/login-success'], isLoggedIn, function(request, response) {
     try {
         response.render('admin/index', {
             user: request.user,
@@ -212,6 +212,14 @@ router.get(['/login-success', '/'], isLoggedIn, function(request, response) {
             alert_description: `There was an error when attempting to load the admin index file after logging in. Please inform the server administrator of this error or try again: ${error}`
         });
     }
+});
+
+router.get('/', isLoggedIn, function(request, response) {
+    response.render('admin/index', {
+        user: request.user,
+        currentPage: '/admin/',
+        title: `Admin dashboard`,
+    });
 });
 
 router.get(['/commands'], isLoggedIn, checkBotRepositoryInCache, async (request, response) => {
