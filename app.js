@@ -41,7 +41,7 @@ import { WebSocketServer } from 'ws';
 const bot_token = process.env.bot_token;
 
 const client_instance = new Client({
-    intents: 
+    intents:
         [GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
@@ -53,13 +53,13 @@ const client_instance = new Client({
 const message_logger = new Logger();
 const cache = new Cache();
 /**
- * The following regex string is for steam ids associated with a steam name specifically for the login log file. 
+ * The following regex string is for steam ids associated with a steam name specifically for the login log file.
  * They are saved as a 17-digit number (e.g. 12345678912345678)
- */ 
+ */
 const login_log_steam_id_regex = /([0-9]{17})/g;
 
 /**
- * The following regex string is for steam ids associated with a steam name specifically for the chat log file. 
+ * The following regex string is for steam ids associated with a steam name specifically for the chat log file.
  * Like the login file, they are saved as a 17-digit number (e.g. 12345678912345678)
  */
 const chat_log_steam_id_regex = /([0-9]{17})/g;
@@ -72,17 +72,17 @@ const login_log_steam_name_regex = /([a-zA-Z0-9 ._-]{0,32}\([0-9]{1,10}\))/g;
 /**
  * The following regex string is to identify and extract the ipv4 address from gportal's ftp log files.
  * An example message will look like the following: 2023.12.19-17.18.57: '72.140.43.39 76561198244922296:jacobdgraham02(2)' logged in at: X=218481.953 Y=243331.516 Z=28960.289
- * We want to extract only the substring '72.140.43.39' 
+ * We want to extract only the substring '72.140.43.39'
  */
 const ipv4_address_regex = /'((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}/g;
 
 /**
- * The below commented out regex string matches all of the chat log messages sent by the chat bot, Wilson. This regex string can be used to keep track of Wilson. 
- * const chat_log_messages_from_wilson_regex = /('76561199505530387:Wilson\24\' '?:Local|Global|Admin:.*)'/g; 
+ * The below commented out regex string matches all of the chat log messages sent by the chat bot, Wilson. This regex string can be used to keep track of Wilson.
+ * const chat_log_messages_from_wilson_regex = /('76561199505530387:Wilson\24\' '?:Local|Global|Admin:.*)'/g;
  */
 
 /**
- * The following regex string is for chat messages when they appear in the chat log file. 
+ * The following regex string is for chat messages when they appear in the chat log file.
  */
 const chat_log_messages_regex = /(?<=Global: |Local: |Admin: |Squad: )\/[^\n]*[^'\n]/g;
 
@@ -123,8 +123,8 @@ const steam_web_api_player_info = new SteamUserInfoCommand(process.env.steam_web
 
 /**
  * This function loops through each of the strings located in the string array 'logs', and parses out various substrings to manipulate them.
- * 
- * @param {string[]} logs An array of strings that represents the contents of the FTP login file on gportal.  
+ *
+ * @param {string[]} logs An array of strings that represents the contents of the FTP login file on gportal.
  * */
 async function determinePlayerLoginSessionMoney(guild_id, logs) {
     const user_balance_updates = new Map();
@@ -138,11 +138,11 @@ async function determinePlayerLoginSessionMoney(guild_id, logs) {
     for (const log of logs) {
         if (!log || log.includes("Game version: ")) {
             continue;
-        } 
+        }
         /**
          * The result of log.split(": ") is an array containing a substring before and after the ':' character in each string 'log'. The destructured array variable 'logTimestamp'
-         * contains the substring before the ':' character, and the array variable 'logMessage' contains the substring after the ':' character. 
-         */ 
+         * contains the substring before the ':' character, and the array variable 'logMessage' contains the substring after the ':' character.
+         */
         const [logTimestamp, logMessage] = log.split(": ");
 
         if (logMessage.includes('logged in') || logMessage.includes('logged out')) {
@@ -151,18 +151,18 @@ async function determinePlayerLoginSessionMoney(guild_id, logs) {
             if (matchResult) {
                 /**
                  * If a string is found to match all of the rules defined in the regex pattern /'(.*?) (.*?):(.*?)(logged in|logged out)/, an array containing 6 values will be returned.
-                 * We are only interested in the 3rd and 6th value, so we ignore the other values in the array by using the , character. 
+                 * We are only interested in the 3rd and 6th value, so we ignore the other values in the array by using the , character.
                  * By using the logTimestamp substring stored earlier, we can replace individual characters in the substring to construct a string which can be converted into a valid
                  * javascript object. The format for a javascript Date object used here is as follows: YYYY-MM-DDTHH:mm:ss. If you are interested, this matches the pattern presented in widely-
-                 * accepted ISO 8601 date format. 
+                 * accepted ISO 8601 date format.
                  */
                 const [, , user_steam_id, , , user_logged_in_or_out] = matchResult;
                 const formatted_date_and_time = new Date(logTimestamp.replace('-', 'T').replace(/\./g, '-').replace(/(?<=T.*)-/g, ':'));
 
                 /**
                  * Each time the user logs in, a Map is updated with their log in steam id and time, so we can begin the process of giving them some amount of discord money depending
-                 * on the length of time that has spanned between their current log in time and their future log out time. Once the user has logged out, we need to fetch their log 
-                 * in time from the Map. 
+                 * on the length of time that has spanned between their current log in time and their future log out time. Once the user has logged out, we need to fetch their log
+                 * in time from the Map.
                  */
                 if (user_logged_in_or_out === 'logged in') {
                     cache.set(`login_time_${user_steam_id}`, formatted_date_and_time);
@@ -170,8 +170,8 @@ async function determinePlayerLoginSessionMoney(guild_id, logs) {
                     const login_time = cache.get(`login_time_${user_steam_id}`);
                     /**
                      * The variable calculated_elapsed_time holds the value in milliseconds. Therefore, to get the time in hours, we have to perform the math calculation 1000 / 60 / 60.
-                     * Now that we have the play time in hours, we can multiply that play time by 1000 to get the amount of money they will get. Let us suppose initially a user has 0 
-                     * discord money. Next, they play on our server for 1.5 hours and log off. Then, their total amount of money earned will be 1500. 
+                     * Now that we have the play time in hours, we can multiply that play time by 1000 to get the amount of money they will get. Let us suppose initially a user has 0
+                     * discord money. Next, they play on our server for 1.5 hours and log off. Then, their total amount of money earned will be 1500.
                      * After we record the user log in and log out time, we will delete that record from the Map to ensure we do not duplicate the money-giving operation.
                      */
                     if (login_time) {
@@ -195,8 +195,8 @@ async function determinePlayerLoginSessionMoney(guild_id, logs) {
 
     /**
      * This is the loop which fetches both the user steam id and their total amount of discord money earned from the Map. For each user within the Map that has both a log in and log out time,
-     * their database record is updated with the amount of money they earned in this specific play session. 
-     * If the operation fails for whatever reason, the expressServer developer will get an email stating this, and the expressServer will also crash. 
+     * their database record is updated with the amount of money they earned in this specific play session.
+     * If the operation fails for whatever reason, the expressServer developer will get an email stating this, and the expressServer will also crash.
      */
     for (const [user_steam_id, update] of user_balance_updates) {
         try {
@@ -224,9 +224,11 @@ async function createNewFtpClient(guild_id, ftp_server_data) {
     };
 
     const gportal_log_file_ftp_client = new FTPClient();
-    gportal_log_file_ftp_client.removeAllListeners();
 
     return await new Promise((resolve, reject) => {
+        const cleanupListeners = () => {
+            gportal_log_file_ftp_client.removeAllListeners();
+        }
         gportal_log_file_ftp_client.on('ready', () => {
             // message_logger.writeLogToAzureContainer(
             //     `InfoLogs`,
@@ -234,6 +236,7 @@ async function createNewFtpClient(guild_id, ftp_server_data) {
             //     guild_id,
             //     `${guild_id}-info-logs`
             // );
+            cleanupListeners();
             cache.set(`ftp_server_configuration_${guild_id}`, gportal_log_file_ftp_client);
             resolve(gportal_log_file_ftp_client);
         });
@@ -244,7 +247,8 @@ async function createNewFtpClient(guild_id, ftp_server_data) {
             //     guild_id,
             //     `${guild_id}-error-logs`
             // );
-            reject(error); 
+            cleanupListeners();
+            reject(error);
         });
         gportal_log_file_ftp_client.on('close', () => {
             // message_logger.writeLogToAzureContainer(
@@ -253,22 +257,15 @@ async function createNewFtpClient(guild_id, ftp_server_data) {
             //     guild_id,
             //     `${guild_id}-info-logs`
             // );
+            cleanupListeners();
             retryConnection(guild_id, ftp_server_data);
         });
 
         gportal_log_file_ftp_client.connect(gportal_ftp_config);
-
-    }).catch(error => {
-        // message_logger.writeLogToAzureContainer(
-        //     `ErrorLogs`,
-        //     `An error has occurred when attempting to establish a connection to the FTP server: ${error}`,
-        //     guild_id,
-        //     `${guild_id}-error-logs`
-        // );
     });
 }
 
-async function establishFtpConnectionToGportal(guild_id, ftp_server_data) {
+async function establishFtpConnectionToGPortal(guild_id, ftp_server_data) {
     try {
         const ftp_client = await createNewFtpClient(guild_id, ftp_server_data);
         cache.set(`ftp_server_configuration_${guild_id}`, ftp_client);
@@ -283,6 +280,7 @@ async function establishFtpConnectionToGportal(guild_id, ftp_server_data) {
  * Attempts to reconnect to the GPortal FTP server when the connection is severed. Used in conjunction with the @establishFtpConnectionToGportal function
  */
 function retryConnection(guild_id, ftp_server_data) {
+    console.log(`Retrying connection to FTP server for guild ${guild_id} in ${RETRY_DELAY / 1000} seconds`);
     const ftp_retry_delay = 5000;
     // message_logger.writeLogToAzureContainer(
     //     `InfoLogs`,
@@ -290,14 +288,18 @@ function retryConnection(guild_id, ftp_server_data) {
     //     guild_id,
     //     `${guild_id}-info-logs`
     // );
-    setTimeout(() => {
-        establishFtpConnectionToGportal(guild_id, ftp_server_data);
+    setTimeout(async() => {
+        try {
+            const ftp_client = await establishFtpConnectionToGportal(guild_id, ftp_server_data);
+        } catch (error) {
+            retryConnection(guild_id, ftp_server_data);
+        }
     }, ftp_retry_delay);
 }
 
 /**
  * This asynchronous function reads login log files from the FTP server hosted on GPortal for my SCUM server
- * The npm package 'FTP' provides functionality to process the data fetched from the GPortal FTP server and extract the relevant 
+ * The npm package 'FTP' provides functionality to process the data fetched from the GPortal FTP server and extract the relevant
  * steam id of the invoker, and their associated in-game chat message
  * @param {Object} request An HTTP request object which attempts to query data from the FTP server
  * @param {any} response An HTTP response object which holds the query results obtained from the FTP server
@@ -418,19 +420,19 @@ async function readAndFormatGportalFtpServerLoginLog(bot_repository, guild_id, f
                 );
 
                 await insertSteamUsersIntoDatabase(
-                    Object.keys(user_steam_ids), 
-                    Object.values(user_steam_ids), 
+                    Object.keys(user_steam_ids),
+                    Object.values(user_steam_ids),
                     guild_id
                 );
 
                 await determinePlayerLoginSessionMoney(
-                    guild_id, 
+                    guild_id,
                     cache.get(`received_chat_login_messages_${guild_id}`)
                 );
 
                 await teleportNewPlayersToLocation(
-                    bot_repository, 
-                    Object.keys(user_steam_ids), 
+                    bot_repository,
+                    Object.keys(user_steam_ids),
                     channel_for_new_joins,
                     guild_id
                 );
@@ -457,11 +459,11 @@ async function readAndFormatGportalFtpServerLoginLog(bot_repository, guild_id, f
 }
 
 /**
- * This function determines if players joining the server are new. If so, they are teleported to a specific area on the map. 
- * The players are teleported to a specific area so they can read relevant server information. 
+ * This function determines if players joining the server are new. If so, they are teleported to a specific area on the map.
+ * The players are teleported to a specific area so they can read relevant server information.
  * If the mongodb database results return a user who has the property 'user_joining_server_first_time' as a value of '0', a command will be executed
  * in-game that sends them to a specific location on the game map which tells them starter information they need to know
- * 
+ *
  * @param {any} online_users a Map containing the key-value pairs of user steam id and user steam name
  */
 async function teleportNewPlayersToLocation(bot_repository, user_steam_ids, channel_for_new_joins, guild_id) {
@@ -527,7 +529,7 @@ async function teleportNewPlayersToLocation(bot_repository, user_steam_ids, chan
 
 /**
  * This asynchronous function reads chat log files from the FTP server hosted on GPortal for my SCUM server
- * The npm package 'FTP' provides functionality to process the data fetched from the GPortal FTP server and extract the relevant 
+ * The npm package 'FTP' provides functionality to process the data fetched from the GPortal FTP server and extract the relevant
  * steam id of the invoker, and their associated in-game chat message
  * @param {Object} request An HTTP request object which attempts to query data from the FTP server
  * @param {any} response An HTTP response object which holds the query results obtained from the FTP server
@@ -563,7 +565,7 @@ async function readAndFormatGportalFtpServerChatLog(guild_id, ftp_client) {
         });
 
         /**
-         * Based on the log files that we obtained from querying the FTP server, we must filter the chat log files based on a filename prefix and 
+         * Based on the log files that we obtained from querying the FTP server, we must filter the chat log files based on a filename prefix and
          * sort by date. To obtain the chat logs, we must filter by the file name 'chat_'+most_recent_date', as the file name is 'chat_'+Date+'.log'
          * E.g. 'chat_202030831164431.log'
          */
@@ -572,7 +574,7 @@ async function readAndFormatGportalFtpServerChatLog(guild_id, ftp_client) {
             .sort((file_one, file_two) => file_two.date - file_one.date);
 
         /**
-         * If no matching file names were found in the GPortal FTP server query result, we return a JSON response of an internal server error 
+         * If no matching file names were found in the GPortal FTP server query result, we return a JSON response of an internal server error
          * indicating that no target files were found
          */
         if (matching_files.length === 0) {
@@ -626,8 +628,8 @@ async function readAndFormatGportalFtpServerChatLog(guild_id, ftp_client) {
                 browser_file_contents_lines = browser_file_contents.split('\n');
 
                 /**
-                 * Whenever the bot restarts, prevent duplicate older log files from being re-read and processed by the program. Set the first line to be processed as the total 
-                 * number of lines that currently exist in the FTP file. 
+                 * Whenever the bot restarts, prevent duplicate older log files from being re-read and processed by the program. Set the first line to be processed as the total
+                 * number of lines that currently exist in the FTP file.
                  */
                 const initial_line_been_processed = cache.get(`initial_line_been_processed_chat_log_${guild_id}`);
 
@@ -659,15 +661,15 @@ async function readAndFormatGportalFtpServerChatLog(guild_id, ftp_client) {
             });
             stream.on('end', async () => {
                 /**
-                * Set the last line processed in the FTP file so that we do not re-read any file content which we have read already. This will assist administrators 
-                * in keeping track of messages that have already been processed. 
+                * Set the last line processed in the FTP file so that we do not re-read any file content which we have read already. This will assist administrators
+                * in keeping track of messages that have already been processed.
                 */
                 cache.set(`last_line_processed_ftp_chat_log_${guild_id}`, browser_file_contents_lines.length);
                 /**
                  * If a data stream from the FTP server was properly terminated and returned some results, we will create a hash of those results
-                 * and will not execute the function again if subsequent hashes are identical. 
+                 * and will not execute the function again if subsequent hashes are identical.
                  */
-                if (browser_file_contents.length > 1) { 
+                if (browser_file_contents.length > 1) {
                     const current_chat_log_file_hash = crypto.createHash('sha256').update(browser_file_contents).digest('hex');
                     const previous_chat_log_file_hash = cache.get(`previous_chat_log_hash_${guild_id}`);
 
@@ -680,7 +682,7 @@ async function readAndFormatGportalFtpServerChatLog(guild_id, ftp_client) {
                     cache.set(`initial_line_been_processed_${guild_id}`, true);
                 }
 
-                
+
                 for (let i = 0; i < file_contents_steam_id_and_messages.length; i++) {
                     await enqueueCommand(file_contents_steam_id_and_messages[i], guild_id);
                 }
@@ -721,7 +723,7 @@ async function readAndFormatGportalFtpServerChatLog(guild_id, ftp_client) {
  * The function checkLocalServerTime runs once every minute, checking the current time relative to the time on the time clock on the target machine. Once the current time
  * fetched by the bot is 5:40 am, a warning message will be announced on the server informing users of a pending server restart in (6:00 - N), where N is the current time.
  * For example, if the current time is 5:40 am, 6:00 am - 5:40 am will result in 0:20. Therefore, the bot will announce on the server a restart in 20 minutes.
- * This occurs when the time is calculated as 20 minutes, 10 minutes, 5 minutes, and one minute. 
+ * This occurs when the time is calculated as 20 minutes, 10 minutes, 5 minutes, and one minute.
  */
 async function checkLocalServerTime(guild_id) {
     const currentDateTime = new Date();
@@ -755,16 +757,16 @@ async function insertSteamUsersIntoDatabase(steam_user_ids_array, steam_user_nam
     }
 }
 /**
- * verifyCallback() is a necessary function to use in all web applications when using express and passport. In this instance, verifyCallback() is the 
+ * verifyCallback() is a necessary function to use in all web applications when using express and passport. In this instance, verifyCallback() is the
  * function that is called internally when you are storing a user object in a session after logging in. Here are the steps in sequence:
  * 1) verifyCallback first attempts to find a user by their submitted username and password
  *  1a) If a user cannot be found, the result is null. The user is not permitted to go to any pages requiring a session with a user object.
- * 2) When the asyncronous database operation returns a user found, the properties from the returned object are stored in local variables. From there, the password 
+ * 2) When the asyncronous database operation returns a user found, the properties from the returned object are stored in local variables. From there, the password
  *    submitted on the login page by the user is hashed & salted and compared with the password existing in the database.
  * 3) An 'admin' object is created to attach to the established user session. This object contains the uuid and username of the admin, so relevant details can be fetched
  *    from the database if needed.
- * 4) If the hashed and salted user submitted password matches what was found in the database, express establishes a session, stores a session key in mongodb for 
- *    persistence, and attaches the admin object to the session. 
+ * 4) If the hashed and salted user submitted password matches what was found in the database, express establishes a session, stores a session key in mongodb for
+ *    persistence, and attaches the admin object to the session.
  * @param {string} username
  * @param {string} password
  * @param {any} done
@@ -776,7 +778,7 @@ const verifyCredentialsCallback = async (email, password, done) => {
     try {
         bot_repository_instance = new BotRepository();
         bot_user_data = await bot_repository_instance.getBotDataByEmail(email);
-        
+
     } catch (error) {
         // message_logger.writeLogToAzureContainer(
         //     `ErrorLogs`,
@@ -797,7 +799,7 @@ const verifyCredentialsCallback = async (email, password, done) => {
     }
 
     bot_repository_instance = new BotRepository(bot_user_data.guild_id);
-    
+
     const bot_user_email = bot_user_data.bot_email;
     const bot_user_username = bot_user_data.bot_username;
     const bot_user_password = bot_user_data.bot_password;
@@ -891,15 +893,15 @@ web_socket_server_instance.on('connection', function(websocket, request) {
     const queryParameters = new URL(request.url, `http://${request.headers.host}`).searchParams;
     const websocket_id = queryParameters.get('websocket_id');
     websocket.id = websocket_id;
-    
+
     cache.set(`websocket_${websocket_id}`, websocket);
     cache.set(`websocket_id_${websocket_id}`, websocket_id);
     cache.set(`bot_repository_${websocket_id}`, new BotRepository(websocket_id));
 
-    websocket.on('message', async function(message) { 
+    websocket.on('message', async function(message) {
         const json_message = JSON.parse(message);
 
-        if (json_message.action === "statusUpdate" && json_message.ftp_server_data && json_message.connectedToServer 
+        if (json_message.action === "statusUpdate" && json_message.ftp_server_data && json_message.connectedToServer
             && json_message.serverOnline && json_message.localTime) {
 
             const json_message_guild_id = json_message.guild_id;
@@ -916,12 +918,12 @@ web_socket_server_instance.on('connection', function(websocket, request) {
                 readAndFormatGportalFtpServerChatLog(json_message_guild_id, ftp_client);
 
                 readAndFormatGportalFtpServerLoginLog(cache.get(`bot_repository_${json_message_guild_id}`),json_message_guild_id,ftp_client);
-                
+
                 checkLocalServerTime(json_message_guild_id);
 
                 botConnectedToGameServer(json_message_guild_id);
-            } 
-        } 
+            }
+        }
     });
 
     websocket.on('error', function(error) {
@@ -1062,7 +1064,7 @@ function sendPlayerMessagesToDiscord(scum_game_chat_messages, discord_channel, g
                 .setTimestamp()
                 .setFooter({ text: 'Scum Monitor Man', iconURL: 'https://i.imgur.com/dYtjF3w.png' });
             discord_channel.send({ embeds: [embedded_message] });
-        } 
+        }
     }
 }
 
@@ -1096,7 +1098,7 @@ async function sendPlayerLoginMessagesToDiscord(scum_game_login_messages, discor
         return;
     }
 
-    for (let i = 0; i < scum_game_login_messages.length; i++) { 
+    for (let i = 0; i < scum_game_login_messages.length; i++) {
         if (typeof scum_game_login_messages[i] === 'string' && scum_game_login_messages[i].trim() && !scum_game_login_messages.includes(`Game version:`)) {
             if (!isValidMessage(scum_game_login_messages[i])) {
                 continue;
@@ -1130,8 +1132,8 @@ async function sendPlayerLoginMessagesToDiscord(scum_game_login_messages, discor
                 y_coordinate = coordinates[2];
                 z_coordinate = coordinates[3];
             }
-                
-            if (user_logged_in_or_out && x_coordinate && y_coordinate && z_coordinate 
+
+            if (user_logged_in_or_out && x_coordinate && y_coordinate && z_coordinate
                 && timestamp && ip_address && steam_id && username) {
 
                 const embedded_message = new EmbedBuilder()
@@ -1154,9 +1156,9 @@ async function sendPlayerLoginMessagesToDiscord(scum_game_login_messages, discor
                 discord_channel.send({ embeds: [embedded_message] });
             }
         }
-    } 
+    }
 }
-    
+
 
 async function sendNewPlayerLoginMessagesToDiscord(user_steam_id, discord_channel, guild_id) {
     if (!discord_channel) {
@@ -1209,7 +1211,7 @@ function checkIfGameServerOnline(bot_status, guild_id, ftp_server_data, game_ser
 async function enableBot(guild_id) {
     try {
         let bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
-        
+
         if (!(bot_repository_instance)) {
             cache.set(`bot_repository_${guild_id}`, new BotRepository(guild_id));
             bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
@@ -1232,7 +1234,7 @@ async function enableBot(guild_id) {
             const user_command_queue = new Queue();
             cache.set(`user_command_queue_${guild_id}`, user_command_queue);
             checkIfGameServerOnline(`enable`, guild_id, ftp_server_data, game_server_data);
-        } 
+        }
     } catch (error) {
         // message_logger.writeLogToAzureContainer(
         //     `ErrorLogs`,
@@ -1245,9 +1247,9 @@ async function enableBot(guild_id) {
 }
 
 /**
-* When the discord API triggers the interactionCreate event, an asynchronous function is executed with the interaction passed in as a parameter value. 
+* When the discord API triggers the interactionCreate event, an asynchronous function is executed with the interaction passed in as a parameter value.
 * If the interaction is not a command, the function does not continue executing.
-* @param {any} interaction 
+* @param {any} interaction
 * @returns ceases execution of the function if the interaction is not a command, if the user sent the message in the wrong channel, or if the user cannot use this command
 */
 
@@ -1265,7 +1267,7 @@ client_instance.on('interactionCreate', async (interaction) => {
 
                 const bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
                 const bot_discord_information = await bot_repository_instance.getBotDataByGuildId(guild_id);
-    
+
                 if (bot_discord_information) {
                     const discord_channel_id_for_chat = bot_discord_information.scum_ingame_chat_channel_id;
                     const discord_channel_id_for_logins = bot_discord_information.scum_ingame_logins_channel_id;
@@ -1273,18 +1275,18 @@ client_instance.on('interactionCreate', async (interaction) => {
                     const discord_channel_id_for_server_info_button = bot_discord_information.scum_server_info_channel_id;
                     const discord_channel_id_for_server_online = bot_discord_information.scum_server_online_channel_id;
                     const discord_channel_id_for_bot_commands = bot_discord_information.scum_bot_commands_channel_id;
-                    
+
                     const battlemetrics_server_id = bot_discord_information.scum_battlemetrics_server_id;
-                    
+
                     const teleport_command_prefix = bot_discord_information.command_prefix;
                     const teleport_command_x_coordinate = bot_discord_information.x_coordinate;
                     const teleport_command_y_coordinate = bot_discord_information.y_coordinate;
                     const teleport_command_z_coordinate = bot_discord_information.z_coordinate;
-                    
+
                     if (battlemetrics_server_id) {
                         const battlemetrics_server_info_instance = new ServerInfoCommand(battlemetrics_server_id);
                         cache.set(`battlemetrics_server_info_instance_${guild_id}`, battlemetrics_server_info_instance);
-                    } 
+                    }
                     if (discord_channel_id_for_chat) {
                         const discord_channel_for_chat = interaction.guild.channels.cache.get(discord_channel_id_for_chat);
                         cache.set(`discord_channel_for_chat_${guild_id}`, discord_channel_for_chat);
@@ -1340,18 +1342,18 @@ client_instance.on('interactionCreate', async (interaction) => {
                     const discord_channel_id_for_server_info_button = bot_discord_information.scum_server_info_channel_id;
                     const discord_channel_id_for_server_online = bot_discord_information.scum_server_online_channel_id;
                     const discord_channel_id_for_bot_commands = bot_discord_information.scum_bot_commands_channel_id;
-                
+
                     const battlemetrics_server_id = bot_discord_information.scum_battlemetrics_server_id;
-                
+
                     const teleport_command_prefix = bot_discord_information.command_prefix;
                     const teleport_command_x_coordinate = bot_discord_information.x_coordinate;
                     const teleport_command_y_coordinate = bot_discord_information.y_coordinate;
                     const teleport_command_z_coordinate = bot_discord_information.z_coordinate;
-                
+
                     if (battlemetrics_server_id) {
                         const battlemetrics_server_info_instance = new ServerInfoCommand(battlemetrics_server_id);
                         cache.set(`battlemetrics_server_info_instance_${guild_id}`, battlemetrics_server_info_instance);
-                    } 
+                    }
                     if (discord_channel_id_for_chat) {
                         const discord_channel_for_chat = interaction.guild.channels.cache.get(discord_channel_id_for_chat);
                         cache.set(`discord_channel_for_chat_${guild_id}`, discord_channel_for_chat);
@@ -1382,7 +1384,7 @@ client_instance.on('interactionCreate', async (interaction) => {
                     cache.set(`teleport_command_z_coordinate_${guild_id}`, teleport_command_z_coordinate);
 
                     await enableBot(guild_id);
-                    
+
                     await interaction.reply({ content: `Your SCUM server bot has been enabled`, ephemeral: true });
                 } else {
                     await interaction.reply({ content: `Your SCUm server bot cannot find your user profile. Please ask the bot developer to register an account for you`, ephemeral: true});
@@ -1490,10 +1492,10 @@ client_instance.on('interactionCreate', async (interaction) => {
             try {
                 battlemetrics_server_info = cache.get(`battlemetrics_server_info_instance_${interaction.guild.id}`);
             } catch (error) {
-                await interaction.reply(`There was an error when attempting to find your SCUM server information. Please first restart your bot. If that does not work, contact the bot administrator and inform them of the following error: ${error}`);  
+                await interaction.reply(`There was an error when attempting to find your SCUM server information. Please first restart your bot. If that does not work, contact the bot administrator and inform them of the following error: ${error}`);
                 return;
-            } 
-            
+            }
+
             if (battlemetrics_server_info) {
                 const battlemetrics_server_data_object = await battlemetrics_server_info.fetchJsonApiDataFromBattlemetrics();
                 const battlemetrics_server_json_data = battlemetrics_server_data_object.data.attributes;
@@ -1523,7 +1525,7 @@ client_instance.on('interactionCreate', async (interaction) => {
                     )
                     .setTimestamp()
                     .setFooter({text:'Scum Monitor Man', iconURL: 'https://i.imgur.com/dYtjF3w.png'});
-        
+
                 await interaction.reply({embeds:[embedded_message], ephemeral:true});
             }
         }
@@ -1539,7 +1541,7 @@ client_instance.on('interactionCreate', async (interaction) => {
         return;
     }
 
-    if (determineIfUserCanUseCommand(interaction.member, command.authorization_role_name)) { 
+    if (determineIfUserCanUseCommand(interaction.member, command.authorization_role_name)) {
         await command.execute(interaction);
     } else {
         await interaction.reply({ content: `You do not have permission to execute the command ${command.data.name}. Contact the server or bot administrator if you believe this is an error` });
@@ -1613,12 +1615,12 @@ client_instance.on('guildCreate', async (guild) => {
                 .setCustomId(`setupuserspawn`)
                 .setLabel(`Register user spawn coordinates`)
                 .setStyle(ButtonStyle.Primary)
-            
+
             const goto_bot_website_button = new ButtonBuilder()
                 .setLabel(`Go to bot web portal`)
                 .setURL("https://scumchatmonitorweb.azurewebsites.net")
                 .setStyle(ButtonStyle.Link)
-        
+
             const button_row_bot_controls = new ActionRowBuilder().addComponents(
                 server_info_button,
                 enable_bot_button,
@@ -1626,7 +1628,7 @@ client_instance.on('guildCreate', async (guild) => {
                 reinitialize_bot_button,
                 goto_bot_website_button
             );
-            
+
             const button_row_bot_data = new ActionRowBuilder().addComponents(
                 setup_discord_channel_ids_button,
                 setup_ftp_server_button,
@@ -1686,7 +1688,7 @@ client_instance.on('guildCreate', async (guild) => {
                 components: [button_row_bot_data]
                 });
                 cache.set(`discord_channel_for_server_info_${guild_id}`, discord_channel_for_server_info);
-            } 
+            }
             if (discord_channel_id_for_server_online) {
                 const discord_channel_for_server_online = guild.channels.cache.get(discord_channel_id_for_server_online);
                 cache.set(`discord_channel_for_server_online_${guild_id}`, discord_channel_for_server_online);
@@ -1719,7 +1721,7 @@ client_instance.on(Events.InteractionCreate, async interaction => {
     if (interaction.isModalSubmit()) {
 
         const guild_id = interaction.guild.id
-  
+
         if (interaction.customId === 'userDataInputModal') {
             const user_username = interaction.fields.getTextInputValue('usernameInput');
             const user_email = interaction.fields.getTextInputValue('emailInput');
@@ -1737,12 +1739,12 @@ client_instance.on(Events.InteractionCreate, async interaction => {
 
             try {
                 const bot_repository_instance = cache.get(`bot_repository_${guild_id}`);
-                await bot_repository_instance.createBot(bot_information); 
+                await bot_repository_instance.createBot(bot_information);
                 await bot_repository_instance.createOrUpdateUser(bot_information.bot_email);
             } catch (error) {
                 throw new Error(`There was an error when attempting to create a bot for you. Please inform the server administrator of this error: ${error}`);
             }
-        } 
+        }
 
         else if (interaction.customId === `userSpawnCoordsInputModal`) {
             const teleport_prefix = "#Teleport";
@@ -1755,7 +1757,7 @@ client_instance.on(Events.InteractionCreate, async interaction => {
                 command_prefix: teleport_prefix,
                 x_coordinate: x_coordinate,
                 y_coordinate: y_coordinate,
-                z_coordinate: z_coordinate 
+                z_coordinate: z_coordinate
             }
 
             try {
@@ -1788,7 +1790,7 @@ client_instance.on(Events.InteractionCreate, async interaction => {
             } catch (error) {
                 throw new Error(`There was an error when attempting to update your bot with Discord channel data. Please inform the server administrator of this error: ${error}`);
             }
-        } 
+        }
 
         else if (interaction.customId === `gameServerInputModal`) {
             const ipv4_address = interaction.fields.getTextInputValue(`ipv4AddressInput`);
@@ -1828,7 +1830,7 @@ client_instance.on(Events.InteractionCreate, async interaction => {
                 throw new Error(`There was an error when attempting to update your bot with FTP server data. Please inform the server administrator of this error: ${error}`);
             }
         }
-  
+
       if (interaction.customId === `userDataInputModal`) {
         await interaction.reply({content: `Your submission for creating new user data with your bot was successful`, ephemeral: true});
       } else if (interaction.customId === `battlemetricsServerIdModal`) {
@@ -1894,7 +1896,7 @@ async function createBotCategoryAndChannels(guild) {
     } catch (error) {
         console.error(`There was an error when setting up the bot channels. Please inform the server administrator of this error: ${error}`);
         throw new Error(`There was an error when setting up the bot channels. Please inform the server administrator of this error: ${error}`);
-    } 
+    }
 }
 
 async function registerInitialSetupCommands(bot_token, bot_id, guild_id) {
@@ -1922,7 +1924,7 @@ async function registerInitialSetupCommands(bot_token, bot_id, guild_id) {
 
     if (bot_token && bot_id && guild_id) {
         const rest = new REST({ version: '10' }).setToken(bot_token)
-        
+
         rest.put(Routes.applicationGuildCommands(bot_id, guild_id), {
             body: commands
         }).then(() => {
@@ -1945,7 +1947,7 @@ async function registerInitialSetupCommands(bot_token, bot_id, guild_id) {
 
 async function enqueueCommand(user_chat_message_object, guild_id) {
     const user_command_queue = new Queue();
-        
+
     user_command_queue.enqueue(user_chat_message_object);
     await setProcessQueueMutex(user_command_queue, guild_id);
 }
@@ -1971,23 +1973,23 @@ async function processQueueIfNotProcessing(user_command_queue, guild_id) {
     let bot_item_package = undefined;
     let teleport_coordinates = undefined;
 
-    while (user_command_queue.size() > 0) { 
+    while (user_command_queue.size() > 0) {
         /**
-         * After a command has finished execution in the queue, shift the values one spot to remove the command which has been executed. Extract the command 
+         * After a command has finished execution in the queue, shift the values one spot to remove the command which has been executed. Extract the command
          * and the steam id of the user who executed the command
          */
         const user_chat_message_object = user_command_queue.dequeue();
-        
+
         /*
-        user_chat_message_object is a key value pair. If the value for that key is undefined, continue to the next element. 
+        user_chat_message_object is a key value pair. If the value for that key is undefined, continue to the next element.
         */
-        if (user_chat_message_object.value === undefined) { 
+        if (user_chat_message_object.value === undefined) {
             continue;
         }
 
         /*
         The key value pair object 'user_chat_message_object' holds the command that the user used as the value. We must fetch the value by referencing the first
-        element in the value property. The value property starts with a ' character, so we take a substring of the value starting after the first character. 
+        element in the value property. The value property starts with a ' character, so we take a substring of the value starting after the first character.
         Next, we have to take the key associated with the command used, which is the user's steam id
         */
         const command_name = user_chat_message_object.value[0].substring(1);
@@ -2001,14 +2003,14 @@ async function processQueueIfNotProcessing(user_command_queue, guild_id) {
         const user_account_balance = user_account.user_money;
 
         /**
-         * Remove the weird (0-9{1,4}) value which is appended onto each username in the GPortal chat log. 
+         * Remove the weird (0-9{1,4}) value which is appended onto each username in the GPortal chat log.
          * The GPortal chat log generates usernames like: jacobdgraham02(102). Therefore, we will use regex to replace that with: jacobdgraham02
          */
-        const client_ingame_chat_name = user_account.user_steam_name.replace(/\([0-9]{1,4}\)/g, '');  
+        const client_ingame_chat_name = user_account.user_steam_name.replace(/\([0-9]{1,4}\)/g, '');
 
         /*
-        By using a string representation of the command to execute, we will fetch the command from the MongoDB database. If the command executed in game is '/test', 
-        a document with the name 'test' will be searched for in MongoDB. MongoDB returns the bot_item_package as an object instead of an array of objects. 
+        By using a string representation of the command to execute, we will fetch the command from the MongoDB database. If the command executed in game is '/test',
+        a document with the name 'test' will be searched for in MongoDB. MongoDB returns the bot_item_package as an object instead of an array of objects.
         */
         if (command_name.toString().startsWith('teleport')) {
             bot_item_package = await bot_repository.getBotTeleportCommandFromName(command_name.toString());
@@ -2042,12 +2044,12 @@ async function processQueueIfNotProcessing(user_command_queue, guild_id) {
             if (bot_item_package.package_cost) {
                 bot_item_package_cost = bot_item_package.package_cost;
             }
-        }       
+        }
 
         /**
          * All of the other commands just deduct money from the user account when executed. The command '!welcomepack' is special because it can be executed multiple times, increasing
          * in cost by 5000 after each execution. In the database class, there is a trigger defined for the user_welcome_pack_cost field that increments by 5000 each time it detects
-         * an increment by 1 for the field 'user_welcome_pack_uses'. Each time this command is executed, we update the user welcome pack uses by one. 
+         * an increment by 1 for the field 'user_welcome_pack_uses'. Each time this command is executed, we update the user welcome pack uses by one.
          */
         if (command_name === 'welcomepack') {
             const welcome_pack_uses = user_account.user_welcome_pack_uses || 0;
@@ -2070,7 +2072,7 @@ async function processQueueIfNotProcessing(user_command_queue, guild_id) {
             continue;
         }
         /**
-         * Subtract the balance of the package from the user's balance 
+         * Subtract the balance of the package from the user's balance
          */
         if (bot_item_package_cost) {
             await bot_repository.updateUserAccountBalance(command_to_execute_player_steam_id, -bot_item_package_cost);
@@ -2081,7 +2083,7 @@ async function processQueueIfNotProcessing(user_command_queue, guild_id) {
          */
         if (bot_package_items) {
             await sendCommandToClient(bot_package_items, guild_id, command_to_execute_player_steam_id);
-        } 
+        }
     }
 }
 
@@ -2151,8 +2153,8 @@ async function sendMessageToClient(message, websocket_id, steam_id) {
 client_instance.login(bot_token);
 
 /**
- * When a user executes a bot command in the correct channel, this function will determine if the user is allowed to use the command. 
- * This is determined by an array of values in the property 'authorization_role_name' in each of the command files. 
+ * When a user executes a bot command in the correct channel, this function will determine if the user is allowed to use the command.
+ * This is determined by an array of values in the property 'authorization_role_name' in each of the command files.
  * @param {any} message_sender
  * @param {any} client_command_values
  * @returns
