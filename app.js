@@ -161,17 +161,14 @@ const gportal_ftp_server_log_interval_seconds = {
     "60": 60000,
     "300": 300000
 }
-
 /**
 * This Queue holds all of the user commands, queued in order so that users have their commands executed at the desired time
 */
 const user_command_queue = new Queue();
-
 /**
 * Traditional logging system to log errors and other messages
 */
 const message_logger = new Logger();
-
 /**
  * A class instance which holds a function that hits the Battlemetrics server API
  */
@@ -363,7 +360,7 @@ maxRetries is used to indicate the maximum number of retry attempts that will be
 retryDelay is used to indicate how many milliseconds to wait before attempting to establish a new connection
  * @returns nothing if an FTP connection cannot be made to GPortal within 5 attempts
  */
-async function createConnectionWithConfig() {
+async function createConnectionWithConfig(config) {
     return new Promise((resolve, reject) => {
         const client = new FTPClient();
 
@@ -386,7 +383,7 @@ async function createConnectionWithConfig() {
             }
         });
 
-        client.connect(gportal_ftp_config);
+        client.connect(config);
     });
     // gportal_log_file_ftp_client = new FTPClient();
     // gportal_log_file_ftp_client.removeAllListeners();
@@ -421,7 +418,7 @@ async function createConnectionWithConfig() {
 async function establishFtpConnection(config) {
     for (let attempt = 1; ; attempt++) {
         try {
-            const client = await connectOnce(config);
+            const client = await createConnectionWithConfig(config);
             console.log('FTP connection successfully established.');
             message_logger.logError('FTP connection successfully established.');
 
@@ -430,7 +427,7 @@ async function establishFtpConnection(config) {
                 console.log('FTP connection closed. Reconnecting…');
                 message_logger.logError('FTP connection closed. Reconnecting…');
                 // fire off a fresh connect attempt (won’t leak)
-                createConnectionWithConfig(config);
+                establishFtpConnection(config);
             });
 
             gportal_log_file_ftp_client   = client;
@@ -860,31 +857,6 @@ function pressMouseLeftClickButton() {
 }
 
 /**
- * The function checkLocalServerTime runs once every minute, checking the current time relative to the time on the time clock on the target machine. Once the current time
- * fetched by the bot is 5:40 am, a warning message will be announced on the server informing users of a pending server restart in (6:00 - N), where N is the current time.
- * For example, if the current time is 5:40 am, 6:00 am - 5:40 am will result in 0:20. Therefore, the bot will announce on the server a restart in 20 minutes.
- * This occurs when the time is calculated as 20 minutes, 10 minutes, 5 minutes, and one minute.
- */
-async function checkLocalServerTime() {
-    const currentDateTime = new Date();
-    const current_hour = currentDateTime.getHours();
-
-    if (current_hour === 5 || current_hour === 18) {
-        const current_minute = currentDateTime.getMinutes();
-        const server_restart_messages = {
-            40: 'Server restart in 20 minutes',
-            50: 'Server restart in 10 minutes',
-            55: 'Server restart in 5 minutes',
-            59: 'Server restart in 1 minute'
-        };
-
-        if (server_restart_messages[current_minute]) {
-            await enqueueCommand(`#Announce ${server_restart_messages[current_minute]}`);
-        }
-    }
-}
-
-/**
  * Start an interval of reading chat log messages from gportal which repeats every 15 seconds. Clear any previously-set intervals
  */
 function startFtpFileProcessingIntervalChatLog() {
@@ -1163,35 +1135,79 @@ async function sendNewPlayerLoginMessagesToDiscord(player_ipv4_addresses, user_s
     }
 }
 
-function checkTcpConnectionToServer(discord_scum_game_chat_messages) {
-    message_for_discord_chat = '';
-    tcpConnectionChecker.checkWindowsHasTcpConnectionToGameServer((game_connection_exists) => {
-        if (game_connection_exists) {
-            message_for_discord_chat = 'The bot is online and connected to the SCUM server';
-            if (!gportal_ftp_connection_issue) {
-                message_for_discord_chat = 'The bot is having FTP connection issues';
-            }
-            discord_scum_game_chat_messages.send(`${message_for_discord_chat}`);
-        } else {
-            reinitializeBotOnServer();
-        }
+/**
+ * This function uses the native Windows command prompt shell to execute the command 'netstat -an' to fetch a list of current connections.
+ * It checks if the computer is connected to the game server IP address, which helps ensure the bot keeps trying to rejoin the game server if disconnected.
+ * The function now returns a Promise that resolves to true if connected, or false otherwise.
+ * @returns {Promise<boolean>} A promise that resolves to a boolean indicating the connection status.
+ */
+async function checkWindowsHasTcpConnectionToGameServer(game_server_address, game_server_port) {
+    return new Promise((resolve, reject) => {
+        exec(`netstat -an | find "${game_server_address}:${game_server_port}"`, (error, stdout) => {
+            if (error) reject(error);
+            resolve(stdout.includes(game_server_address + ':' + game_server_port));
+        });
     });
 }
 
-function checkIfGameServerOnline() {
-    tcpConnectionChecker.checkWindowsCanPingGameServer((game_server_online) => {
-        if (game_server_online) {
-            startFtpFileProcessingIntervalLoginLog();
-            startFtpFileProcessingIntervalChatLog();
-            establishFtpConnectionToGportal();
-            startCheckLocalServerTimeInterval();
-        } else {
-            stopFileProcessingIntervalChatLog();
-            stopFileProcessingIntervalLoginLog();
-            stopCheckLocalServerTimeInterval();
-        }
+/**
+ * This function uses the native Windows command prompt shell to execute a 'ping' command that will test to see if the game server is in an operational state.
+ * Because the game server restarts every day at approximately 18:00, we must ping the server to see if the server is online before doing anything on the server.
+ * @param game_server_address
+ */
+async function checkWindowsCanPingGameServer(game_server_address) {
+    return new Promise((resolve, reject) => {
+        exec(`ping ${game_server_address}`, (error, stdout) => {
+            if (error) {
+                stopFileProcessingIntervalChatLog();
+                stopFileProcessingIntervalLoginLog();
+                stopCheckLocalServerTimeInterval();
+                reject(error);
+            } else {
+                startFtpFileProcessingIntervalLoginLog();
+                startFtpFileProcessingIntervalChatLog();
+                establishFtpConnection(gportal_ftp_config);
+                startCheckLocalServerTimeInterval();
+            }
+            resolve(stdout.includes('Reply from ' + game_server_address));
+        });
     });
 }
+
+function getLocalTimeInHHmm() {
+    const current_hh_mm = new Date().toLocaleDateString('en-US', {
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    return current_hh_mm;
+}
+
+/**
+ * The function checkLocalServerTime runs once every minute, checking the current time relative to the time on the time clock on the target machine. Once the current time
+ * fetched by the bot is 5:40 am, a warning message will be announced on the server informing users of a pending server restart in (6:00 - N), where N is the current time.
+ * For example, if the current time is 5:40 am, 6:00 am - 5:40 am will result in 0:20. Therefore, the bot will announce on the server a restart in 20 minutes.
+ * This occurs when the time is calculated as 20 minutes, 10 minutes, 5 minutes, and one minute.
+ */
+async function checkLocalServerTime() {
+    const hhmm = getLocalTimeInHHmm();
+
+    const server_restart_messages = {
+        '05:40': 'Server restart in 20 minutes',
+        '05:50': 'Server restart in 10 minutes',
+        '05:55': 'Server restart in 5 minutes',
+        '05:59': 'Server restart in 1 minute',
+        '18:40': 'Server restart in 20 minutes',
+        '18:50': 'Server restart in 10 minutes',
+        '18:55': 'Server restart in 5 minutes',
+        '18:59': 'Server restart in 1 minute'
+    };
+
+    if (hhmm === '05:00' || hhmm === '18:00') {
+        await enqueueCommand(`#Announce ${server_restart_messages[hhmm]}`);
+    }
+}
+
 
 /**
  * The discord API triggers an event called 'ready' when the discord bot is ready to respond to commands and other input.
@@ -1515,10 +1531,6 @@ function sleep(milliseconds) {
  * @returns if the system cannot detect the SCUM process currently running, the function will cease execution.
  */
 async function runCommand(command) {
-    const scumProcess = exec('powershell.exe -c "Add-Type -TypeDefinition \'using System; using System.Runtime.InteropServices; public class User32 { [DllImport(\"user32.dll\")] public static extern bool SetForegroundWindow(IntPtr hWnd); }\'"');
-    if (!scumProcess) {
-        return;
-    }
     await sleep(500);
     copyToClipboard(command);
     await sleep(500);
