@@ -576,7 +576,7 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
 
                 insertSteamUsersIntoDatabase(Object.keys(user_steam_ids), Object.values(user_steam_ids));
 
-                teleportNewPlayersToLocation(user_steam_ids);
+                //teleportNewPlayersToLocation(user_steam_ids);
 
                 received_chat_login_messages = [];
 
@@ -597,41 +597,41 @@ async function readAndFormatGportalFtpServerLoginLog(request, response) {
  *
  * @param {any} online_users a Map containing the key-value pairs of user steam id and user steam name
  */
-async function teleportNewPlayersToLocation(online_users) {
-    /**
-     * Iterate over each key in the Map online_users. Each key in the Map is the steam id of the user
-     */
-    for (const key in online_users) {
-        /**
-         * Replacing the ' characters enclosing the string so we get a valid number
-         */
-        key.replace(/'/g, "");
-        /*
-        Only find a user in the MongoDB database if they have not yet joined the server (i.e. with the property 'user_joining_server_first_time' equal to 0)
-        After a user joins the server, that property is updated to contain a value of '1'
-        */
-        user_first_join_results = await user_repository.findUserByIdIfFirstServerJoin(key);
-        if (user_first_join_results) {
-            user_steam_id = user_first_join_results.user_steam_id;
-
-            try {
-                myEmitter.emit('newUserJoinedServer', user_steam_id);
-                await sendNewPlayerLoginMessagesToDiscord(player_ipv4_addresses, user_steam_id, discord_scum_game_first_time_logins_chat);
-            } catch (error) {
-                console.error(`An error has occurred sending the new player login messages to discord: ${error}`);
-            }
-
-            await sleep(60000);
-
-            try {
-                await enqueueCommand(`#Teleport -129023.125 -91330.055 36830.551 ${user_steam_id}`);
-            } catch (error) {
-                console.error(`An error has occurred when attempting to teleport the player to the spawn location area: ${error}`);
-            }
-        }
-        await user_repository.updateUser(key, { user_joining_server_first_time: 1 });
-    }
-}
+// async function teleportNewPlayersToLocation(online_users) {
+//     /**
+//      * Iterate over each key in the Map online_users. Each key in the Map is the steam id of the user
+//      */
+//     for (const key in online_users) {
+//         /**
+//          * Replacing the ' characters enclosing the string so we get a valid number
+//          */
+//         key.replace(/'/g, "");
+//         /*
+//         Only find a user in the MongoDB database if they have not yet joined the server (i.e. with the property 'user_joining_server_first_time' equal to 0)
+//         After a user joins the server, that property is updated to contain a value of '1'
+//         */
+//         user_first_join_results = await user_repository.findUserByIdIfFirstServerJoin(key);
+//         if (user_first_join_results) {
+//             user_steam_id = user_first_join_results.user_steam_id;
+//
+//             try {
+//                 myEmitter.emit('newUserJoinedServer', user_steam_id);
+//                 await sendNewPlayerLoginMessagesToDiscord(player_ipv4_addresses, user_steam_id, discord_scum_game_first_time_logins_chat);
+//             } catch (error) {
+//                 console.error(`An error has occurred sending the new player login messages to discord: ${error}`);
+//             }
+//
+//             await sleep(60000);
+//
+//             try {
+//                 await enqueueCommand(`#Teleport -129023.125 -91330.055 36830.551 ${user_steam_id}`);
+//             } catch (error) {
+//                 console.error(`An error has occurred when attempting to teleport the player to the spawn location area: ${error}`);
+//             }
+//         }
+//         await user_repository.updateUser(key, { user_joining_server_first_time: 1 });
+//     }
+// }
 
 /**
  * This asynchronous function reads chat log files from the FTP server hosted on GPortal for my SCUM server
